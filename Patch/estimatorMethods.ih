@@ -1,0 +1,250 @@
+#include "estimatorMethods.h"
+
+namespace Patch{
+
+    namespace Backstage {
+
+        template<typename FunctorGoodStarter>
+        void initializeCurveWithAGoodStarter(KSpace &KImage,
+                                             FunctorGoodStarter fgs,
+                                             Curve &initialCurve,
+                                             Curve &newCurve) {
+            Curve::ConstIterator newCurveBegin, newCurveEnd;
+            newCurveBegin = initialCurve.begin();
+            newCurveEnd = initialCurve.end();
+
+            std::vector<SCell> scells;
+
+            findGoodStarter(KImage,
+                            fgs,
+                            newCurveBegin,
+                            newCurveEnd,
+                            scells);
+
+            {
+                auto it = newCurveBegin;
+
+                do {
+                    newCurve.push_back(*it);
+                    ++it;
+                } while (it != newCurveEnd);
+            }
+        }
+
+/* --------------------------------------------------------------------------------------------------------------------------- */
+
+        template<typename IteratorType, typename FunctorGoodStarter>
+        void findGoodStarter(KSpace &KImage,
+                             FunctorGoodStarter goodStarterFunctor,
+                             IteratorType &curveBegin,
+                             IteratorType &curveEnd,
+                             std::vector<SCell>& scells)
+        {
+            DGtal::PointVector<2, int> v(3, 3);
+            KSpace::SPreCell s(v, true);
+
+            for(auto it=curveBegin;it!=curveEnd;++it){
+                scells.push_back(*it);
+            }
+
+            curveBegin = scells.begin();
+            curveEnd = scells.end();
+
+            int count = 0;
+            while (!goodStarterFunctor(curveBegin, curveEnd, KImage)) {
+
+                scells.push_back( *curveBegin );
+                curveBegin = ( scells.begin() + count + 1);
+                curveEnd = scells.end();
+
+                ++count;
+                if (count > 4) break;
+            }
+
+
+
+        }
+
+
+/* --------------------------------------------------------------------------------------------------------------------------- */
+
+
+        template<typename IteratorType, typename SegmentComputer, typename Segmentation, typename SegmentIterator>
+        bool IsGoodStarter(const IteratorType &itb,
+                           const IteratorType &ite/*,
+                           std::pair <KSpace::Point, KSpace::Point> &incidentPixels*/)
+        {
+            bool goodOne = true;
+
+            SegmentComputer mySC;
+            Segmentation seg(itb, ite, mySC);
+            seg.setSubRange(itb, ite);
+
+            if (isNotEmpty(itb, ite)) {
+
+                SegmentIterator segItBegin = seg.begin();
+                SegmentIterator segItEnd = seg.end();
+                SegmentIterator segIt = segItBegin;
+                SegmentIterator nextSegIt = segIt;
+
+                if (nextSegIt != segItEnd) {  //at least one maximal segment
+                    ++nextSegIt;
+
+                    if (nextSegIt == segItEnd) {    //only one maximal segment
+
+                    } else {   //strictly more than one maximal segment
+                        IteratorType itCurrent = itb;
+                        bool full_cycle;
+                        auto sEnd(segIt->end());
+
+                        IteratorType itEnd = getMiddleIterator(nextSegIt->begin(), sEnd, full_cycle);//(floor)
+
+
+                        if (*itCurrent == *itEnd) {
+                            goodOne = false;
+                            /*incidentPixels = (*seg.begin()->begin());*/
+                        }
+                    }
+                }
+            }
+
+            return goodOne;
+        }
+
+/* --------------------------------------------------------------------------------------------------------------------------- */
+        /*FUNCTORS*/
+        template<typename CurveSCellIteratorType>
+        bool Functors::IsGoodStarterStabbingCircles<CurveSCellIteratorType>::operator()(const CurveSCellIteratorType &itb,
+                                                                                        const CurveSCellIteratorType &ite,
+                                                                                        KSpace& KImage/*,
+                                                                                        std::pair <KSpace::Point, KSpace::Point> &incidentPixels*/)
+        {
+            typedef typename DGtal::ConstRangeAdapter<CurveSCellIteratorType,
+                                                      DGtal::functors::SCellToIncidentPoints<DGtal::Z2i::KSpace>,
+                                                      std::pair<DGtal::Z2i::Point,DGtal::Z2i::Point> > IncidentPointsRangeType;
+
+            DGtal::functors::SCellToIncidentPoints<KSpace> myFunc(KImage);
+
+            IncidentPointsRangeType range(itb,
+                                          ite,
+                                          myFunc);
+
+            typedef typename IncidentPointsRangeType::ConstCirculator IteratorType;
+
+            typedef typename DGtal::StabbingCircleComputer<IteratorType> SegmentComputer;
+            typedef typename DGtal::SaturatedSegmentation<SegmentComputer> Segmentation;
+            typedef typename Segmentation::SegmentComputerIterator SegmentIterator;
+
+            return IsGoodStarter<IteratorType, SegmentComputer, Segmentation, SegmentIterator>(range.c(),
+                                                                                               range.c()/*,
+                                                                                               incidentPixels*/);
+        }
+
+/* --------------------------------------------------------------------------------------------------------------------------- */
+
+        template<typename CurveSCellIteratorType>
+        bool Functors::IsGoodStarterArithmeticalDSSComputer<CurveSCellIteratorType>::operator()(const CurveSCellIteratorType &itb,
+                                                                                                const CurveSCellIteratorType &ite,
+                                                                                                KSpace& KImage/*,
+                                                                                                std::pair <KSpace::Point, KSpace::Point> &incidentPixels*/)
+        {
+            typedef typename DGtal::ConstRangeAdapter<CurveSCellIteratorType,
+                                                      DGtal::functors::SCellToPoint<DGtal::Z2i::KSpace>,
+                                                      DGtal::Z2i::Point > PointsRangeType;
+
+            DGtal::functors::SCellToPoint<KSpace> myFunc(KImage);
+
+            PointsRangeType range(itb,
+                                  ite,
+                                  myFunc);
+
+            typedef typename PointsRangeType::ConstCirculator IteratorType;
+
+
+            typedef typename DGtal::ArithmeticalDSSComputer< IteratorType, int, 4 > SegmentComputer;
+            typedef typename DGtal::SaturatedSegmentation<SegmentComputer> Segmentation;
+            typedef typename Segmentation::SegmentComputerIterator SegmentIterator;
+
+            return IsGoodStarter<IteratorType, SegmentComputer, Segmentation, SegmentIterator>(range.c(),
+                                                                                               range.c()/*,
+                                                                                               incidentPixels*/);
+        }
+
+/* --------------------------------------------------------------------------------------------------------------------------- */
+
+
+    }
+    /*END BACKSTAGE*/
+
+
+    template<typename IteratorType>
+    void estimationsPatchMCMSECurvature(IteratorType itb,
+                                        IteratorType ite,
+                                        std::vector<double>& estimations)
+    {
+        typedef DGtal::StabbingCircleComputer<IteratorType> SegmentComputer;
+        typedef DGtal::CurvatureFromDCAEstimator<SegmentComputer, false> SCEstimator;
+
+        SegmentComputer sc;
+        SCEstimator f;
+
+        Patch::MostCenteredMaximalSegmentEstimator<SegmentComputer,SCEstimator> MCMSECurvature(sc,f);
+
+        MCMSECurvature.init(1.0,itb,ite);
+        MCMSECurvature.eval(itb,ite,std::back_inserter(estimations));
+    }
+
+    template<typename IteratorType>
+    void estimationsDGtalMCMSECurvature(IteratorType itb,
+                                        IteratorType ite,
+                                        std::vector<double>& estimations)
+    {
+        typedef DGtal::StabbingCircleComputer<IteratorType> SegmentComputer;
+        typedef DGtal::CurvatureFromDCAEstimator<SegmentComputer, false> SCEstimator;
+
+        SegmentComputer sc;
+        SCEstimator f;
+
+        DGtal::MostCenteredMaximalSegmentEstimator<SegmentComputer,SCEstimator> MDCACurvatureEstimator(sc,f);
+
+        MDCACurvatureEstimator.init(1.0,itb,ite);
+        MDCACurvatureEstimator.eval(itb,ite,std::back_inserter(estimations));
+    }
+
+
+    template<typename IteratorType>
+    void estimationsPatchMCMSETangent(IteratorType itb,
+                                      IteratorType ite,
+                                      std::vector< TangentVector >& estimations)
+    {
+        typedef DGtal::ArithmeticalDSSComputer< IteratorType, int, 4 > SegmentComputer;
+        typedef DGtal::TangentFromDSSEstimator<SegmentComputer> SCEstimator;
+
+        SegmentComputer sc;
+        SCEstimator f;
+
+        Patch::MostCenteredMaximalSegmentEstimator<SegmentComputer,SCEstimator> MCMSETangent(sc,f);
+
+        MCMSETangent.init(1.0,itb,ite);
+        MCMSETangent.eval(itb,ite,std::back_inserter(estimations));
+    }
+
+
+    template<typename IteratorType>
+    void estimationsDGtalMCMSETangent(IteratorType itb,
+                                      IteratorType ite,
+                                      std::vector< TangentVector >& estimations)
+    {
+        typedef DGtal::ArithmeticalDSSComputer< IteratorType, int, 4 > SegmentComputer;
+        typedef DGtal::TangentFromDSSEstimator<SegmentComputer> SCEstimator;
+
+        SegmentComputer sc;
+        SCEstimator f;
+
+        DGtal::MostCenteredMaximalSegmentEstimator<SegmentComputer,SCEstimator> MDCATangentEstimator(sc,f);
+
+        MDCATangentEstimator.init(1.0,itb,ite);
+        MDCATangentEstimator.eval(itb,ite,std::back_inserter(estimations));
+    }
+
+}
