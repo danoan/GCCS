@@ -43,14 +43,14 @@ void curvatureEstimatorsGridCurve(UtilsTypes::Curve::ConstIterator begin,
 
 }
 
-void curvatureEstimatorsGluedCurve(UtilsTypes::Curve::ConstIterator begin,
-                                   UtilsTypes::Curve::ConstIterator end,
+void curvatureEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
+                                   UtilsTypes::SCellGluedCurveIterator end,
                                    UtilsTypes::KSpace& KImage,
                                    std::vector<double>& estimations)
 {
     typedef UtilsTypes::functors::SCellToIncidentPoints<KSpace> AdapterFunctor;
 
-    typedef UtilsTypes::ConstRangeAdapter< UtilsTypes::Curve::ConstIterator,
+    typedef UtilsTypes::ConstRangeAdapter< UtilsTypes::SCellGluedCurveIterator,
                                            AdapterFunctor,
                                            AdapterFunctor::Output > RangeAdapter;
 

@@ -171,6 +171,12 @@ void runTests(const std::string& imgPath,
     }
     EA.board.saveEPS(outputFilePath.c_str());
 
+    /*Maximal Stabbing Circles*/
+    EA.board.clear(DGtal::Color::White);
+    EA.drawMaximalStabbingCircles(intCurve);
+    outputFilePath = outputFolder + "/maximalStabbingCircles.eps";
+    EA.board.save(outputFilePath .c_str());
+
 }
 
 void testSequence()

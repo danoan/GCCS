@@ -30,8 +30,8 @@ void curvatureEstimatorsGridCurve(UtilsTypes::Curve::ConstIterator begin,
                                   UtilsTypes::KSpace& KImage,
                                   std::vector<double>& estimations);
 
-void curvatureEstimatorsGluedCurve(UtilsTypes::Curve::ConstIterator begin,
-                                   UtilsTypes::Curve::ConstIterator end,
+void curvatureEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
+                                   UtilsTypes::SCellGluedCurveIterator end,
                                    UtilsTypes::KSpace& KImage,
                                    std::vector<double>& estimations);
 

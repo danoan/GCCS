@@ -11,26 +11,11 @@ void Artist::drawCurvatureMap(ArtistTypes::Curve& myCurve,
                               double& cmin,
                               double& cmax)
 {
-    DGtal::functors::SCellToIncidentPoints<KSpace> scelltopF(KImage);
-
-
-    typedef ConstRangeAdapter< ArtistTypes::Curve::ConstIterator,
-                               DGtal::functors::SCellToIncidentPoints<KSpace>,
-                               std::pair<KSpace::Point,KSpace::Point>
-    > GridCurveRangeType;
-
-
-    GridCurveRangeType myRange( myCurve.begin(),
-                                myCurve.end(),
-                                scelltopF);
-
-
     std::vector<double> estimations;
-    if(Patch::useDGtal){
-        Patch::estimationsDGtalMCMSECurvature(myRange.c(),myRange.c(),estimations);
-    }else{
-        Patch::estimationsPatchMCMSECurvature(myRange.c(),myRange.c(),estimations);
-    }
+    curvatureEstimatorsGridCurve(myCurve.begin(),
+                                 myCurve.end(),
+                                 KImage,
+                                 estimations);
 
     /*Max and Min value computation for Color Map*/
     if(squaredCurvature) {
@@ -63,21 +48,11 @@ void Artist::drawGluedCurvatureMap(SegCut::SCellGluedCurveIterator itb,
                                    double& cmin,
                                    double& cmax)
 {
-    typedef DGtal::functors::SCellToIncidentPoints<ArtistTypes::KSpace> SCellToIncPointsFunctor;
-
-
-    SCellToIncPointsFunctor myFunc(KImage);
-
-    ArtistTypes::GluedCurveIncidentPointsRange gcipRange(itb,
-                                                         ite,
-                                                         myFunc );
-
     std::vector<double> estimations;
-    if(Patch::useDGtal){
-        Patch::estimationsDGtalMCMSECurvature(gcipRange.begin(),gcipRange.end(),estimations);
-    }else{
-        Patch::estimationsPatchMCMSECurvature(gcipRange.begin(),gcipRange.end(),estimations);
-    }
+    curvatureEstimatorsGluedCurve(itb,
+                                  ite,
+                                  KImage,
+                                  estimations);
 
 
     if(squaredCurvature){
@@ -186,20 +161,14 @@ void Artist::drawTangentMap(Curve& myCurve,
                             double& cmin,
                             double& cmax)
 {
-    typedef typename Curve::PointsRange::ConstCirculator AdapterCirculator;
-    typedef DGtal::PointVector<2,double> TangentVector;
+    std::vector<ArtistTypes::TangentVector> estimations;
 
+    tangentEstimatorsGridCurve(myCurve.begin(),
+                               myCurve.end(),
+                               KImage,
+                               estimations);
 
-    Curve::PointsRange myRange = myCurve.getPointsRange();
-
-    std::vector< TangentVector > estimations;
-    if(Patch::useDGtal){
-        Patch::estimationsDGtalMCMSETangent(myRange.c(),myRange.c(),estimations);
-    }else{
-        Patch::estimationsPatchMCMSETangent(myRange.c(),myRange.c(),estimations);
-    }
-
-    std::function< double( TangentVector ) > toDouble = []( TangentVector tv){return tv[0];};
+    std::function< double( ArtistTypes::TangentVector ) > toDouble = []( ArtistTypes::TangentVector tv){return tv[0];};
     max_and_min(estimations,cmin,cmax,toDouble);
 
 
@@ -218,10 +187,7 @@ void Artist::drawMaximalStabbingCircles(Curve& myCurve)
     typedef StabbingCircleComputer<AdapterCirculator> SegmentComputer;
     typedef CurvatureFromDCAEstimator<SegmentComputer, false> SCFunctor;
 
-    Board2D board;
-
     Curve::IncidentPointsRange intRange = myCurve.getIncidentPointsRange();
-
 
     typedef DGtal::SaturatedSegmentation<SegmentComputer> Segmentation;
     Segmentation seg( intRange.c(), intRange.c(), SegmentComputer() );
