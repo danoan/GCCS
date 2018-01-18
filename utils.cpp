@@ -23,7 +23,8 @@ void drawCurvatureMap(std::vector<Z2i::SCell>::const_iterator begin,
 void curvatureEstimatorsGridCurve(UtilsTypes::Curve::ConstIterator begin,
                                   UtilsTypes::Curve::ConstIterator end,
                                   UtilsTypes::KSpace& KImage,
-                                  std::vector<double>& estimations)
+                                  std::vector<double>& estimations,
+                                  bool closedCurve)
 {
     typedef UtilsTypes::functors::SCellToIncidentPoints<KSpace> AdapterFunctor;
 
@@ -31,15 +32,60 @@ void curvatureEstimatorsGridCurve(UtilsTypes::Curve::ConstIterator begin,
                                AdapterFunctor,
                                AdapterFunctor::Output > RangeAdapter;
 
+    Curve negativeCurve;
+    invertCurve(KImage,
+                begin,
+                end,
+                negativeCurve);
+
     AdapterFunctor myFunctor(KImage);
-    RangeAdapter range(begin,end,myFunctor);
+    RangeAdapter rangePositiveCurve(begin,
+                                    end,
+                                    myFunctor);
+
+    RangeAdapter rangeNegativeCurve(negativeCurve.begin(),
+                                    negativeCurve.end(),
+                                    myFunctor);
 
 
-    if(Patch::useDGtal){
-        Patch::estimationsDGtalMCMSECurvature(range.c(),range.c(),estimations);
+    std::vector<double> positiveEstimations;
+    std::vector<double> negativeEstimations;
+
+    if(closedCurve) {
+        Patch::estimationsDGtalMCMSECurvature(rangePositiveCurve.c(),
+                                              rangePositiveCurve.c(),
+                                              positiveEstimations);
+
+        Patch::estimationsDGtalMCMSECurvature(rangeNegativeCurve.c(),
+                                              rangeNegativeCurve.c(),
+                                              negativeEstimations);
     }else{
-        Patch::estimationsPatchMCMSECurvature(range.c(),range.c(),estimations);
+        Patch::estimationsDGtalMCMSECurvature(rangePositiveCurve.begin(),
+                                              rangePositiveCurve.end(),
+                                              positiveEstimations);
+
+        Patch::estimationsDGtalMCMSECurvature(rangeNegativeCurve.begin(),
+                                              rangeNegativeCurve.end(),
+                                              negativeEstimations);
     }
+
+    if(!Patch::useDGtal){
+        //Solve Shift
+        positiveEstimations.push_back(positiveEstimations[0]);
+        positiveEstimations.erase(positiveEstimations.begin());
+
+        negativeEstimations.push_back(negativeEstimations[0]);
+        negativeEstimations.erase(negativeEstimations.begin());
+    }
+
+    int ip=0;
+    int nL = negativeEstimations.size()-1;
+    double sign;
+    do{
+        sign = positiveEstimations[ip]>0?1.0:-1.0;
+        estimations.push_back( sign*( fabs(positiveEstimations[ip]) + fabs(negativeEstimations[nL-ip]) )/2.0 );
+        ++ip;
+    }while(ip<=nL);
 
 }
 
@@ -52,16 +98,57 @@ void curvatureEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
 
     typedef UtilsTypes::ConstRangeAdapter< UtilsTypes::SCellGluedCurveIterator,
                                            AdapterFunctor,
-                                           AdapterFunctor::Output > RangeAdapter;
+                                           AdapterFunctor::Output > GluedRangeAdapter;
+
+
+    typedef ConstRangeAdapter< UtilsTypes::Curve::ConstIterator,
+            AdapterFunctor,
+            AdapterFunctor::Output > RangeAdapter;
+
 
     AdapterFunctor myFunctor(KImage);
-    RangeAdapter range(begin,end,myFunctor);
+    GluedRangeAdapter rangePositiveCurve(begin,
+                                    end,
+                                    myFunctor);
 
-    if(Patch::useDGtal){
-        Patch::estimationsDGtalMCMSECurvature(range.begin(),range.end(),estimations);
-    }else{
-        Patch::estimationsPatchMCMSECurvature(range.begin(),range.end(),estimations);
+    Curve negativeCurve;
+    invertCurve(KImage,
+                begin,
+                end,
+                negativeCurve);
+
+    RangeAdapter rangeNegativeCurve(negativeCurve.begin(),
+                                    negativeCurve.end(),
+                                    myFunctor);
+
+    std::vector<double> positiveEstimations;
+    std::vector<double> negativeEstimations;
+
+    Patch::estimationsDGtalMCMSECurvature(rangePositiveCurve.begin(),
+                                          rangePositiveCurve.end(),
+                                          positiveEstimations);
+
+    Patch::estimationsDGtalMCMSECurvature(rangeNegativeCurve.begin(),
+                                          rangeNegativeCurve.end(),
+                                          negativeEstimations);
+
+    if(!Patch::useDGtal){
+        //Solve Shift
+        positiveEstimations.push_back(positiveEstimations[0]);
+        positiveEstimations.erase(positiveEstimations.begin());
+
+        negativeEstimations.push_back(negativeEstimations[0]);
+        negativeEstimations.erase(negativeEstimations.begin());
     }
+
+    int ip=0;
+    int nL = negativeEstimations.size()-1;
+    double sign;
+    do{
+        sign = positiveEstimations[ip]>0?1.0:-1.0;
+        estimations.push_back( sign*( fabs(positiveEstimations[ip]) + fabs(negativeEstimations[nL-ip]) )/2.0 );
+        ++ip;
+    }while(ip<=nL);
 
 }
 
@@ -82,19 +169,10 @@ void curvatureEstimatorsConnections(UtilsTypes::GluedCurveIteratorPair begin,
         UtilsTypes::SCellGluedCurveIterator gcBegin = it->first;
         UtilsTypes::SCellGluedCurveIterator gcEnd = it->second;
 
-        UtilsTypes::GluedCurveIncidentPointsRange gcipRange(gcBegin,
-                                                                   gcEnd,
-                                                                   myFunc );
-
-        if(Patch::useDGtal){
-            Patch::estimationsDGtalMCMSECurvature(gcipRange.begin(),
-                                                  gcipRange.end(),
-                                                  partialEstimations);
-        }else{
-            Patch::estimationsPatchMCMSECurvature(gcipRange.begin(),
-                                                  gcipRange.end(),
-                                                  partialEstimations);
-        }
+        curvatureEstimatorsGluedCurve(gcBegin,
+                                      gcEnd,
+                                      KImage,
+                                      partialEstimations);
 
         estimations.push_back( partialEstimations[gluedCurveLength] );
         partialEstimations.clear();
@@ -109,42 +187,119 @@ void curvatureEstimatorsConnections(UtilsTypes::GluedCurveIteratorPair begin,
 void tangentEstimatorsGridCurve(UtilsTypes::Curve::ConstIterator begin,
                                 UtilsTypes::Curve::ConstIterator end,
                                 UtilsTypes::KSpace& KImage,
-                                std::vector< UtilsTypes::TangentVector >& estimationsTangent )
+                                std::vector< UtilsTypes::TangentVector >& estimationsTangent,
+                                bool closedCurve)
 {
     typedef ConstRangeAdapter< UtilsTypes::Curve::ConstIterator,
                                functors::SCellToPoint<UtilsTypes::KSpace>,
                                UtilsTypes::KSpace::Point > RangeAdapter;
 
     functors::SCellToPoint<UtilsTypes::KSpace> myFunctor = functors::SCellToPoint<UtilsTypes::KSpace>(KImage);
-    RangeAdapter range(begin,end,myFunctor);
+    RangeAdapter rangePositiveCurve(begin,
+                                    end,
+                                    myFunctor);
 
+    Curve negativeCurve;
+    invertCurve(KImage,begin,end,negativeCurve);
 
-    if(Patch::useDGtal){
-        Patch::estimationsDGtalMCMSETangent(range.c(),range.c(),estimationsTangent);
+    RangeAdapter rangeNegativeCurve(negativeCurve.begin(),
+                                    negativeCurve.end(),
+                                    myFunctor);
+
+    std::vector<UtilsTypes::TangentVector> positiveEstimations;
+    std::vector<UtilsTypes::TangentVector> negativeEstimations;
+    if(closedCurve) {
+
+        Patch::estimationsDGtalMCMSETangent(rangePositiveCurve.c(),
+                                            rangePositiveCurve.c(),
+                                            positiveEstimations);
+
+        Patch::estimationsDGtalMCMSETangent(rangeNegativeCurve.c(),
+                                            rangeNegativeCurve.c(),
+                                            negativeEstimations);
     }else{
-        Patch::estimationsPatchMCMSETangent(range.c(),range.c(),estimationsTangent);
+        Patch::estimationsDGtalMCMSETangent(rangePositiveCurve.begin(),
+                                            rangePositiveCurve.end(),
+                                            positiveEstimations);
+
+        Patch::estimationsDGtalMCMSETangent(rangeNegativeCurve.begin(),
+                                            rangeNegativeCurve.end(),
+                                            negativeEstimations);
     }
+
+    if(!Patch::useDGtal){
+        //Solve Shift
+        positiveEstimations.push_back(positiveEstimations[0]);
+        positiveEstimations.erase(positiveEstimations.begin());
+
+        negativeEstimations.push_back(negativeEstimations[0]);
+        negativeEstimations.erase(negativeEstimations.begin());
+    }
+
+    int ip=0;
+    int nL = negativeEstimations.size()-1;
+    do{
+        estimationsTangent.push_back( (positiveEstimations[ip]-negativeEstimations[nL-ip])/2.0 );
+        ++ip;
+    }while(ip<=nL);
 
 
 }
 
-void tangentEstimatorsGluedCurve(UtilsTypes::Curve::ConstIterator begin,
-                                 UtilsTypes::Curve::ConstIterator end,
+void tangentEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
+                                 UtilsTypes::SCellGluedCurveIterator end,
                                  UtilsTypes::KSpace& KImage,
                                 std::vector< UtilsTypes::TangentVector >& estimationsTangent )
 {
-    typedef UtilsTypes::ConstRangeAdapter< UtilsTypes::Curve::ConstIterator,
-                                           UtilsTypes::functors::SCellToPoint<KSpace>,
-                                           UtilsTypes::KSpace::Point> RangeAdapter;
+    typedef UtilsTypes::ConstRangeAdapter< UtilsTypes::SCellGluedCurveIterator,
+            UtilsTypes::functors::SCellToPoint<KSpace>,
+            UtilsTypes::KSpace::Point> GluedRangeAdapter;
 
     UtilsTypes::functors::SCellToPoint<KSpace> myFunctor = UtilsTypes::functors::SCellToPoint<KSpace>(KImage);
-    RangeAdapter range(begin,end,myFunctor);
+    GluedRangeAdapter rangePositiveCurve(begin,
+                                         end,
+                                         myFunctor);
 
-    if(Patch::useDGtal){
-        Patch::estimationsDGtalMCMSETangent(range.begin(),range.end(),estimationsTangent);
-    }else{
-        Patch::estimationsPatchMCMSETangent(range.begin(),range.end(),estimationsTangent);
+    typedef UtilsTypes::ConstRangeAdapter< UtilsTypes::Curve::ConstIterator,
+            UtilsTypes::functors::SCellToPoint<KSpace>,
+            UtilsTypes::KSpace::Point> RangeAdapter;
+
+    Curve negativeCurve;
+    invertCurve(KImage,
+                begin,
+                end,
+                negativeCurve);
+
+
+    RangeAdapter rangeNegativeCurve(negativeCurve.begin(),
+                                    negativeCurve.end(),
+                                    myFunctor);
+
+    std::vector<UtilsTypes::TangentVector> positiveEstimations;
+    Patch::estimationsDGtalMCMSETangent(rangePositiveCurve.begin(),
+                                        rangePositiveCurve.end(),
+                                        positiveEstimations);
+
+    std::vector<UtilsTypes::TangentVector> negativeEstimations;
+    Patch::estimationsDGtalMCMSETangent(rangeNegativeCurve.begin(),
+                                        rangeNegativeCurve.end(),
+                                        negativeEstimations);
+
+    if(!Patch::useDGtal){
+        //Solve Shift
+        positiveEstimations.push_back(positiveEstimations[0]);
+        positiveEstimations.erase(positiveEstimations.begin());
+
+        negativeEstimations.push_back(negativeEstimations[0]);
+        negativeEstimations.erase(negativeEstimations.begin());
     }
+
+    int ip=0;
+    int nL = negativeEstimations.size()-1;
+    do{
+        estimationsTangent.push_back( (positiveEstimations[ip]-negativeEstimations[nL-ip])/2.0 );
+        ++ip;
+    }while(ip<=nL);
 
 }
 
@@ -170,19 +325,10 @@ void tangentEstimatorsConnections(UtilsTypes::GluedCurveIteratorPair begin,
         UtilsTypes::SCellGluedCurveIterator begin = it->first;
         UtilsTypes::SCellGluedCurveIterator end = it->second;
 
-        GluedCurvePointsRange gcipRange(begin,
-                                        end,
-                                        myFunc );
-
-        if(Patch::useDGtal){
-            Patch::estimationsDGtalMCMSETangent(gcipRange.begin(),
-                                                gcipRange.end(),
-                                                partialEstimations);
-        }else{
-            Patch::estimationsPatchMCMSETangent(gcipRange.begin(),
-                                                gcipRange.end(),
-                                                partialEstimations);
-        }
+        tangentEstimatorsGluedCurve(begin,
+                                    end,
+                                    KImage,
+                                    partialEstimations);
 
         estimations.push_back( partialEstimations[gluedCurveLength] );
         partialEstimations.clear();
@@ -232,5 +378,7 @@ UtilsTypes::ConnectorSeedRangeType getSeedRange(KSpace& KImage,
 
     return seedRange;
 }
+
+
 
 

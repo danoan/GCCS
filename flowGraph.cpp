@@ -43,15 +43,9 @@ void setGridCurveWeight(Curve curvePriorGS,
                         KSpace& KImage,
                         std::map<Z2i::SCell,double>& weightMap)
 {
-    Curve curveGSCurvature;
-    Patch::initializeCurveCurvatureEstimator(KImage,
-                                             curvePriorGS,
-                                             curveGSCurvature);
-
-
     std::vector<double> curvatureEstimations;
-    curvatureEstimatorsGridCurve(curveGSCurvature.begin(),
-                                 curveGSCurvature.end(),
+    curvatureEstimatorsGridCurve(curvePriorGS.begin(),
+                                 curvePriorGS.end(),
                                  KImage,
                                  curvatureEstimations);
 
@@ -59,22 +53,16 @@ void setGridCurveWeight(Curve curvePriorGS,
     updateToSquared(curvatureEstimations.begin(),curvatureEstimations.end());
 
 
-    Curve curveGSTangent;
-    Patch::initializeCurveCurvatureEstimator(KImage,
-                                             curvePriorGS,
-                                             curveGSTangent);
-
-
     std::vector<TangentVector> tangentEstimations;
-    tangentEstimatorsGridCurve(curveGSTangent.begin(),
-                               curveGSTangent.end(),
+    tangentEstimatorsGridCurve(curvePriorGS.begin(),
+                               curvePriorGS.end(),
                                KImage,
                                tangentEstimations);
 
 
     std::vector<double> tangentWeightVector;
-    tangentWeight(curveGSTangent.begin(),
-                  curveGSTangent.end(),
+    tangentWeight(curvePriorGS.begin(),
+                  curvePriorGS.end(),
                   KImage,
                   tangentEstimations,
                   tangentWeightVector);
@@ -82,7 +70,7 @@ void setGridCurveWeight(Curve curvePriorGS,
 
     {
         int i =0;
-        for(auto it=curveGSCurvature.begin();it!=curveGSCurvature.end();++it){
+        for(auto it=curvePriorGS.begin();it!=curvePriorGS.end();++it){
             weightMap[*it] = curvatureEstimations[i];
             ++i;
         }
@@ -180,28 +168,6 @@ void prepareFlowGraph(SegCut::Image2D& mask,
                                  stgcF);
 
     setGluedCurveWeight(gcsRange,KImage,gluedCurveLength,weightMap);
-
-    std::cout << "Internal Edges Weight" << std::endl;
-    for(auto it=intCurvePriorGS.begin();it!=intCurvePriorGS.end();++it){
-        std::cout << weightMap[*it] << std::endl;
-//        weightMap[*it] = 2;
-    }
-
-    std::cout << "External Edges Weight" << std::endl;
-    for(auto it=extCurvePriorGS.begin();it!=extCurvePriorGS.end();++it){
-        std::cout << weightMap[*it] << std::endl;
-//        weightMap[*it] = 0;
-    }
-
-    std::cout << "Connection Edges Weight" << std::endl;
-    for(auto it=gcsRange.begin();it!=gcsRange.end();++it){
-        std::cout << weightMap[it->first.linkSurfel()] << std::endl;
-//        if(it->first.connectorType() == ConnectorType::internToExtern){
-//            weightMap[it->first.linkSurfel()] = 2.0  ;
-//        }else{
-//            weightMap[it->first.linkSurfel()] = 2.0  ;
-//        }
-    }
 
     *fgb = new FlowGraphBuilder(intCurvePriorGS,
                                 extCurvePriorGS,
@@ -376,10 +342,10 @@ namespace UtilsTypes
 };
 
 int main(){
-    Patch::useDGtal = true;
+    Patch::useDGtal = false;
     unsigned int gluedCurveLength = 10;
 
-    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_small_square.pgm");
+    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/last_image.pgm");
 
     std::string outImageFolder = "output/images/flow-evolution/square";
     std::string cutOutputPath;

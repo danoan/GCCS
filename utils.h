@@ -28,7 +28,8 @@ void drawCurvatureMap(std::vector<Z2i::SCell>::const_iterator begin,
 void curvatureEstimatorsGridCurve(UtilsTypes::Curve::ConstIterator begin,
                                   UtilsTypes::Curve::ConstIterator end,
                                   UtilsTypes::KSpace& KImage,
-                                  std::vector<double>& estimations);
+                                  std::vector<double>& estimations,
+                                  bool closedCurve=true);
 
 void curvatureEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
                                    UtilsTypes::SCellGluedCurveIterator end,
@@ -44,10 +45,11 @@ void curvatureEstimatorsConnections(UtilsTypes::GluedCurveIteratorPair begin,
 void tangentEstimatorsGridCurve(UtilsTypes::Curve::ConstIterator begin,
                                 UtilsTypes::Curve::ConstIterator end,
                                 UtilsTypes::KSpace& KImage,
-                                std::vector< UtilsTypes::TangentVector >& estimationsTangent );
+                                std::vector< UtilsTypes::TangentVector >& estimationsTangent,
+                                bool closedCurve=true);
 
-void tangentEstimatorsGluedCurve(UtilsTypes::Curve::ConstIterator begin,
-                                 UtilsTypes::Curve::ConstIterator end,
+void tangentEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
+                                 UtilsTypes::SCellGluedCurveIterator end,
                                  UtilsTypes::KSpace& KImage,
                                  std::vector< UtilsTypes::TangentVector >& estimationsTangent );
 
@@ -68,6 +70,32 @@ void setCurves(std::string imgFilePath,
 UtilsTypes::ConnectorSeedRangeType getSeedRange(UtilsTypes::KSpace& KImage,
                                                 UtilsTypes::Curve& intCurve,
                                                 UtilsTypes::Curve& extCurve);
+template<typename SCellIteratorType>
+void invertCurve(KSpace& KImage,
+                 SCellIteratorType begin,
+                 SCellIteratorType end,
+                 UtilsTypes::Curve& c2)
+{
+    std::vector<UtilsTypes::Z2i::SCell> SCells;
+    for(auto it=begin;it!=end;++it){
+        SCells.push_back(*it);
+    }
+
+
+    std::vector<UtilsTypes::Z2i::SCell> newSCells;
+    {
+        auto it = SCells.rbegin();
+        do{
+            UtilsTypes::Z2i::SCell newLinel = KImage.sCell( *it);
+            KImage.sSetSign(newLinel,!KImage.sSign(*it));
+
+            newSCells.push_back(newLinel);
+            ++it;;
+        }while(it!=SCells.rend());
+    }
+
+    c2.initFromSCellsVector(newSCells);
+}
 
 template<typename Value>
 void setWeight(UtilsTypes::Curve::ConstIterator begin,
@@ -96,7 +124,7 @@ void max_and_min(std::vector<Value>& V,
         if( toDouble(*itV) < cmin ) cmin = toDouble(*itV);
         if( toDouble(*itV) > cmax ) cmax = toDouble(*itV);
     }
-    cmax = cmax>cmin?cmax:cmin+1;
+    cmax = cmax>cmin?cmax:cmin+0.0000001;
 }
 
 template<typename IteratorType>

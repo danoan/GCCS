@@ -28,7 +28,7 @@ void testConnectdeness(std::string imgFilePath)
     DGtal::functors::SCellToIncidentPoints<KSpace> myFunctor(KImage);
     int gluedCurveNumber =0;
     for(auto itgc=gcsRange.begin();itgc!=gcsRange.end();++itgc ){
-        std::cout << "Glued Curve Start " << gluedCurveNumber << std::endl;
+//        std::cout << "Glued Curve Start " << gluedCurveNumber << std::endl;
 
         SCellGluedCurveIterator begin = itgc->first;
         SCellGluedCurveIterator end = itgc->second;
@@ -50,12 +50,10 @@ void testCurvatureEvaluation(std::string imgFilePath)
     KSpace KImage;
     setKImage(imgFilePath,KImage);
 
-    Curve intCurvePriorGS,extCurvePriorGS;
-    setCurves(imgFilePath,intCurvePriorGS,extCurvePriorGS);
-
     Curve intCurve,extCurve;
-    Patch::initializeCurveCurvatureEstimator(KImage,intCurvePriorGS,intCurve);
-    Patch::initializeCurveCurvatureEstimator(KImage,extCurvePriorGS,extCurve);
+    setCurves(imgFilePath,intCurve,extCurve);
+
+
 
     ConnectorSeedRangeType seedRange = getSeedRange(KImage,intCurve,extCurve);
     unsigned int gluedCurveLength = 10;
@@ -68,7 +66,7 @@ void testCurvatureEvaluation(std::string imgFilePath)
     DGtal::functors::SCellToIncidentPoints<KSpace> myFunctor(KImage);
     int gluedCurveNumber=0;
     for(auto itgc=gcsRange.begin();itgc!=gcsRange.end();++itgc ){
-        std::cout << "Glued Curve Start " << gluedCurveNumber << std::endl;
+//        std::cout << "Glued Curve Start " << gluedCurveNumber << std::endl;
 
         SCellGluedCurveIterator begin = itgc->first;
         SCellGluedCurveIterator end = itgc->second;
@@ -78,15 +76,10 @@ void testCurvatureEvaluation(std::string imgFilePath)
                                                 myFunctor);
 
         std::vector<double> estimations;
-        if(Patch::useDGtal){
-            Patch::estimationsDGtalMCMSECurvature(gcipRange.begin(),
-                                                  gcipRange.end(),
-                                                  estimations);
-        }else{
-            Patch::estimationsPatchMCMSECurvature(gcipRange.begin(),
-                                                  gcipRange.end(),
-                                                  estimations);
-        }
+        curvatureEstimatorsGluedCurve(begin,
+                                      end,
+                                      KImage,
+                                      estimations);
 
 
 
@@ -94,7 +87,6 @@ void testCurvatureEvaluation(std::string imgFilePath)
             auto it = gcipRange.begin();
             int i =0;
             do {
-                std::cout << estimations[i] << std::endl;
                 ++it;
                 ++i;
             } while (it != gcipRange.end());
@@ -121,12 +113,8 @@ void runTests(const std::string& imgPath,
 
     EA.setOptional(true);
 
-    Curve intCurvePriorGS,extCurvePriorGS;
-    setCurves(imgPath,intCurvePriorGS,extCurvePriorGS);
-
     Curve intCurve,extCurve;
-    Patch::initializeCurveCurvatureEstimator(KImage,intCurvePriorGS,intCurve);
-    Patch::initializeCurveCurvatureEstimator(KImage,extCurvePriorGS,extCurve);
+    setCurves(imgPath,intCurve,extCurve);
 
     /*All Glued Curves*/
     EA.board.clear(DGtal::Color::White);
@@ -190,14 +178,14 @@ void testSequence()
     runTests("../images/flow-evolution/last_image.pgm",
              outputRootPath + "/last_image");
 
-//    runTests("../images/graph-weight-test/single_square.pgm",
-//             outputRootPath + "/square");
+    runTests("../images/graph-weight-test/single_square.pgm",
+                 outputRootPath + "/square");
 
-//    runTests("../images/graph-weight-test/single_triangle.pgm",
-//             outputRootPath + "/triangle");
-//
-//    runTests("../images/graph-weight-test/smallest_disk.pgm",
-//             outputRootPath + "/disk");
+    runTests("../images/graph-weight-test/single_triangle.pgm",
+             outputRootPath + "/triangle");
+
+    runTests("../images/graph-weight-test/smallest_disk.pgm",
+             outputRootPath + "/disk");
 }
 
 namespace Patch{

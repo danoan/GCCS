@@ -73,42 +73,57 @@ void Artist::drawGluedCurvatureMap(SegCut::SCellGluedCurveIterator itb,
 void Artist::drawCurvesAndConnectionsCurvatureMap(std::string imgFilePath,
                                                   std::string outputFilePath)
 {
-    Curve intCurvePriorGS,extCurvePriorGS;
+    Curve intCurve,extCurve;
     KSpace KImage;
     
-    setCurves(imgFilePath,intCurvePriorGS,extCurvePriorGS);
+    setCurves(imgFilePath,intCurve,extCurve);
     setKImage(imgFilePath,KImage);
-    
-    Curve intCurve,extCurve;
-    Patch::initializeCurveCurvatureEstimator(KImage,
-                                             intCurvePriorGS,
-                                             intCurve);
-    
-    Patch::initializeCurveCurvatureEstimator(KImage,
-                                             extCurvePriorGS,
-                                             extCurve);    
-    
-    
+
     ArtistTypes::ConnectorSeedRangeType seedRange = getSeedRange(KImage,intCurve,extCurve);
 
 
     unsigned int gluedCurveLength = 10;
     ArtistTypes::SeedToGluedCurveRangeFunctor stgcF(gluedCurveLength);
     ArtistTypes::GluedCurveSetRange gluedCurveSetRange( seedRange.begin(),
-                                                                seedRange.end(),
-                                                                stgcF);
+                                                        seedRange.end(),
+                                                        stgcF);
     double cmax=-100;
     double cmin=100;
 
-    for(int i=0;i<2;++i){
-        for(auto it=gluedCurveSetRange.begin();it!=gluedCurveSetRange.end();++it){
-            drawGluedCurvatureMap(it->first,it->second,cmin,cmax );
-        }
+    std::vector<double> connectorsEstimations;
+    curvatureEstimatorsConnections(gluedCurveSetRange.begin(),
+                                   gluedCurveSetRange.end(),
+                                   KImage,
+                                   gluedCurveLength,
+                                   connectorsEstimations);
 
-        drawCurvatureMap(intCurve,cmin,cmax);
-        drawCurvatureMap(extCurve,cmin,cmax);
+    if(squaredCurvature){
+        updateToSquared(connectorsEstimations.begin(),connectorsEstimations.end());
     }
 
+    std::vector<ArtistTypes::Z2i::SCell> connectorsSCells;
+    for (auto it = gluedCurveSetRange.begin(); it != gluedCurveSetRange.end(); ++it) {
+        connectorsSCells.push_back(it->first.linkSurfel());
+    }
+
+
+    for(auto it=connectorsEstimations.begin();it!=connectorsEstimations.end();it++){
+        cmin=*it<cmin?*it:cmin;
+        cmax=*it>cmax?*it:cmax;
+    }
+
+    for(int i=0;i<2;i++) {
+        drawCurvatureMap(intCurve, cmin, cmax);
+        drawCurvatureMap(extCurve, cmin, cmax);
+
+        draw(connectorsEstimations,
+             connectorsSCells.begin(),
+             connectorsSCells.end(),
+             board,
+             cmin,
+             cmax);
+
+    }
 
     boost::filesystem::path p(outputFilePath.c_str());
     p.remove_filename();
