@@ -9,6 +9,10 @@
 #include "DGtal/topology/helpers/Surfaces.h"
 #include "DGtal/images/SimpleThresholdForegroundPredicate.h"
 
+namespace Patch{
+    extern bool cross_element;
+};
+
 namespace ImageProcTypes{
     using namespace DGtal;
     using namespace DGtal::Z2i;

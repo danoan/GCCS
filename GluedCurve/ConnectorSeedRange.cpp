@@ -35,6 +35,8 @@ ConnectorSeedRange<CellularSpace,
                 for (auto ite = incidentEdges.begin(); ite != incidentEdges.end(); ite++) {
                     SCell potentialConnectionLinel = *ite;
 
+                    if(gridLinels.find(potentialConnectionLinel)!=gridLinels.end()) continue;
+
                     SCell p1 = KImage.sIndirectIncident(potentialConnectionLinel,*KImage.sDirs(potentialConnectionLinel));    //Source
                     SCell p2 = KImage.sDirectIncident(potentialConnectionLinel,*KImage.sDirs(potentialConnectionLinel));      //Target
 
@@ -131,6 +133,7 @@ void ConnectorSeedRange<CellularSpace,
     if( DGtal::isNotEmpty(curveCirculator,curveCirculator) ) {
         SCellCirculatorType ic = curveCirculator;
         do {
+            gridLinels.insert(*ic);
             SCells incidentPointels = KImage.sLowerIncident(*ic);
 
             SCell p = KImage.sDirectIncident( *ic, *KImage.sDirs(*ic) );   //Target

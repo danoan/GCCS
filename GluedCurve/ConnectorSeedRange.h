@@ -13,6 +13,9 @@
 
 #include "ConnectorSeed.h"
 
+namespace Patch{
+    extern bool cross_element;
+};
 
 template<typename CellularSpace, typename TIterator>
 class ConnectorSeedRange{
@@ -64,6 +67,9 @@ private:
 
     SCellCirculatorType internalCurveCirculator,
                         externalCurveCirculator;
+
+
+    std::set<SCell> gridLinels;
 
 
     void alignIterator(SCellCirculatorType& internalCirculator,

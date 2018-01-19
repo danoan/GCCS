@@ -36,7 +36,14 @@ void dilateWithMorphology(ImageProcTypes::Image2D &newImage, const ImageProcType
 
 void dilateWithMorphology(ImageProcTypes::Image2D &newImage, const cv::Mat &src, const int &dilation_size){
     cv::Mat dilation_dst;
-    int dilation_type = cv::MORPH_RECT;
+    int dilation_type;
+
+    if(Patch::cross_element){
+        dilation_type = cv::MORPH_CROSS;
+    }else{
+        dilation_type = cv::MORPH_RECT;
+    }
+
 
     cv::Mat element = cv::getStructuringElement( dilation_type,
                                                  cv::Size( 2*dilation_size + 1, 2*dilation_size+1 ),
@@ -49,7 +56,13 @@ void dilateWithMorphology(ImageProcTypes::Image2D &newImage, const cv::Mat &src,
 
 void dilateWithFilters(ImageProcTypes::Image2D &newImage, const std::string &filepath, const int &dilation_size){
     cv::Mat src,binary_src;
-    int dilation_type = cv::MORPH_RECT;
+    int dilation_type;
+
+    if(Patch::cross_element){
+        dilation_type = cv::MORPH_CROSS;
+    }else{
+        dilation_type = cv::MORPH_RECT;
+    }
 
     src = cv::imread(filepath.c_str(),cv::IMREAD_GRAYSCALE);
     cv::threshold(src,binary_src,0,1,cv::THRESH_BINARY);
@@ -113,7 +126,13 @@ void erode(ImageProcTypes::Image2D &newImage, const ImageProcTypes::Image2D &inp
     fromImage2DToMat(inputImage,cvSrc);
 
     cv::Mat dilation_dst;
-    int erosion_type = cv::MORPH_RECT;
+    int erosion_type;
+
+    if(Patch::cross_element){
+        erosion_type = cv::MORPH_CROSS;
+    }else{
+        erosion_type = cv::MORPH_RECT;
+    }
 
     cv::Mat element = cv::getStructuringElement( erosion_type,
                                                  cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
@@ -134,9 +153,9 @@ void computeBoundaryCurve(ImageProcTypes::Curve &boundCurve,
     KImage.init(imageDomain.lowerBound(),imageDomain.upperBound(),true);
 
     ImageProcTypes::ThreshPredicate imagePredicate (image,thresh_value);
-    ImageProcTypes::SCell imageBel = ImageProcTypes::Surfaces<ImageProcTypes::KSpace>::findABel(KImage, imagePredicate, 10000);
+    ImageProcTypes::Z2i::SCell imageBel = ImageProcTypes::Surfaces<ImageProcTypes::KSpace>::findABel(KImage, imagePredicate, 10000);
 
-    std::vector<ImageProcTypes::SCell> boundarySCells;
+    std::vector<ImageProcTypes::Z2i::SCell> boundarySCells;
     ImageProcTypes::Surfaces<ImageProcTypes::KSpace>::track2DBoundary(boundarySCells,
                                              KImage,
                                              SAdj,
@@ -166,9 +185,9 @@ void computeBoundaryCurve(ImageProcTypes::Curve &boundCurve,
     KImage.init(imageDomain.lowerBound(),imageDomain.upperBound(),true);
 
     ImageProcTypes::ThreshPredicate imagePredicate (mask,thresh_value);
-    ImageProcTypes::SCell imageBel = ImageProcTypes::Surfaces<ImageProcTypes::KSpace>::findABel(KImage, imagePredicate, 10000);
+    ImageProcTypes::Z2i::SCell imageBel = ImageProcTypes::Surfaces<ImageProcTypes::KSpace>::findABel(KImage, imagePredicate, 10000);
 
-    std::vector<ImageProcTypes::SCell> boundarySCells;
+    std::vector<ImageProcTypes::Z2i::SCell> boundarySCells;
     ImageProcTypes::Surfaces<ImageProcTypes::KSpace>::track2DBoundary(boundarySCells,
                                              KImage,
                                              SAdj,
