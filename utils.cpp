@@ -141,6 +141,7 @@ void curvatureEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
         negativeEstimations.erase(negativeEstimations.begin());
     }
 
+
     int ip=0;
     int nL = negativeEstimations.size()-1;
     double sign;
@@ -150,6 +151,33 @@ void curvatureEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
         ++ip;
     }while(ip<=nL);
 
+}
+
+void normalizeAroundNeighbors(std::vector<double>& v, int radius)
+{
+    std::vector<double> temp = v;
+    double s;
+    for(int i=radius;i<v.size()-radius;++i){
+        s=0;
+        for(int j=-radius;j<=radius;++j){
+            s+=temp[i+j];
+        }
+        v[i] = s/(2*radius+1);
+    }
+}
+
+void normalizeAroundNeighbors(std::vector<UtilsTypes::TangentVector>& v, int radius)
+{
+    std::vector<UtilsTypes::TangentVector> temp = v;
+    UtilsTypes::TangentVector s;
+    for(int i=radius;i<v.size()-radius;++i){
+        s = UtilsTypes::TangentVector(0,0);
+        for(int j=-radius;j<=radius;++j){
+            s+=temp[i+j];
+            s = s.getNormalized();
+        }
+        v[i] = s;
+    }
 }
 
 
@@ -239,7 +267,7 @@ void tangentEstimatorsGridCurve(UtilsTypes::Curve::ConstIterator begin,
     int ip=0;
     int nL = negativeEstimations.size()-1;
     do{
-        estimationsTangent.push_back( (positiveEstimations[ip]-negativeEstimations[nL-ip])/2.0 );
+        estimationsTangent.push_back( (positiveEstimations[ip]-negativeEstimations[nL-ip]).getNormalized() );
         ++ip;
     }while(ip<=nL);
 
@@ -297,7 +325,7 @@ void tangentEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
     int ip=0;
     int nL = negativeEstimations.size()-1;
     do{
-        estimationsTangent.push_back( (positiveEstimations[ip]-negativeEstimations[nL-ip])/2.0 );
+        estimationsTangent.push_back( (positiveEstimations[ip]-negativeEstimations[nL-ip]).getNormalized() );
         ++ip;
     }while(ip<=nL);
 

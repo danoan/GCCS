@@ -346,7 +346,7 @@ int main(){
     Patch::useDGtal = false;
     unsigned int gluedCurveLength = 10;
 
-    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/last_image.pgm");
+    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_square.pgm");
 
     std::string outImageFolder = "output/images/flow-evolution/square";
     std::string cutOutputPath;
@@ -369,7 +369,7 @@ int main(){
                           i);
 
         cutOutputPath = outImageFolder + "/cutGraph" + std::to_string(i) + ".eps";
-        imageOutputPath = "output/images/flow-evolution/square/out" + std::to_string(i+1) + ".pgm";
+        imageOutputPath = outImageFolder + "/out" + std::to_string(i+1) + ".pgm";
         drawCutUpdateImage(fgb,
                            weightMap,
                            &sg,

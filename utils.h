@@ -60,6 +60,8 @@ void tangentEstimatorsConnections(UtilsTypes::GluedCurveIteratorPair begin,
                                   std::vector< UtilsTypes::TangentVector >& estimations);
 
 
+void normalizeAroundNeighbors(std::vector<double>& v, int radius);
+void normalizeAroundNeighbors(std::vector<UtilsTypes::TangentVector>& v, int radius);
 
 void setKImage(std::string imgFilePath,KSpace& KImage);
 

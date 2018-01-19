@@ -175,17 +175,17 @@ void testSequence()
     else
         outputRootPath += "/Patch";
 
-    runTests("../images/flow-evolution/last_image.pgm",
-             outputRootPath + "/last_image");
+//    runTests("../images/flow-evolution/last_image.pgm",
+//             outputRootPath + "/last_image");
 
     runTests("../images/graph-weight-test/single_square.pgm",
                  outputRootPath + "/square");
 
-    runTests("../images/graph-weight-test/single_triangle.pgm",
-             outputRootPath + "/triangle");
-
-    runTests("../images/graph-weight-test/smallest_disk.pgm",
-             outputRootPath + "/disk");
+//    runTests("../images/graph-weight-test/single_triangle.pgm",
+//             outputRootPath + "/triangle");
+//
+//    runTests("../images/graph-weight-test/smallest_disk.pgm",
+//             outputRootPath + "/disk");
 }
 
 namespace Patch{
