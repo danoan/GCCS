@@ -76,13 +76,13 @@ void setGridCurveWeight(Curve curvePriorGS,
         }
     }
 
-//    {
-//        int i =0;
-//        for(auto it=curveGSTangent.begin();it!=curveGSTangent.end();++it){
-//            weightMap[*it] *=tangentWeightVector[i];
-//            ++i;
-//        }
-//    }
+    {
+        int i =0;
+        for(auto it=curvePriorGS.begin();it!=curvePriorGS.end();++it){
+            weightMap[*it] *=tangentWeightVector[i];
+            ++i;
+        }
+    }
 
 }
 
@@ -126,13 +126,13 @@ void setGluedCurveWeight(GluedCurveSetRange gcRange,
         } while (it != gcRange.end());
     }
 
-//    {
-//        int i = 0;
-//        for (GluedCurveIteratorPair it = gcRange.begin(); it != gcRange.end(); ++it) {
-//            weightMap[it->first.linkSurfel()]*= tangentWeightVector[i];
-//            ++i;
-//        }
-//    }
+    {
+        int i = 0;
+        for (GluedCurveIteratorPair it = gcRange.begin(); it != gcRange.end(); ++it) {
+            weightMap[it->first.linkSurfel()]*= tangentWeightVector[i];
+            ++i;
+        }
+    }
 
 }
 
@@ -151,6 +151,7 @@ void prepareFlowGraph(SegCut::Image2D& mask,
     computeBoundaryCurve(intCurvePriorGS,KImage,mask,100);
     computeBoundaryCurve(extCurvePriorGS,KImage,dilatedImage);
 
+    gluedCurveLength = extCurvePriorGS.size()/4.0;
 
     setGridCurveWeight(intCurvePriorGS,
                        KImage,
