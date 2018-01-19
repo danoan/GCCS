@@ -46,7 +46,7 @@ ConnectorSeedToGluedCurveRange<ConnectorSeedIteratorType>::operator() (const Inp
     SCellCirculatorType it1b,it1e, it2b,it2e;
 
 
-    it1b = walkCirculator(cc.firstCirculator, -distance);
+    it1b = walkCirculator(cc.firstCirculator, -distance+1);
     it1e = cc.firstCirculator;
     it2b = cc.secondCirculator;
     it2e = walkCirculator(it2b, distance);

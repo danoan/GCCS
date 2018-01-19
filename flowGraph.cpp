@@ -7,7 +7,10 @@
 using namespace lemon;
 
 
+#include "boost/filesystem.hpp"
+
 #include <DGtal/io/boards/Board2D.h>
+#include <boost/filesystem/path.hpp>
 #include "DGtal/io/readers/GenericReader.h"
 #include "DGtal/io/writers/GenericWriter.h"
 
@@ -153,13 +156,13 @@ void prepareFlowGraph(SegCut::Image2D& mask,
         computeBoundaryCurve(intCurvePriorGS,KImage,mask,100);
         computeBoundaryCurve(extCurvePriorGS,KImage,dilatedImage);
 
-        gluedCurveLength = intCurvePriorGS.size()/2.0;
+//        gluedCurveLength = intCurvePriorGS.size()/2.0;
     }else{
         erode(dilatedImage,mask,1);
         computeBoundaryCurve(extCurvePriorGS,KImage,mask,100);
         computeBoundaryCurve(intCurvePriorGS,KImage,dilatedImage);
 
-        gluedCurveLength = extCurvePriorGS.size()/2.0;
+//        gluedCurveLength = extCurvePriorGS.size()/2.0;
     }
 
 
@@ -223,6 +226,10 @@ double drawCutUpdateImage(FlowGraphBuilder* fgb,
 
     Palette palette;
 
+    boost::filesystem::path p1(cutOutputPath.c_str());
+    p1.remove_filename();
+    boost::filesystem::create_directories(p1);
+
     graphToEps(**sg,cutOutputPath.c_str())
         .coords(fgb->coordsMap())
         .run();
@@ -236,6 +243,9 @@ double drawCutUpdateImage(FlowGraphBuilder* fgb,
         out.setValue(p,255);
     }
 
+    boost::filesystem::path p2(imageOutputPath.c_str());
+    p2.remove_filename();
+    boost::filesystem::create_directories(p2);
 
     GenericWriter<Image2D>::exportFile(imageOutputPath.c_str(),out);
 
