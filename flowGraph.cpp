@@ -140,18 +140,30 @@ void setGluedCurveWeight(GluedCurveSetRange gcRange,
 void prepareFlowGraph(SegCut::Image2D& mask,
                       unsigned int gluedCurveLength,
                       std::map<Z2i::SCell,double>& weightMap,
-                      FlowGraphBuilder** fgb) //it should be an empty pointer
+                      FlowGraphBuilder** fgb,
+                      bool toDilate) //it should be an empty pointer
 {
     Curve intCurvePriorGS,extCurvePriorGS;
     KSpace KImage;
 
     SegCut::Image2D dilatedImage(mask.domain());
 
-    dilate(dilatedImage,mask,1);
-    computeBoundaryCurve(intCurvePriorGS,KImage,mask,100);
-    computeBoundaryCurve(extCurvePriorGS,KImage,dilatedImage);
+    if(toDilate){
+        dilate(dilatedImage,mask,1);
+        computeBoundaryCurve(intCurvePriorGS,KImage,mask,100);
+        computeBoundaryCurve(extCurvePriorGS,KImage,dilatedImage);
 
-    gluedCurveLength = extCurvePriorGS.size()/4.0;
+        gluedCurveLength = intCurvePriorGS.size()/2.0;
+    }else{
+        erode(dilatedImage,mask,1);
+        computeBoundaryCurve(extCurvePriorGS,KImage,mask,100);
+        computeBoundaryCurve(intCurvePriorGS,KImage,dilatedImage);
+
+        gluedCurveLength = extCurvePriorGS.size()/2.0;
+    }
+
+
+
 
     setGridCurveWeight(intCurvePriorGS,
                        KImage,
@@ -354,14 +366,14 @@ int main(){
 
     FlowGraphBuilder* fgb;
     MySubGraph* sg;
-    for(int i=0;i<20;++i)
+    for(int i=0;i<40;++i)
     {
         std::map<Z2i::SCell,double> weightMap;
         prepareFlowGraph(image,
                          gluedCurveLength,
                          weightMap,
-                         &fgb);
-
+                         &fgb,
+                         true);
 
         drawCurvatureMaps(image,
                           weightMap,
@@ -370,6 +382,10 @@ int main(){
 
         cutOutputPath = outImageFolder + "/cutGraph" + std::to_string(i) + ".eps";
         imageOutputPath = outImageFolder + "/out" + std::to_string(i+1) + ".pgm";
+
+
+
+
         drawCutUpdateImage(fgb,
                            weightMap,
                            &sg,
