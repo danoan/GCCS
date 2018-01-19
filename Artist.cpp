@@ -149,8 +149,8 @@ void Artist::drawAllGluedCurves(std::string imgFilePath,
     double cmax = -100;
     double cmin = 100;
 
-    drawCurvatureMap(intCurve, cmax, cmin);
-    drawCurvatureMap(extCurve, cmax, cmin);
+    drawCurvatureMap(intCurve, cmin, cmax);
+    drawCurvatureMap(extCurve, cmin, cmax);
     for (auto it = gluedCurveSetRange.begin(); it != gluedCurveSetRange.end(); ++it) {
         drawGluedCurvatureMap(it->first, it->second, cmin, cmax);
     }
