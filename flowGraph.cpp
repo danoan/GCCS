@@ -371,9 +371,9 @@ int main(){
 
     unsigned int gluedCurveLength = 10;
 
-    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_triangle.pgm");
+    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/smallest_disk.pgm");
 
-    std::string outImageFolder = "output/images/flow-evolution/triangle";
+    std::string outImageFolder = "output/images/flow-evolution/disk";
     std::string cutOutputPath;
     std::string imageOutputPath;
 
@@ -386,7 +386,7 @@ int main(){
                          gluedCurveLength,
                          weightMap,
                          &fgb,
-                         i%2==0);
+                         true);
 
         drawCurvatureMaps(image,
                           weightMap,
@@ -397,7 +397,7 @@ int main(){
         imageOutputPath = outImageFolder + "/out" + std::to_string(i+1) + ".pgm";
 
 
-        if(i%2==1){
+        if(false){
             Image2D temp(image.domain());
             erode(temp,image,1);
             image = temp;
