@@ -36,6 +36,9 @@ ConnectorSeedRange<CellularSpace,
                     SCell potentialConnectionLinel = *ite;
 
                     if(gridLinels.find(potentialConnectionLinel)!=gridLinels.end()) continue;
+                    SCell otherDirection(potentialConnectionLinel);
+                    KImage.sSetSign(otherDirection,!KImage.sSign(otherDirection));
+                    if(gridLinels.find(otherDirection)!=gridLinels.end()) continue;
 
                     SCell p1 = KImage.sIndirectIncident(potentialConnectionLinel,*KImage.sDirs(potentialConnectionLinel));    //Source
                     SCell p2 = KImage.sDirectIncident(potentialConnectionLinel,*KImage.sDirs(potentialConnectionLinel));      //Target

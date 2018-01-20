@@ -156,13 +156,13 @@ void prepareFlowGraph(SegCut::Image2D& mask,
         computeBoundaryCurve(intCurvePriorGS,KImage,mask,100);
         computeBoundaryCurve(extCurvePriorGS,KImage,dilatedImage);
 
-//        gluedCurveLength = intCurvePriorGS.size()/2.0;
+        gluedCurveLength = intCurvePriorGS.size()/2.0;
     }else{
         erode(dilatedImage,mask,1);
         computeBoundaryCurve(extCurvePriorGS,KImage,mask,100);
         computeBoundaryCurve(intCurvePriorGS,KImage,dilatedImage);
 
-//        gluedCurveLength = extCurvePriorGS.size()/2.0;
+        gluedCurveLength = extCurvePriorGS.size()/2.0;
     }
 
 
@@ -357,6 +357,7 @@ void drawCurvatureMaps(Image2D& image,
 
 namespace Patch{
     bool useDGtal;
+    bool cross_element;
 };
 
 namespace UtilsTypes
@@ -366,11 +367,13 @@ namespace UtilsTypes
 
 int main(){
     Patch::useDGtal = false;
+    Patch::cross_element = true;
+
     unsigned int gluedCurveLength = 10;
 
-    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_square.pgm");
+    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_triangle.pgm");
 
-    std::string outImageFolder = "output/images/flow-evolution/square";
+    std::string outImageFolder = "output/images/flow-evolution/triangle";
     std::string cutOutputPath;
     std::string imageOutputPath;
 
@@ -383,7 +386,7 @@ int main(){
                          gluedCurveLength,
                          weightMap,
                          &fgb,
-                         true);
+                         i%2==0);
 
         drawCurvatureMaps(image,
                           weightMap,
@@ -394,7 +397,11 @@ int main(){
         imageOutputPath = outImageFolder + "/out" + std::to_string(i+1) + ".pgm";
 
 
-
+        if(i%2==1){
+            Image2D temp(image.domain());
+            erode(temp,image,1);
+            image = temp;
+        }
 
         drawCutUpdateImage(fgb,
                            weightMap,

@@ -83,7 +83,6 @@ void invertCurve(KSpace& KImage,
         SCells.push_back(*it);
     }
 
-
     std::vector<UtilsTypes::Z2i::SCell> newSCells;
     {
         auto it = SCells.rbegin();

@@ -174,12 +174,12 @@ void testSequence()
         outputRootPath += "/no-Patch";
     else
         outputRootPath += "/Patch";
+    
+    runTests("../images/graph-weight-test/last_image.pgm",
+             outputRootPath + "/last_image");
 
-//    runTests("../images/flow-evolution/last_image.pgm",
-//             outputRootPath + "/last_image");
-
-    runTests("../images/graph-weight-test/single_square.pgm",
-                 outputRootPath + "/square");
+//    runTests("../images/graph-weight-test/single_square.pgm",
+//                 outputRootPath + "/square");
 
 //    runTests("../images/graph-weight-test/single_triangle.pgm",
 //             outputRootPath + "/triangle");
@@ -190,6 +190,7 @@ void testSequence()
 
 namespace Patch{
     bool useDGtal;
+    bool cross_element;
 };
 
 namespace UtilsTypes
@@ -200,6 +201,8 @@ namespace UtilsTypes
 int main()
 {
     Patch::useDGtal = true;
+    Patch::cross_element = true;
+    
     testSequence();
     Patch::useDGtal = false;
     testSequence();
