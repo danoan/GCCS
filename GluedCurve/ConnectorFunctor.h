@@ -25,7 +25,9 @@ public:
 
     typedef TPConnectorSeedType ConnectorSeedType;
     typedef typename ConnectorSeedType::SCellCirculatorType SCellCirculatorType;
-    typedef GluedCurveIterator<SCellCirculatorType> GCIterator;
+    typedef typename ConnectorSeedType::SCellIteratorType SCellIteratorType;
+
+    typedef GluedCurveIterator<SCellCirculatorType,SCellIteratorType > GCIterator;
 
     typedef ConnectorSeedType Input;
     typedef std::pair<GCIterator,GCIterator> Output;
@@ -55,8 +57,8 @@ ConnectorSeedToGluedCurveRange<ConnectorSeedIteratorType>::operator() (const Inp
 
     return std::pair<GCIterator,
                      GCIterator>(
-            GCIterator(cc.connector, it1b, it1e, it2b, it2e,cc.cType),
-            GCIterator(cc.connector, it1b, it1e, it2b, it2e,cc.cType,true)
+            GCIterator(cc.connectors.begin(), --cc.connectors.end(), it1b, it1e, it2b, it2e,cc.cType),
+            GCIterator(cc.connectors.begin(), --cc.connectors.end(), it1b, it1e, it2b, it2e,cc.cType,true)
     );
 }
 

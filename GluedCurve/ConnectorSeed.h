@@ -12,21 +12,36 @@ struct ConnectorSeed{
     typedef T1 ConnectorElementType;
     typedef T2 SCellCirculatorType;
 
-    ConnectorElementType connector;
+    std::vector<ConnectorElementType> connectors;
     ConnectorType cType;
+
+    typedef typename std::vector<ConnectorElementType>::const_iterator SCellIteratorType;
 
 
     SCellCirculatorType firstCirculator;
     SCellCirculatorType secondCirculator;
 
-    ConnectorSeed(ConnectorElementType& cet,
+    ConnectorSeed(ConnectorElementType cet,
                   SCellCirculatorType& fit,
                   SCellCirculatorType& sit,
-                  ConnectorType ct): connector(cet),
-                                     firstCirculator(fit),
+                  ConnectorType ct): firstCirculator(fit),
                                      secondCirculator(sit),
                                      cType(ct)
-    {};
+    {
+        connectors.push_back(cet);
+    };
+
+
+    ConnectorSeed(SCellIteratorType& cItB,
+                  SCellIteratorType& cItE,
+                  SCellCirculatorType& fit,
+                  SCellCirculatorType& sit,
+                  ConnectorType ct): firstCirculator(fit),
+                                     secondCirculator(sit),
+                                     cType(ct)
+    {
+        connectors.insert(cItB,cItE);
+    };
 };
 
 template< typename X >
