@@ -33,6 +33,8 @@ void testConnectdeness(std::string imgFilePath)
         SCellGluedCurveIterator begin = itgc->first;
         SCellGluedCurveIterator end = itgc->second;
 
+        if(begin.connectorType()==makeConvex) continue;
+
         GluedCurveIncidentPointsRange gcipRange(begin,
                                                 end,
                                                 myFunctor );
@@ -71,6 +73,8 @@ void testCurvatureEvaluation(std::string imgFilePath)
 
         SCellGluedCurveIterator begin = itgc->first;
         SCellGluedCurveIterator end = itgc->second;
+        
+        if(begin.connectorType()==makeConvex) continue;
 
         GluedCurveIncidentPointsRange gcipRange(begin,
                                                 end,

@@ -92,6 +92,50 @@ ConnectorSeedRange<CellularSpace,
 }
 
 template<typename CellularSpace, typename TIterator>
+void ConnectorSeedRange<CellularSpace, TIterator>::createExtensionConnectorsSeeds(std::vector<MatchPair>& vMP,
+                                                                                  int radius)
+{
+    typedef typename std::vector<MatchPair>::const_iterator MatchIteratorType;
+
+
+    for(MatchIteratorType x = vMP.begin();x!=vMP.end();++x){
+        SCell start = *x->itb;
+        SCell end = *x->ite;
+
+        SCell commonPointel = KImage.sIndirectIncident(end,*KImage.sDirs(end));
+        Dimension d = *KImage.sDirs(start);
+
+        SCell first = start;
+        int v = KImage.sSign(first)?-1:1;
+
+        std::vector<SCell> curveSCells;
+        int i =0;
+        do {
+            first = KImage.sGetAdd(first,d,v);
+            curveSCells.push_back(first);
+
+            ++i;
+            std::cout << KImage.sDirectIncident(first,d) << std::endl;
+
+        }while(KImage.sDirectIncident(first,d).preCell().coordinates!=commonPointel.preCell().coordinates
+               && i <= radius);
+
+        //I can also check for the connectivity of the curve here
+        if(KImage.sDirectIncident(first,d).preCell().coordinates==commonPointel.preCell().coordinates){
+
+            connectorSeedList.push_back( ConnectorSeedType(curveSCells.begin(),
+                                                           curveSCells.end(),
+                                                           x->itb,
+                                                           x->ite)
+            );
+
+        }
+    }
+
+
+};
+
+template<typename CellularSpace, typename TIterator>
 void ConnectorSeedRange<CellularSpace, TIterator>::extensionConnectors()
 {
     int radius = 8;
@@ -114,7 +158,7 @@ void ConnectorSeedRange<CellularSpace, TIterator>::extensionConnectors()
         L.push_front(it);
     }while(it!=internalCurveCirculator);
 
-    std::cout << vMP.size() << std::endl;
+    createExtensionConnectorsSeeds(vMP,radius);
 };
 
 
@@ -165,40 +209,6 @@ LinelType ConnectorSeedRange<CellularSpace, TIterator>::getLinelType(const SCell
 };
 
 template<typename CellularSpace, typename TIterator>
-bool ConnectorSeedRange<CellularSpace, TIterator>::checkCurve(MatchPair& matchPair,int radius)
-{
-    SCell start = *matchPair.itb;
-    SCell end = *matchPair.ite;
-
-    SCell commonPointel = KImage.sIndirectIncident(end,*KImage.sDirs(end));
-
-    Dimension d = *KImage.sDirs(start);
-    SCell first = start;
-    int v = KImage.sSign(first)?-1:1;
-
-    std::vector<SCell> curveSCells;
-    int i =0;
-    do{
-        curveSCells.push_back(first);
-        first = KImage.sGetAdd(first,d,v);
-
-        ++i;
-        std::cout << KImage.sDirectIncident(first,d) << std::endl;
-    }while(KImage.sDirectIncident(first,d).preCell().coordinates!=commonPointel.preCell().coordinates && i <= radius);
-
-    if(KImage.sDirectIncident(first,d).preCell().coordinates!=commonPointel.preCell().coordinates) return false;
-
-    Curve C;
-    try{
-        C.initFromSCellsRange(curveSCells.begin(),curveSCells.end());
-        return true;
-    }catch(const std::exception& e){
-        return false;
-    }
-
-};
-
-template<typename CellularSpace, typename TIterator>
 bool ConnectorSeedRange<CellularSpace, TIterator>::isItMatch(SCellCirculatorType& closure,
                                                              SCellCirculatorType& el,
                                                              MatchPair& mp,
@@ -222,8 +232,8 @@ bool ConnectorSeedRange<CellularSpace, TIterator>::isItMatch(SCellCirculatorType
         mp.itb = el;
         mp.ite = closure;
         mp.ite++;
-        bool cv = checkCurve(mp,radius);
-        return cv;
+
+        return true;
 
     }
 

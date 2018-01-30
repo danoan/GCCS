@@ -46,47 +46,17 @@ struct ConnectorSeed{
         connectors.push_back(cet);
     };
 
-    ConnectorSeed(SCellCirculatorType& fit,
-                  SCellCirculatorType& sit,
-                  int radius): firstCirculator(fit),
-                               secondCirculator(sit),
-                               cType(makeConvex)
+    ConnectorSeed(SCellIteratorType citB,
+                  SCellIteratorType citE,
+                  SCellCirculatorType fit,
+                  SCellCirculatorType sit): firstCirculator(fit),
+                                             secondCirculator(sit),
+                                             cType(makeConvex)
     {
-        SCell start = *fit;
-        SCell end = *sit;
-
-        SCell commonPointel = KImage.sIndirectIncident(end, *KImage.sDirs(end));
-
-        Dimension d = *KImage.sDirs(start);
-        SCell first = start;
-        int v = KImage.sSign(first) ? -1 : 1;
-
-        std::vector<SCell> curveSCells;
-        int i = 0;
-        do {
-            curveSCells.push_back(first);
-            first = KImage.sGetAdd(first, d, v);
-
-            ++i;
-        } while (KImage.sDirectIncident(first, d).preCell().coordinates != commonPointel.preCell().coordinates &&
-                 i <= radius);
-
-        if (KImage.sDirectIncident(first, d).preCell().coordinates != commonPointel.preCell().coordinates) {
-            isValid = false;
-        } else {
-            isValid = true;
+        for(auto it = citB;it!=citE;++it){
+            connectors.push_back(*it);
         }
 
-
-//        if (isValid) {
-//            Curve C;
-//            try {
-//                C.initFromSCellsRange(curveSCells.begin(), curveSCells.end());
-//                return true;
-//            } catch (const std::exception &e) {
-//                return false;
-//            }
-//        }
     }
 };
 

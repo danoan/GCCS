@@ -101,7 +101,8 @@ private:
 
     LinelType getLinelType(const SCell& linel);
 
-    bool checkCurve(MatchPair& matchPair, int radius);
+    void createExtensionConnectorsSeeds(std::vector<MatchPair>& vMP,
+                                        int radius);
 
 };
 
