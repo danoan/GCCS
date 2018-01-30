@@ -73,7 +73,7 @@ void computeCurvature(std::string imgFilePath)
 
 namespace Patch
 {
-    bool useDGtal;
+    bool solveShift;
 };
 
 namespace UtilsTypes{
@@ -82,7 +82,7 @@ namespace UtilsTypes{
 
 int main()
 {
-    Patch::useDGtal = false;
+    Patch::solveShift = false;
 
     std::string imgFilePath = "../images/graph-weight-test/single_square.pgm";
 //    std::string imgFilePath = "../images/graph-weight-test/single_triangle.pgm";

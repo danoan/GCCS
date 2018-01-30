@@ -156,17 +156,19 @@ void prepareFlowGraph(SegCut::Image2D& mask,
         computeBoundaryCurve(intCurvePriorGS,KImage,mask,100);
         computeBoundaryCurve(extCurvePriorGS,KImage,dilatedImage);
 
-        gluedCurveLength = intCurvePriorGS.size()/2.0;
+//        gluedCurveLength = intCurvePriorGS.size()/2.0;
     }else{
         erode(dilatedImage,mask,1);
         computeBoundaryCurve(extCurvePriorGS,KImage,mask,100);
         computeBoundaryCurve(intCurvePriorGS,KImage,dilatedImage);
 
-        gluedCurveLength = extCurvePriorGS.size()/2.0;
+//        gluedCurveLength = extCurvePriorGS.size()/2.0;
     }
 
 
-
+    Board2D board;
+    board << extCurvePriorGS;
+    board.saveEPS("int.eps");
 
     setGridCurveWeight(intCurvePriorGS,
                        KImage,
@@ -242,6 +244,29 @@ double drawCutUpdateImage(FlowGraphBuilder* fgb,
         Z2i::Point p = KImage.sCoords(pixel);
         out.setValue(p,255);
     }
+
+
+    /*Fill the holes*/
+    for(ListDigraph::NodeIt n(fgb->graph());n!=INVALID;++n){
+        Z2i::SCell pixel = fgb->pixelsMap()[n];
+        Z2i::Point p = KImage.sCoords(pixel);
+        Z2i::SCells N = KImage.sNeighborhood(pixel);
+
+        unsigned char v = out(p);
+        unsigned char nv;
+        bool hole=true;
+        for(int j=1;j<5;++j){
+            nv = out(KImage.sCoords(N[j]));
+            if(v==nv){
+                hole=false;
+                break;
+            }
+        }
+        if(hole){
+            out.setValue(p,nv);
+        }
+    }
+
 
     boost::filesystem::path p2(imageOutputPath.c_str());
     p2.remove_filename();
@@ -356,7 +381,7 @@ void drawCurvatureMaps(Image2D& image,
 
 
 namespace Patch{
-    bool useDGtal;
+    bool solveShift;
     bool cross_element;
 };
 
@@ -366,20 +391,20 @@ namespace UtilsTypes
 };
 
 int main(){
-    Patch::useDGtal = false;
-    Patch::cross_element = true;
+    Patch::solveShift = false;
+    Patch::cross_element = false;
 
-    unsigned int gluedCurveLength = 10;
+    unsigned int gluedCurveLength = 5;
 
-    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/smallest_disk.pgm");
+    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/problematic_1.pgm");
 
-    std::string outImageFolder = "output/images/flow-evolution/disk";
+    std::string outImageFolder = "output/images/flow-evolution/square-out81";
     std::string cutOutputPath;
     std::string imageOutputPath;
 
     FlowGraphBuilder* fgb;
     MySubGraph* sg;
-    for(int i=0;i<40;++i)
+    for(int i=0;i<200;++i)
     {
         std::map<Z2i::SCell,double> weightMap;
         prepareFlowGraph(image,
@@ -412,8 +437,13 @@ int main(){
         );
 
 
-        
-        if(i==50) break;
+        if(i%40==39){
+            Image2D rImage(image.domain());
+            resize(image,rImage);
+            image = rImage;
+        }
+
+
 
         std::cout << "OK " << i << std::endl;
 

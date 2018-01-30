@@ -1,11 +1,11 @@
 #include "imageProc.h"
 
-void fromMatToImage2D(const cv::Mat &cvImg, ImageProcTypes::Image2D &dgtalImg){
+void fromMatToImage2D(const cv::Mat &cvImg, ImageProcTypes::Image2D &dgtalImg, int shift){
     int ubY = cvImg.rows-1;
     for(int i=0;i<cvImg.rows;i++){
         for(int j=0;j<cvImg.cols;j++){
             unsigned char v( cvImg.at<unsigned char>(i,j) );
-            dgtalImg.setValue( ImageProcTypes::Point(j,ubY-i), v );
+            dgtalImg.setValue( ImageProcTypes::Point(j+shift,ubY-i+shift), v );
         }
     }
 }
@@ -170,6 +170,18 @@ void computeBoundaryCurve(ImageProcTypes::Curve &boundCurve,
 //    for(ThreshSurface::SurfelConstIterator it = threshSurf.begin(); it!=threshSurf.end();it++) {
 //        boundCurve.push_back(*it);
 //    }
+}
+
+void resize(ImageProcTypes::Image2D &input,ImageProcTypes::Image2D &out)
+{
+    int r = input.domain().upperBound()[1] + 1;
+    int c = input.domain().upperBound()[0] + 1;
+
+    cv::Mat cvInput(r,c,CV_8UC1);
+    cv::Mat cvOut(r,c,CV_8UC1);
+    fromImage2DToMat(input,cvInput);
+    cv::resize(cvInput,cvOut,cv::Size(0,0),0.5,0.5,cv::INTER_NEAREST);
+    fromMatToImage2D(cvOut,out,(int) r/4.0);
 }
 
 void computeBoundaryCurve(ImageProcTypes::Curve &boundCurve,

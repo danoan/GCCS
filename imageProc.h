@@ -22,6 +22,8 @@ namespace ImageProcTypes{
 };
 
 
+void resize(ImageProcTypes::Image2D &input,ImageProcTypes::Image2D &out);
+
 void computeBoundaryCurve(ImageProcTypes::Curve &boundCurve,
                           ImageProcTypes::KSpace &KImage,
                           const ImageProcTypes::Image2D &image,
@@ -45,7 +47,7 @@ void dilateWithMorphology(ImageProcTypes::Image2D &newImage, const cv::Mat &src,
 void erode(ImageProcTypes::Image2D &newImage, const ImageProcTypes::Image2D &inputImage, const int &dilation_size);
 
 void fromImage2DToMat(const ImageProcTypes::Image2D &dgtalImg,cv::Mat &cvImg);
-void fromMatToImage2D(const cv::Mat &cvImg, ImageProcTypes::Image2D &dgtalImg);
+void fromMatToImage2D(const cv::Mat &cvImg, ImageProcTypes::Image2D &dgtalImg,int shift=0);
 
 
 

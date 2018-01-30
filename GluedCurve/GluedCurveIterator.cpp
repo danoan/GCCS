@@ -111,6 +111,7 @@ void GluedCurveIterator<CurveCirculator,LinkIteratorType>::increment()
     }
     ++(currentIterator);
 
+
 }
 
 template <typename CurveCirculator,typename LinkIteratorType>
@@ -145,7 +146,6 @@ void GluedCurveIterator<CurveCirculator,LinkIteratorType>::decrement()
             if ( currentIterator == myIt1b) {
 //                iteratorStage = 2;
 //                currentIterator = myIt2e;
-                return;
             }
         }
     }else {

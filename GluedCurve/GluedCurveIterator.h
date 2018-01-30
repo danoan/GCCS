@@ -2,7 +2,7 @@
 #define FLOWGRAPH_GLUEDCURVEITERATOR_H
 
 #include "DGtal/helpers/StdDefs.h"
-
+#include "ConnectorSeed.h"
 
 using namespace DGtal;
 using namespace DGtal::Z2i;
@@ -79,6 +79,8 @@ class GluedCurveIterator
         >
 {
 private:
+
+
     CurveCirculator myIt1b,myIt1e,myIt2b,myIt2e;
     LinkIteratorType myItLb,myItLe;
 
