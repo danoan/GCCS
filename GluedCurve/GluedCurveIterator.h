@@ -2,11 +2,91 @@
 #define FLOWGRAPH_GLUEDCURVEITERATOR_H
 
 #include "DGtal/helpers/StdDefs.h"
-
+#include "ConnectorSeed.h"
 
 using namespace DGtal;
 using namespace DGtal::Z2i;
 
+template<typename CurveCirculator>
+class CurrentIteratorType{
+public:
+
+    typedef std::vector<SCell>::const_iterator LinkIteratorType;
+
+    CurrentIteratorType(){
+        element = new SCell();
+    }
+
+    CurrentIteratorType(const CurrentIteratorType& other){
+        grid = other.grid;
+        gridIt = other.gridIt;
+        connectorIt = other.connectorIt;
+
+        element = new SCell();
+    }
+
+    CurrentIteratorType& operator=(const CurrentIteratorType& other){
+        grid = other.grid;
+        gridIt = other.gridIt;
+        connectorIt = other.connectorIt;
+
+        element = new SCell();
+
+        return *this;
+    }
+
+    ~CurrentIteratorType(){delete element;}
+
+    void set(CurveCirculator& it){
+        grid=true;
+        gridIt = it;
+    }
+
+    void set(LinkIteratorType& it){
+        grid=false;
+        connectorIt = it;
+    }
+
+
+    bool operator==(const CurrentIteratorType& other) const{
+        return (grid && grid==other.grid && gridIt==other.gridIt) ||
+               (!grid && grid==other.grid && connectorIt==other.connectorIt) ;
+    }
+
+    bool operator==(const CurveCirculator& otherGridIt) const{
+        return grid && gridIt==otherGridIt;
+    }
+
+    bool operator==(const LinkIteratorType& otherLinkIt) const{
+        return !grid && connectorIt==otherLinkIt;
+    }
+
+    SCell& operator*() const{
+
+        if(grid){
+            *element = *gridIt;
+        } else{
+            *element = *connectorIt;
+        }
+        return *element;
+    }
+
+    void operator++(){
+        if(grid) ++gridIt;
+        else ++connectorIt;
+    }
+
+    void operator--(){
+        if(grid) --gridIt;
+        else --connectorIt;
+    }
+
+private:
+    SCell* element;
+    CurveCirculator gridIt;
+    LinkIteratorType connectorIt;
+    bool grid;
+};
 
 template <typename CurveCirculator>
 class GluedCurveIterator
@@ -17,12 +97,15 @@ class GluedCurveIterator
         >
 {
 private:
+    typedef std::vector<SCell>::const_iterator LinkIteratorType;
+
     CurveCirculator myIt1b,myIt1e,myIt2b,myIt2e;
-    CurveCirculator currentIterator;
+    CurrentIteratorType<CurveCirculator> currentIterator;
 
     ConnectorType cType;
 
-    Z2i::SCell myLinkSurfel;
+
+    LinkIteratorType myItLb,myItLe;
     Z2i::SCell *element;
 
     char iteratorStage;
@@ -33,7 +116,8 @@ public:
 
     GluedCurveIterator();
 
-    GluedCurveIterator(Z2i::SCell linkSurfel,
+    GluedCurveIterator(LinkIteratorType itLb,
+                       LinkIteratorType itLe,
                          CurveCirculator it1b,
                          CurveCirculator it1e,
                          CurveCirculator it2b,
@@ -46,7 +130,11 @@ public:
 
     ~GluedCurveIterator(){delete element;};
 
-    inline Z2i::SCell linkSurfel(){return myLinkSurfel;};
+    inline SCell linkSurfel(){ return *myItLb; }
+
+    inline LinkIteratorType linkSurfelsBegin(){return myItLb;};
+    inline LinkIteratorType linkSurfelsEnd(){return myItLe;};
+
     inline ConnectorType connectorType(){return cType;};
 
 private:

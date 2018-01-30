@@ -10,11 +10,13 @@
 #include "DGtal/topology/CCellularGridSpaceND.h"
 
 #include <map>
+#include <list>
 
 #include "ConnectorSeed.h"
 
-namespace Patch{
-    extern bool cross_element;
+
+enum LinelType{
+    Up=0,Left=1,Down=2,Right=3
 };
 
 template<typename CellularSpace, typename TIterator>
@@ -34,18 +36,27 @@ public:
     typedef typename KSpace::SCell SCell;
     typedef typename KSpace::SCells SCells;
 
+    typedef typename DGtal::Dimension Dimension;
+    typedef typename KSpace::Point Point;
+    typedef DGtal::Z2i::Curve Curve;
+
 
     typedef typename KSpace::Point SCellPointelKey;
 
     typedef SCell ConnectorElementType;
     typedef TIterator SCellCirculatorType;
-    typedef ConnectorSeed<ConnectorElementType,SCellCirculatorType> ConnectorSeedType;
+    typedef ConnectorSeed<ConnectorElementType,SCellCirculatorType,KSpace> ConnectorSeedType;
     typedef typename std::vector< ConnectorSeedType >::const_iterator ConnectorSeedIteratorType;
 
 
     BOOST_STATIC_ASSERT(( boost::is_same<
             typename DGtal::IteratorCirculatorTraits<TIterator>::Value,
             SCell>::value ));
+
+
+    struct MatchPair{
+        SCellCirculatorType itb,ite;
+    };
 
 
     ConnectorSeedRange(KSpace& KImage,
@@ -78,6 +89,19 @@ private:
 
     void setPointelGroup(const SCellCirculatorType& curveCirculator,
                          int pointelGroupId);
+
+    void extensionConnectors();
+
+    void validateStack(std::list<SCellCirculatorType>& L,
+                       std::vector<MatchPair>& vMP,
+                       int radius
+    );
+
+    bool isItMatch(SCellCirculatorType& n, SCellCirculatorType& o, MatchPair& mp, int radius);
+
+    LinelType getLinelType(const SCell& linel);
+
+    bool checkCurve(MatchPair& matchPair, int radius);
 
 };
 

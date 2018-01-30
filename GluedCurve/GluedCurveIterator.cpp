@@ -2,13 +2,15 @@
 
 template <typename CurveCirculator>
 GluedCurveIterator<CurveCirculator>::GluedCurveIterator()
-    :myIt1b(),
+    :
+     myItLb(),
+     myItLe(),
+     myIt1b(),
      myIt1e(),
      myIt2b(),
      myIt2e(),
      currentIterator(),
      cType(),
-     myLinkSurfel(),
      myFlagIsValid(false),
      iteratorStage(0)
 {
@@ -16,7 +18,8 @@ GluedCurveIterator<CurveCirculator>::GluedCurveIterator()
 }
 
 template <typename CurveCirculator>
-GluedCurveIterator<CurveCirculator>::GluedCurveIterator(Z2i::SCell linkSurfel,
+GluedCurveIterator<CurveCirculator>::GluedCurveIterator(LinkIteratorType itLb,
+                                                        LinkIteratorType itLe,
                                            CurveCirculator it1b,
                                            CurveCirculator it1e,
                                            CurveCirculator it2b,
@@ -24,22 +27,24 @@ GluedCurveIterator<CurveCirculator>::GluedCurveIterator(Z2i::SCell linkSurfel,
                                            ConnectorType cType,
                                            bool theEnd):
 
+            myItLb(itLb),
+            myItLe(itLe),
             myIt1b(it1b),
             myIt1e(it1e),
             myIt2b(it2b),
             myIt2e(it2e),
             cType(cType),
-            myLinkSurfel(linkSurfel),
             myFlagIsValid(true)
 {
     element = new Z2i::SCell();
 
     if(theEnd){
         iteratorStage = 2;
-        currentIterator = it2e;
+        currentIterator.set(itLe);
+        currentIterator.set(it2e);
     }else{
         iteratorStage = 0;
-        currentIterator = it1b;
+        currentIterator.set(it1b);
     }
 
     myFlagIsValid = true;
@@ -48,11 +53,12 @@ GluedCurveIterator<CurveCirculator>::GluedCurveIterator(Z2i::SCell linkSurfel,
 
 template <typename CurveCirculator>
 GluedCurveIterator<CurveCirculator>::GluedCurveIterator(const GluedCurveIterator& other):
+            myItLb(other.myItLb),
+            myItLe(other.myItLe),
             myIt1b(other.myIt1b),
             myIt1e(other.myIt1e),
             myIt2b(other.myIt2b),
             myIt2e(other.myIt2e),
-            myLinkSurfel(other.myLinkSurfel),
             cType(other.cType),
             myFlagIsValid(other.myFlagIsValid),
             iteratorStage(other.iteratorStage),
@@ -63,6 +69,9 @@ GluedCurveIterator<CurveCirculator>::GluedCurveIterator(const GluedCurveIterator
 
 template <typename CurveCirculator>
 GluedCurveIterator<CurveCirculator>& GluedCurveIterator<CurveCirculator>::operator =(const GluedCurveIterator& other){
+    myItLb = other.myItLb;
+    myItLe = other.myItLe;
+
     myIt1b = other.myIt1b;
     myIt1e = other.myIt1e;
     myIt2b = other.myIt2b;
@@ -70,7 +79,6 @@ GluedCurveIterator<CurveCirculator>& GluedCurveIterator<CurveCirculator>::operat
 
     cType = other.cType;
 
-    myLinkSurfel = other.myLinkSurfel;
     myFlagIsValid = other.myFlagIsValid;
     iteratorStage = other.iteratorStage;
     currentIterator = other.currentIterator;
@@ -87,6 +95,7 @@ void GluedCurveIterator<CurveCirculator>::increment()
         if( iteratorStage==0 ) {
             if (currentIterator == myIt1e) {
                 iteratorStage = 1;
+                currentIterator.set(myItLb);
                 return;
             }
         }else{
@@ -96,11 +105,15 @@ void GluedCurveIterator<CurveCirculator>::increment()
                 return;
             }
         }
-        (currentIterator)++;
+        ++(currentIterator);
     }else {
-        currentIterator = myIt2b;
-        iteratorStage = 2;
+        ++(currentIterator);
+        if(currentIterator==myItLe){
+            currentIterator.set(myIt2b);
+            iteratorStage = 2;
+        }
     }
+
 
 }
 
@@ -108,12 +121,7 @@ template <typename CurveCirculator>
 bool GluedCurveIterator<CurveCirculator>::equal(const GluedCurveIterator& other) const
 {
     if( iteratorStage == other.iteratorStage ){
-        if(iteratorStage==1){
-            return myLinkSurfel==other.myLinkSurfel;
-        }else{
-            return currentIterator==other.currentIterator;
-        }
-
+        return currentIterator==other.currentIterator;
     }else{
         return false;
     }
@@ -123,7 +131,7 @@ bool GluedCurveIterator<CurveCirculator>::equal(const GluedCurveIterator& other)
 template <typename CurveCirculator>
 typename CurveCirculator::value_type& GluedCurveIterator<CurveCirculator>::dereference() const
 {
-    *element = iteratorStage==1?myLinkSurfel:*currentIterator;
+    *element = *currentIterator;
     return *element;
 }
 
@@ -134,19 +142,21 @@ void GluedCurveIterator<CurveCirculator>::decrement()
         if( iteratorStage==2 ) {
             if ( currentIterator == myIt2b) {
                 iteratorStage = 1;
-                return;
+                currentIterator.set(myItLe);
             }
         }else{
             if ( currentIterator == myIt1b) {
 //                iteratorStage = 2;
 //                currentIterator = myIt2e;
-                return;
             }
         }
-        currentIterator--;
+        --currentIterator;
     }else {
-        currentIterator = myIt1e;
-        iteratorStage = 0;
+        if(currentIterator==myItLb){
+            currentIterator.set(myIt1e);
+            iteratorStage = 0;
+        }
+        --currentIterator;
     }
 
 }

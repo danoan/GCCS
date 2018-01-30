@@ -65,19 +65,41 @@ private:
 
     void createEdgeFromLinel(Curve::SCell& linel,
                              KSpace& KImage,
-                             std::map<Z2i::SCell,double>& weightMap,
-                             ListDigraph::Node& sourcePixelNode,
-                             ListDigraph::Node& targetPixelNode);
+                             std::map<Z2i::SCell,double>& weightMap);
 
     void createGridCurveEdges(Curve::ConstIterator curveBegin,
                               Curve::ConstIterator curveEnd,
-                              ListDigraph::Node terminalToConnect,
-                              bool toTerminal,
                               std::map<Z2i::SCell,double>& weightMap);
 
     void createGluedCurveEdges(SegCut::GluedCurveIteratorPair gluedRangeBegin,
                                SegCut::GluedCurveIteratorPair gluedRangeEnd,
                                std::map<Z2i::SCell,double>& weightMap);
+
+    void createEscapeEdges();
+
+
+    void createSourceEdges();
+    void createTargetEdges();
+
+    void connectNodeToPixel(ListDigraph::Node& sourceNode,
+                            KSpace::SCell pTarget,
+                            ListDigraph::Arc& a);
+
+    void connectPixelToNode(KSpace::SCell pSource,
+                            ListDigraph::Node& targetNode,
+                            ListDigraph::Arc& a);
+
+    void createNodeFromPixel(KSpace::SCell pixel,
+                             ListDigraph::Node& node);
+
+    void createEdgeFromPixels(KSpace::SCell pSource,
+                              KSpace::SCell pTarget,
+                              ListDigraph::Arc& a);
+
+    void explore(KSpace::SCell candidate,
+                 std::set<KSpace::SCell>& borderPoints,
+                 std::set<KSpace::SCell>& visitedNodes);
+
 
 
 private:

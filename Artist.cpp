@@ -82,7 +82,7 @@ void Artist::drawCurvesAndConnectionsCurvatureMap(std::string imgFilePath,
     ArtistTypes::ConnectorSeedRangeType seedRange = getSeedRange(KImage,intCurve,extCurve);
 
 
-    unsigned int gluedCurveLength = intCurve.size()/2.0;
+    unsigned int gluedCurveLength = 10;
     ArtistTypes::SeedToGluedCurveRangeFunctor stgcF(gluedCurveLength);
     ArtistTypes::GluedCurveSetRange gluedCurveSetRange( seedRange.begin(),
                                                         seedRange.end(),
@@ -141,7 +141,7 @@ void Artist::drawAllGluedCurves(std::string imgFilePath,
     ArtistTypes::ConnectorSeedRangeType seedRange = getSeedRange(KImage, intCurve, extCurve);
 
 
-    unsigned int gluedCurveLength = intCurve.size()/2.0;
+    unsigned int gluedCurveLength = 30;
     ArtistTypes::SeedToGluedCurveRangeFunctor stgcF(gluedCurveLength);
     ArtistTypes::GluedCurveSetRange gluedCurveSetRange(seedRange.begin(),
                                                        seedRange.end(),

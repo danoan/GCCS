@@ -39,6 +39,7 @@ void testConnectdeness(std::string imgFilePath)
 
         GridCurve<KSpace> gc;
         gc.initFromSCellsRange(begin,end);
+        std::cout << gc << std::endl;
         ++gluedCurveNumber;
     }
 
@@ -76,10 +77,25 @@ void testCurvatureEvaluation(std::string imgFilePath)
                                                 myFunctor);
 
         std::vector<double> estimations;
+
+        GridCurve<KSpace> gc;
+        gc.initFromSCellsRange(begin,end);
+
+        Curve negativeCurve;
+        invertCurve(KImage,
+                    begin,
+                    end,
+                    negativeCurve);
+
+        std::cout << negativeCurve << std::endl;
+        curvatureEstimatorsGridCurve(negativeCurve.begin(),negativeCurve.end(),KImage,estimations);
+
+
         curvatureEstimatorsGluedCurve(begin,
                                       end,
                                       KImage,
                                       estimations);
+
 
 
 
@@ -170,7 +186,7 @@ void runTests(const std::string& imgPath,
 void testSequence()
 {
     std::string outputRootPath = "../output/tests";
-    if(Patch::useDGtal)
+    if(Patch::solveShift)
         outputRootPath += "/no-Patch";
     else
         outputRootPath += "/Patch";
@@ -178,18 +194,18 @@ void testSequence()
     runTests("../images/graph-weight-test/last_image.pgm",
              outputRootPath + "/last_image");
 
-//    runTests("../images/graph-weight-test/single_square.pgm",
-//                 outputRootPath + "/square");
+    runTests("../images/graph-weight-test/single_square.pgm",
+                 outputRootPath + "/square");
 
-//    runTests("../images/graph-weight-test/single_triangle.pgm",
-//             outputRootPath + "/triangle");
-//
-//    runTests("../images/graph-weight-test/smallest_disk.pgm",
-//             outputRootPath + "/disk");
+    runTests("../images/graph-weight-test/single_triangle.pgm",
+             outputRootPath + "/triangle");
+
+    runTests("../images/graph-weight-test/smallest_disk.pgm",
+             outputRootPath + "/disk");
 }
 
 namespace Patch{
-    bool useDGtal;
+    bool solveShift;
     bool cross_element;
 };
 
@@ -200,11 +216,11 @@ namespace UtilsTypes
 
 int main()
 {
-    Patch::useDGtal = true;
-    Patch::cross_element = true;
+    Patch::solveShift = true;
+    Patch::cross_element = false;
     
     testSequence();
-    Patch::useDGtal = false;
+    Patch::solveShift = false;
     testSequence();
 
 }

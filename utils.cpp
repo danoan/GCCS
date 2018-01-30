@@ -69,7 +69,7 @@ void curvatureEstimatorsGridCurve(UtilsTypes::Curve::ConstIterator begin,
                                               negativeEstimations);
     }
 
-    if(!Patch::useDGtal){
+    if(Patch::solveShift){
         //Solve Shift
         positiveEstimations.push_back(positiveEstimations[0]);
         positiveEstimations.erase(positiveEstimations.begin());
@@ -78,12 +78,11 @@ void curvatureEstimatorsGridCurve(UtilsTypes::Curve::ConstIterator begin,
         negativeEstimations.erase(negativeEstimations.begin());
     }
 
+
     int ip=0;
     int nL = negativeEstimations.size()-1;
-    double sign;
     do{
-        sign = positiveEstimations[ip]>0?1.0:-1.0;
-        estimations.push_back( sign*( fabs(positiveEstimations[ip]) + fabs(negativeEstimations[nL-ip]) )/2.0 );
+        estimations.push_back( (positiveEstimations[ip] - negativeEstimations[nL-ip] )/2.0 );
         ++ip;
     }while(ip<=nL);
 
@@ -132,7 +131,7 @@ void curvatureEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
                                           rangeNegativeCurve.end(),
                                           negativeEstimations);
 
-    if(!Patch::useDGtal){
+    if(Patch::solveShift){
         //Solve Shift
         positiveEstimations.push_back(positiveEstimations[0]);
         positiveEstimations.erase(positiveEstimations.begin());
@@ -144,10 +143,8 @@ void curvatureEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
 
     int ip=0;
     int nL = negativeEstimations.size()-1;
-    double sign;
     do{
-        sign = positiveEstimations[ip]>0?1.0:-1.0;
-        estimations.push_back( sign*( fabs(positiveEstimations[ip]) + fabs(negativeEstimations[nL-ip]) )/2.0 );
+        estimations.push_back( ( positiveEstimations[ip] - negativeEstimations[nL-ip] )/2.0 );
         ++ip;
     }while(ip<=nL);
 
@@ -255,7 +252,7 @@ void tangentEstimatorsGridCurve(UtilsTypes::Curve::ConstIterator begin,
                                             negativeEstimations);
     }
 
-    if(!Patch::useDGtal){
+    if(Patch::solveShift){
         //Solve Shift
         positiveEstimations.push_back(positiveEstimations[0]);
         positiveEstimations.erase(positiveEstimations.begin());
@@ -313,7 +310,7 @@ void tangentEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
                                         rangeNegativeCurve.end(),
                                         negativeEstimations);
 
-    if(!Patch::useDGtal){
+    if(Patch::solveShift){
         //Solve Shift
         positiveEstimations.push_back(positiveEstimations[0]);
         positiveEstimations.erase(positiveEstimations.begin());
