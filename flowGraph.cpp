@@ -396,9 +396,9 @@ int main(){
 
     unsigned int gluedCurveLength = 5;
 
-    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/problematic_1.pgm");
+    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_square.pgm");
 
-    std::string outImageFolder = "output/images/flow-evolution/square-out81";
+    std::string outImageFolder = "output/images/flow-evolution/square";
     std::string cutOutputPath;
     std::string imageOutputPath;
 

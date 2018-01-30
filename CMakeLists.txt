@@ -17,7 +17,7 @@ LINK_DIRECTORIES(${DGTAL_LIBRARY_DIRS})
 set(SOURCE_FILES imageProc.cpp Artist.cpp Patch/estimatorMethods.cpp utils.cpp)
 
 add_executable(moduleTest test.cpp  ${SOURCE_FILES})
-add_executable(flowGraph flowGraph.cpp ${SOURCE_FILES} FlowGraphBuilder.cpp GluedCurve/dumb.cpp)
+add_executable(flowGraph flowGraph.cpp ${SOURCE_FILES} FlowGraphBuilder.cpp)
 add_executable(minimalCase minimalCase.cpp ${SOURCE_FILES})
 
 add_executable(dumb GluedCurve/dumb.cpp GluedCurve/GluedCurveIterator.cpp ${SOURCE_FILES})
