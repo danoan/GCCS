@@ -125,7 +125,7 @@ void max_and_min(std::vector<Value>& V,
         if( toDouble(*itV) < cmin ) cmin = toDouble(*itV);
         if( toDouble(*itV) > cmax ) cmax = toDouble(*itV);
     }
-    cmax = cmax>cmin?cmax:cmin+0.0000001;
+
 }
 
 template<typename IteratorType>
@@ -147,6 +147,8 @@ void draw(std::vector<Value>& V,
           double cmax,
           typename std::function< double(Value) >& toDouble = UtilsTypes::toDouble)
 {
+    if(cmin==cmax) cmax = cmin + 0.0000001;
+
     UtilsTypes::GradientColorMap<double,
                                  UtilsTypes::ColorGradientPreset::CMAP_JET> cmap_jet(cmin,cmax);
 

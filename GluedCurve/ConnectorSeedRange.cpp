@@ -115,7 +115,6 @@ void ConnectorSeedRange<CellularSpace, TIterator>::createExtensionConnectorsSeed
             curveSCells.push_back(first);
 
             ++i;
-            std::cout << KImage.sDirectIncident(first,d) << std::endl;
 
         }while(KImage.sDirectIncident(first,d).preCell().coordinates!=commonPointel.preCell().coordinates
                && i <= radius);
@@ -179,7 +178,6 @@ void ConnectorSeedRange<CellularSpace, TIterator>::validateStack(std::list<SCell
         if( isItMatch(t,*it,mp,radius) ){
             it=L.erase(it);
             vMP.push_back(mp);
-            std::cout << *(vMP[vMP.size()-1].itb) << "::" << *(vMP[vMP.size()-1].ite) << std::endl;
         }
         ++it;
     }while(it!=L.end());

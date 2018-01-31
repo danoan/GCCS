@@ -11,13 +11,15 @@ GluedCurveIterator<CurveCirculator,LinkIteratorType>::GluedCurveIterator()
      currentIterator(),
      cType(),
      myFlagIsValid(false),
-     iteratorStage(0)
+     iteratorStage(0),
+     numConnectors(0)
 {
     element = new Z2i::SCell();
 }
 
 template <typename CurveCirculator,typename LinkIteratorType>
-GluedCurveIterator<CurveCirculator,LinkIteratorType>::GluedCurveIterator(LinkIteratorType itLb,
+GluedCurveIterator<CurveCirculator,LinkIteratorType>::GluedCurveIterator(int numConnectors,
+                                                                         LinkIteratorType itLb,
                                                                          LinkIteratorType itLe,
                                                                          CurveCirculator it1b,
                                                                          CurveCirculator it1e,
@@ -32,7 +34,8 @@ GluedCurveIterator<CurveCirculator,LinkIteratorType>::GluedCurveIterator(LinkIte
             myIt2b(it2b),
             myIt2e(it2e),
             cType(cType),
-            myFlagIsValid(true)
+            myFlagIsValid(true),
+            numConnectors(numConnectors)
 {
     element = new Z2i::SCell();
 

@@ -79,7 +79,7 @@ class GluedCurveIterator
         >
 {
 private:
-
+    int numConnectors;
 
     CurveCirculator myIt1b,myIt1e,myIt2b,myIt2e;
     LinkIteratorType myItLb,myItLe;
@@ -98,7 +98,8 @@ public:
 
     GluedCurveIterator();
 
-    GluedCurveIterator(  LinkIteratorType itLb,
+    GluedCurveIterator(  int numConnectors,
+                         LinkIteratorType itLb,
                          LinkIteratorType itLe,
                          CurveCirculator it1b,
                          CurveCirculator it1e,
@@ -114,6 +115,11 @@ public:
 
     inline Z2i::SCell linkSurfel(){return *myItLb;};
     inline ConnectorType connectorType(){return cType;};
+
+    inline LinkIteratorType connectorsBegin(){return myItLb;};
+    inline LinkIteratorType connectorsEnd(){return myItLe+1;};
+
+    inline int numberOfConnectors(){return numConnectors;};
 
 private:
     friend class boost::iterator_core_access;

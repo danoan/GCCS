@@ -57,8 +57,8 @@ ConnectorSeedToGluedCurveRange<ConnectorSeedIteratorType>::operator() (const Inp
 
     return std::pair<GCIterator,
                      GCIterator>(
-            GCIterator(cc.connectors.begin(), --cc.connectors.end(), it1b, it1e, it2b, it2e,cc.cType),
-            GCIterator(cc.connectors.begin(), --cc.connectors.end(), it1b, it1e, it2b, it2e,cc.cType,true)
+            GCIterator(cc.connectors.size(),cc.connectors.begin(), --cc.connectors.end(), it1b, it1e, it2b, it2e,cc.cType),
+            GCIterator(cc.connectors.size(),cc.connectors.begin(), --cc.connectors.end(), it1b, it1e, it2b, it2e,cc.cType,true)
     );
 }
 
