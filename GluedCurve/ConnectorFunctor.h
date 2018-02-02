@@ -54,7 +54,6 @@ ConnectorSeedToGluedCurveRange<ConnectorSeedIteratorType>::operator() (const Inp
     it2e = walkCirculator(it2b, distance);
 
 
-
     return std::pair<GCIterator,
                      GCIterator>(
             GCIterator(cc.connectors.size(),cc.connectors.begin(), --cc.connectors.end(), it1b, it1e, it2b, it2e,cc.cType),

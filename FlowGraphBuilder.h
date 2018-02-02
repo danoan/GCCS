@@ -15,6 +15,28 @@ using namespace lemon;
 #include "typeDefs.h"
 #include "utils.h"
 
+namespace Stats{
+    extern int gluedEdges;
+    extern int sourceEdges;
+    extern int targetEdges;
+    extern int externalEdges;
+    extern int internalEdges;
+
+    extern int makeConvexEdges;
+    extern int escapeEdges;
+
+    extern double extMakeConvexCut;
+
+    typedef SubDigraph< ListDigraph,ListDigraph::NodeMap<bool> > MySubGraph;
+}
+
+class UnsignedSCellComparison{
+public:
+    bool operator()(const SCell& s1, const SCell& s2) const{
+        return s1.preCell().coordinates < s2.preCell().coordinates;
+    }
+};
+
 class FlowGraphBuilder{
 
 public:
@@ -43,6 +65,14 @@ public:
     void operator()(std::map<Z2i::SCell,double>& weightMap);
     
     void draw();
+
+    Stats::MySubGraph externalCurveSubgraph(ListDigraph::NodeMap<bool>& node_filter,
+                                            ListDigraph::ArcMap<bool>& arc_filter );
+    Stats::MySubGraph internalCurveSubgraph(ListDigraph::NodeMap<bool>& node_filter,
+                                            ListDigraph::ArcMap<bool>& arc_filter);
+
+    Stats::MySubGraph particularCurveSubgraph(ListDigraph::NodeMap<bool>& node_filter,
+                                              ListDigraph::ArcMap<bool>& arc_filter );
     
     ListDigraph& graph(){return fg;};
     ListDigraph::Node& source(){return sourceNode;}
@@ -73,13 +103,13 @@ private:
 
     void createGluedCurveEdges(SegCut::GluedCurveIteratorPair gluedRangeBegin,
                                SegCut::GluedCurveIteratorPair gluedRangeEnd,
-                               std::map<Z2i::SCell,double>& weightMap);
+                               std::map<Z2i::SCell,double>& weightMap,
+                               std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes);
 
-    void createEscapeEdges();
+    void createEscapeEdges(std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes);
 
 
-    void createSourceEdges();
-    void createTargetEdges();
+    void createSourceEdges(std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes);
 
     void connectNodeToPixel(ListDigraph::Node& sourceNode,
                             KSpace::SCell pTarget,
@@ -97,9 +127,47 @@ private:
                               ListDigraph::Arc& a);
 
     void explore(KSpace::SCell candidate,
-                 std::set<KSpace::SCell>& borderPoints,
-                 std::set<KSpace::SCell>& visitedNodes);
+                 std::set<KSpace::SCell,UnsignedSCellComparison>& borderPoints,
+                 std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes);
 
+
+    bool createTargetEdgesFromGluedSegments(SegCut::GluedCurveIteratorPair gluedRangeBegin,
+                                            SegCut::GluedCurveIteratorPair gluedRangeEnd,
+                                            std::map<Z2i::SCell,double>& weightMap);
+
+    void createTargetEdgesFromExteriorCurve(std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes,
+                                            std::map<Z2i::SCell,double>& weightMap);
+
+    template<typename TType>
+    void createFromIteratorsQueue(std::queue<TType> intervals,std::map<Z2i::SCell,double>& weightMap)
+    {
+
+        TType start,end;
+        KSpace::SCell pixelModel = KImage.sCell( KSpace::Point(1,1),KSpace::POS);
+        while(!intervals.empty()){
+            start = intervals.front();
+            intervals.pop();
+            end = intervals.front();
+            intervals.pop();
+
+            TType itC = start;
+            do{
+                Stats::extMakeConvexCut+= weightMap[*itC];
+
+                KSpace::SCell indirectIncidentPixel = KImage.sIndirectIncident(*itC,KImage.sOrthDir(*itC));
+                ListDigraph::Arc a;
+                connectPixelToNode(indirectIncidentPixel,targetNode,a);
+                edgeWeight[a] = 10;
+
+                Stats::targetEdges++;
+
+                if(itC==end) break;
+                ++itC;
+            }while(true);
+
+        }
+
+    }
 
 
 private:

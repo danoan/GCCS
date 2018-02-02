@@ -79,9 +79,11 @@ void invertCurve(KSpace& KImage,
                  UtilsTypes::Curve& c2)
 {
     std::vector<UtilsTypes::Z2i::SCell> SCells;
-    for(auto it=begin;it!=end;++it){
+    auto it=begin;
+    do{
         SCells.push_back(*it);
-    }
+        ++it;
+    }while(it!=end);
 
     std::vector<UtilsTypes::Z2i::SCell> newSCells;
     {

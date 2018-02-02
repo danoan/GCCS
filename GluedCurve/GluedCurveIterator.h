@@ -70,31 +70,17 @@ private:
 
 };
 
-template <typename CurveCirculator, typename LinkIteratorType>
+template <typename TCurveCirculator, typename TLinkIteratorType>
 class GluedCurveIterator
         : public boost::iterator_facade<
-                GluedCurveIterator<CurveCirculator,LinkIteratorType>,
-                typename CurveCirculator::value_type,
+                GluedCurveIterator<TCurveCirculator,TLinkIteratorType>,
+                typename TCurveCirculator::value_type,
                 boost::bidirectional_traversal_tag
         >
 {
-private:
-    int numConnectors;
-
-    CurveCirculator myIt1b,myIt1e,myIt2b,myIt2e;
-    LinkIteratorType myItLb,myItLe;
-
-    CurrentIteratorType<CurveCirculator,LinkIteratorType> currentIterator;
-
-    ConnectorType cType;
-
-    Z2i::SCell *element;
-
-    char iteratorStage;
-
-    bool myFlagIsValid;
-
 public:
+    typedef TLinkIteratorType LinkIteratorType;
+    typedef TCurveCirculator CurveCirculator;
 
     GluedCurveIterator();
 
@@ -117,7 +103,10 @@ public:
     inline ConnectorType connectorType(){return cType;};
 
     inline LinkIteratorType connectorsBegin(){return myItLb;};
-    inline LinkIteratorType connectorsEnd(){return myItLe+1;};
+    inline LinkIteratorType connectorsEnd(){return myItLe;};
+
+    inline CurveCirculator curveSegment1End(){return myIt1e;};
+    inline CurveCirculator curveSegment2Begin(){return myIt2b;};
 
     inline int numberOfConnectors(){return numConnectors;};
 
@@ -131,6 +120,22 @@ private:
     typename CurveCirculator::value_type& dereference() const;
 
     void decrement();
+
+
+    int numConnectors;
+
+    CurveCirculator myIt1b,myIt1e,myIt2b,myIt2e;
+    LinkIteratorType myItLb,myItLe;
+
+    CurrentIteratorType<CurveCirculator,LinkIteratorType> currentIterator;
+
+    ConnectorType cType;
+
+    Z2i::SCell *element;
+
+    char iteratorStage;
+
+    bool myFlagIsValid;
 };
 
 #include "GluedCurveIterator.cpp"

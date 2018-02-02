@@ -14,7 +14,6 @@
 
 #include "ConnectorSeed.h"
 
-
 enum LinelType{
     Up=0,Left=1,Down=2,Right=3
 };
@@ -90,18 +89,26 @@ private:
     void setPointelGroup(const SCellCirculatorType& curveCirculator,
                          int pointelGroupId);
 
-    void extensionConnectors();
+    void extensionConnectors(SCellCirculatorType itBegin,
+                             SCellCirculatorType counterClockCirc,
+                             bool counterclock,
+                             std::vector<MatchPair>& visitedPairs);
 
     void validateStack(std::list<SCellCirculatorType>& L,
                        std::vector<MatchPair>& vMP,
-                       int radius
+                       int radius,
+                       bool counterclock
     );
 
-    bool isItMatch(SCellCirculatorType& n, SCellCirculatorType& o, MatchPair& mp, int radius);
+    bool isItMatch(SCellCirculatorType& n, SCellCirculatorType& o, MatchPair& mp, int radius, bool counterclock);
 
     LinelType getLinelType(const SCell& linel);
 
     void createExtensionConnectorsSeeds(std::vector<MatchPair>& vMP,
+                                        int radius);
+
+    void createExtensionConnectorsSeeds(std::vector<MatchPair>& vMP,
+                                        SCellCirculatorType& counterClCirc,
                                         int radius);
 
 };

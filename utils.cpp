@@ -82,9 +82,10 @@ void curvatureEstimatorsGridCurve(UtilsTypes::Curve::ConstIterator begin,
     int ip=0;
     int nL = negativeEstimations.size()-1;
     do{
-        estimations.push_back( (positiveEstimations[ip] - negativeEstimations[nL-ip] )/2.0 );
+        estimations.push_back( ( fabs(positiveEstimations[ip]) + fabs(negativeEstimations[nL-ip]) )/2.0 );
         ++ip;
     }while(ip<=nL);
+
 
 }
 
@@ -144,10 +145,9 @@ void curvatureEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
     int ip=0;
     int nL = negativeEstimations.size()-1;
     do{
-        estimations.push_back( ( positiveEstimations[ip] - negativeEstimations[nL-ip] )/2.0 );
+        estimations.push_back( ( fabs(positiveEstimations[ip]) + fabs(negativeEstimations[nL-ip]) )/2.0 );
         ++ip;
     }while(ip<=nL);
-
 }
 
 void normalizeAroundNeighbors(std::vector<double>& v, int radius)

@@ -11,6 +11,7 @@ using namespace DGtal::Z2i;
 #include "utils.h"
 #include "issueUtils.h"
 #include "Artist.h"
+#include "FlowGraphBuilder.h"
 
 using namespace UtilsTypes;
 
@@ -138,8 +139,9 @@ void setGluedCurveWeight(GluedCurveSetRange gcRange,
             do{
                 weightMap[*itC] = estimationsCurvature[i];
                 ++i;
+                if(itC==it->first.connectorsEnd()) break;
                 ++itC;
-            }while(itC!=it->first.connectorsEnd());
+            }while(true);
 
         }
     }
@@ -166,9 +168,10 @@ void setGluedCurveWeight(GluedCurveSetRange gcRange,
 
                 tangentWeightVector.push_back(fabs(estimationsTangent[i].dot(scellVector)));
 
-                ++itC;
                 ++i;
-            } while (itC != it->first.connectorsEnd());
+                if(itC==it->first.connectorsEnd()) break;
+                ++itC;
+            }while(true);
 
         }
 
@@ -180,9 +183,10 @@ void setGluedCurveWeight(GluedCurveSetRange gcRange,
             auto itC = it->first.connectorsBegin();
             do {
                 weightMap[*itC]*= tangentWeightVector[i];
-                ++itC;
                 ++i;
-            }while(itC != it->first.connectorsEnd());
+                if(itC==it->first.connectorsEnd()) break;
+                ++itC;
+            }while(true);
         }
     }
 
@@ -222,10 +226,28 @@ void prepareFlowGraph(SegCut::Image2D& mask,
                                  seedRange.end(),
                                  stgcF);
 
+    std::cout << "INT CURVE" <<std::endl;
+    for(auto it=intCurvePriorGS.begin();it!=intCurvePriorGS.end();++it){
+        std::cout << *it << "::" << weightMap[*it] << std::endl;
+    }
+    std::cout << "EXT CURVE" <<std::endl;
+    for(auto it=extCurvePriorGS.begin();it!=extCurvePriorGS.end();++it){
+        std::cout << *it << "::" << weightMap[*it] << std::endl;
+    }
+
 
     setGluedCurveWeight(gcsRange,KImage,gluedCurveLength,weightMap);
 
 //    Issue::updateGluedWeightUsingFP(seedRange,KImage,weightMap);
+
+    FlowGraphBuilder fgb(intCurvePriorGS,
+                         extCurvePriorGS,
+                         KImage,
+                         gluedCurveLength);
+
+    fgb(weightMap);
+    fgb.draw();
+
 
 }
 
@@ -251,6 +273,7 @@ void drawCurvatureMaps(Image2D& image,
 //    computeBoundaryCurve(extCurve,KImage,image,100);
 //    computeBoundaryCurve(intCurve,KImage,dilatedImage);
 
+
     std::vector<Z2i::SCell> intConnection;
     std::vector<Z2i::SCell> extConnection;
     std::vector<Z2i::SCell> makeConvexConnection;
@@ -274,10 +297,12 @@ void drawCurvatureMaps(Image2D& image,
                 extConnection.push_back(it->first.linkSurfel());
                 break;
             case makeConvex:
-                for(auto itC = it->first.connectorsBegin();itC!=it->first.connectorsEnd();++itC){
+                auto itC = it->first.connectorsBegin();
+                do{
                     makeConvexConnection.push_back(*itC);
-                }
-                break;
+                    if(itC==it->first.connectorsEnd()) break;
+                    ++itC;
+                }while(true);
         }
 
     }
@@ -358,31 +383,33 @@ void drawCurvatureMaps(Image2D& image,
 
     cmin=100;
     cmax=-100;
-    for(int i=0;i<2;i++) {
-        drawCurvatureMap(makeConvexConnection.begin(),
-                         makeConvexConnection.end(),
-                         cmin,
-                         cmax,
-                         board,
-                         weightMap
-        );
+    if (makeConvexConnection.size() > 0) {
+        for (int i = 0; i < 2; i++) {
+            drawCurvatureMap(makeConvexConnection.begin(),
+                             makeConvexConnection.end(),
+                             cmin,
+                             cmax,
+                             board,
+                             weightMap
+            );
 
-        drawCurvatureMap(intCurve.begin(),
-                         intCurve.end(),
-                         cmin,
-                         cmax,
-                         board,
-                         weightMap
-        );
+            drawCurvatureMap(intCurve.begin(),
+                             intCurve.end(),
+                             cmin,
+                             cmax,
+                             board,
+                             weightMap
+            );
 
-        drawCurvatureMap(extCurve.begin(),
-                         extCurve.end(),
-                         cmin,
-                         cmax,
-                         board,
-                         weightMap
-        );
+            drawCurvatureMap(extCurve.begin(),
+                             extCurve.end(),
+                             cmin,
+                             cmax,
+                             board,
+                             weightMap
+            );
 
+        }
     }
 
     std::string makeConvexConnsOutputFilePath = outputFolder +
@@ -457,16 +484,16 @@ int main(){
 
     unsigned int gluedCurveLength = 10;
 
-    std::string imgPath = "../images/flow-evolution/problematic_1.pgm";
+    std::string imgPath = "../images/flow-evolution/problematic_8.pgm";
     SegCut::Image2D image = GenericReader<SegCut::Image2D>::import(imgPath);
 
-    std::string outImageFolder = "issueout/problematic_1";
+    std::string outImageFolder = "issueout/problematic_8";
     std::string cutOutputPath;
     std::string imageOutputPath;
 
 
     KSpace KImage;
-    setKImage("../images/flow-evolution/problematic_1.pgm",KImage);
+    setKImage("../images/flow-evolution/problematic_8.pgm",KImage);
 
     Board2D board;
     Artist EA(KImage,board);

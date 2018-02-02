@@ -180,7 +180,7 @@ void resize(ImageProcTypes::Image2D &input,ImageProcTypes::Image2D &out)
     cv::Mat cvInput(r,c,CV_8UC1);
     cv::Mat cvOut(r,c,CV_8UC1);
     fromImage2DToMat(input,cvInput);
-    cv::resize(cvInput,cvOut,cv::Size(0,0),0.5,0.5,cv::INTER_NEAREST);
+    cv::resize(cvInput,cvOut,cv::Size(0,0),0.5,0.5,cv::INTER_LINEAR);
     fromMatToImage2D(cvOut,out,(int) r/4.0);
 }
 

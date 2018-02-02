@@ -102,8 +102,15 @@ void setGluedCurveWeight(GluedCurveSetRange gcRange,
     {
         int i = 0;
         for (GluedCurveIteratorPair it = gcRange.begin(); it != gcRange.end(); ++it) {
-            weightMap[it->first.linkSurfel()] = estimationsCurvature[i];
-            ++i;
+
+            auto itC = it->first.connectorsBegin();
+            do{
+                weightMap[*itC] = estimationsCurvature[i];
+                ++i;
+                if(itC==it->first.connectorsEnd()) break;
+                ++itC;
+            }while(true);
+
         }
     }
 
@@ -115,25 +122,39 @@ void setGluedCurveWeight(GluedCurveSetRange gcRange,
     {
         GluedCurveIteratorPair it = gcRange.begin();
         int i = 0;
-        do {
-            KSpace::SCell linel = it->first.linkSurfel();
+        for (GluedCurveIteratorPair it = gcRange.begin(); it != gcRange.end(); ++it) {
 
-            UtilsTypes::KSpace::Point pTarget = KImage.sCoords(KImage.sDirectIncident(linel, *KImage.sDirs(linel)));
-            UtilsTypes::KSpace::Point pSource = KImage.sCoords(KImage.sIndirectIncident(linel, *KImage.sDirs(linel)));
+            auto itC = it->first.connectorsBegin();
+            do {
 
-            UtilsTypes::KSpace::Point scellVector = pTarget - pSource;
+                KSpace::SCell linel = *itC;
 
-            tangentWeightVector.push_back(fabs(estimationsTangent[i].dot(scellVector)));
-            ++it;
-            ++i;
-        } while (it != gcRange.end());
+                UtilsTypes::KSpace::Point pTarget = KImage.sCoords(KImage.sDirectIncident(linel, *KImage.sDirs(linel)));
+                UtilsTypes::KSpace::Point pSource = KImage.sCoords(KImage.sIndirectIncident(linel, *KImage.sDirs(linel)));
+
+                UtilsTypes::KSpace::Point scellVector = pTarget - pSource;
+
+                tangentWeightVector.push_back(fabs(estimationsTangent[i].dot(scellVector)));
+
+                ++i;
+                if(itC==it->first.connectorsEnd()) break;
+                ++itC;
+            }while(true);
+
+        }
+
     }
 
     {
         int i = 0;
         for (GluedCurveIteratorPair it = gcRange.begin(); it != gcRange.end(); ++it) {
-            weightMap[it->first.linkSurfel()]*= tangentWeightVector[i];
-            ++i;
+            auto itC = it->first.connectorsBegin();
+            do {
+                weightMap[*itC]*= tangentWeightVector[i];
+                ++i;
+                if(itC==it->first.connectorsEnd()) break;
+                ++itC;
+            }while(true);
         }
     }
 
@@ -166,6 +187,7 @@ void prepareFlowGraph(SegCut::Image2D& mask,
     }
 
 
+
     Board2D board;
     board << extCurvePriorGS;
     board.saveEPS("int.eps");
@@ -178,6 +200,17 @@ void prepareFlowGraph(SegCut::Image2D& mask,
                        KImage,
                        weightMap);
 
+    double s = 0;
+    for(auto it=extCurvePriorGS.begin();it!=extCurvePriorGS.end();++it){
+        s+=weightMap[*it];
+    }
+    std::cout << "External Cut::" << s << std::endl;
+
+    s=0;
+    for(auto it=intCurvePriorGS.begin();it!=intCurvePriorGS.end();++it){
+        s+=weightMap[*it];
+    }
+    std::cout << "Internal Cut::" << s << std::endl;
 
     ConnectorSeedRangeType seedRange = getSeedRange(KImage,intCurvePriorGS,extCurvePriorGS);
     SeedToGluedCurveRangeFunctor stgcF(gluedCurveLength);
@@ -204,6 +237,8 @@ double drawCutUpdateImage(FlowGraphBuilder* fgb,
 {
     fgb->operator()(weightMap);
     fgb->draw();
+
+
 
     Preflow<ListDigraph,ListDigraph::ArcMap<double> > flow = fgb->preparePreFlow();
 
@@ -234,6 +269,10 @@ double drawCutUpdateImage(FlowGraphBuilder* fgb,
 
     graphToEps(**sg,cutOutputPath.c_str())
         .coords(fgb->coordsMap())
+        .nodeScale(.0005)
+        .arcWidthScale(0.0005)
+        .drawArrows()
+        .arrowWidth(0.25)
         .run();
 
 
@@ -281,39 +320,53 @@ double drawCutUpdateImage(FlowGraphBuilder* fgb,
 void drawCurvatureMaps(Image2D& image,
                        std::map<Z2i::SCell,double>& weightMap,
                        std::string outputFolder,
-                       int iteration)
-{
+                       int iteration) {
     Board2D board;
-    Curve intCurve,extCurve;
+    Curve intCurve, extCurve;
     KSpace KImage;
 
     SegCut::Image2D dilatedImage(image.domain());
 
-    dilate(dilatedImage,image,1);
-    computeBoundaryCurve(intCurve,KImage,image,100);
-    computeBoundaryCurve(extCurve,KImage,dilatedImage);
+    dilate(dilatedImage, image, 1);
+    computeBoundaryCurve(intCurve, KImage, image, 100);
+    computeBoundaryCurve(extCurve, KImage, dilatedImage);
 
     std::vector<Z2i::SCell> intConnection;
     std::vector<Z2i::SCell> extConnection;
+    std::vector<Z2i::SCell> makeConvexConnection;
 
 
-    ConnectorSeedRangeType seedRange = getSeedRange(KImage,intCurve,extCurve);
+    ConnectorSeedRangeType seedRange = getSeedRange(KImage, intCurve, extCurve);
     SeedToGluedCurveRangeFunctor stgcF(10);
-    GluedCurveSetRange gcsRange( seedRange.begin(),
-                                 seedRange.end(),
-                                 stgcF);
+    GluedCurveSetRange gcsRange(seedRange.begin(),
+                                seedRange.end(),
+                                stgcF);
 
-    for(GluedCurveIteratorPair it=gcsRange.begin();it!=gcsRange.end();++it){
-        if( it->first.connectorType()==ConnectorType::internToExtern ){
-            intConnection.push_back(it->first.linkSurfel());
-        }else{
-            extConnection.push_back(it->first.linkSurfel());
+    for (GluedCurveIteratorPair it = gcsRange.begin(); it != gcsRange.end(); ++it) {
+        ConnectorType ct = it->first.connectorType();
+
+        switch (ct) {
+
+            case internToExtern:
+                intConnection.push_back(it->first.linkSurfel());
+                break;
+            case externToIntern:
+                extConnection.push_back(it->first.linkSurfel());
+                break;
+            case makeConvex:
+                auto itC = it->first.connectorsBegin();
+                do{
+                    makeConvexConnection.push_back(*itC);
+                    if(itC==it->first.connectorsEnd()) break;
+                    ++itC;
+                }while(true);
         }
+
     }
 
-    double cmin=100;
-    double cmax=-100;
-    for(int i=0;i<2;i++) {
+    double cmin = 100;
+    double cmax = -100;
+    for (int i = 0; i < 2; i++) {
         drawCurvatureMap(intCurve.begin(),
                          intCurve.end(),
                          cmin,
@@ -340,14 +393,14 @@ void drawCurvatureMaps(Image2D& image,
     }
 
     std::string intConnsOutputFilePath = outputFolder +
-                "/intconnCurvatureMap" + std::to_string(iteration) + ".eps";
+                                         "/intconnCurvatureMap" + std::to_string(iteration) + ".eps";
     board.save(intConnsOutputFilePath.c_str());
 
     board.clear();
 
-    cmin=100;
-    cmax=-100;
-    for(int i=0;i<2;i++) {
+    cmin = 100;
+    cmax = -100;
+    for (int i = 0; i < 2; i++) {
         drawCurvatureMap(intCurve.begin(),
                          intCurve.end(),
                          cmin,
@@ -374,9 +427,76 @@ void drawCurvatureMaps(Image2D& image,
     }
 
     std::string extConnsOutputFilePath = outputFolder +
-            "/extconnCurvatureMap" + std::to_string(iteration) + ".eps";
+                                         "/extconnCurvatureMap" + std::to_string(iteration) + ".eps";
 
     board.save(extConnsOutputFilePath.c_str());
+
+
+    board.clear();
+
+    cmin = 100;
+    cmax = -100;
+    for (int i = 0; i < 2; i++) {
+        drawCurvatureMap(intCurve.begin(),
+                         intCurve.end(),
+                         cmin,
+                         cmax,
+                         board,
+                         weightMap
+        );
+
+        drawCurvatureMap(extCurve.begin(),
+                         extCurve.end(),
+                         cmin,
+                         cmax,
+                         board,
+                         weightMap
+        );
+    }
+
+    std::string noConnsOutputFilePath = outputFolder +
+                                         "/noConnCurvatureMap" + std::to_string(iteration) + ".eps";
+
+    board.save(noConnsOutputFilePath.c_str());
+
+
+    board.clear();
+
+    cmin = 100;
+    cmax = -100;
+    if (makeConvexConnection.size() > 0){
+        for (int i = 0; i < 2; i++) {
+            drawCurvatureMap(makeConvexConnection.begin(),
+                             makeConvexConnection.end(),
+                             cmin,
+                             cmax,
+                             board,
+                             weightMap
+            );
+
+            drawCurvatureMap(intCurve.begin(),
+                             intCurve.end(),
+                             cmin,
+                             cmax,
+                             board,
+                             weightMap
+            );
+
+            drawCurvatureMap(extCurve.begin(),
+                             extCurve.end(),
+                             cmin,
+                             cmax,
+                             board,
+                             weightMap
+            );
+
+        }
+    }
+
+    std::string makeConvexConnsOutputFilePath = outputFolder +
+                                                "/makeConvexConnCurvatureMap" + std::to_string(iteration) + ".eps";
+
+    board.save(makeConvexConnsOutputFilePath.c_str());
 }
 
 
@@ -396,15 +516,15 @@ int main(){
 
     unsigned int gluedCurveLength = 5;
 
-    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_square.pgm");
+    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/out54.pgm");
 
-    std::string outImageFolder = "output/images/flow-evolution/square";
+    std::string outImageFolder = "output/images/flow-evolution/problematic_8";
     std::string cutOutputPath;
     std::string imageOutputPath;
 
     FlowGraphBuilder* fgb;
     MySubGraph* sg;
-    for(int i=0;i<200;++i)
+    for(int i=54;i<55;++i)
     {
         std::map<Z2i::SCell,double> weightMap;
         prepareFlowGraph(image,
@@ -437,11 +557,11 @@ int main(){
         );
 
 
-        if(i%40==39){
-            Image2D rImage(image.domain());
-            resize(image,rImage);
-            image = rImage;
-        }
+//        if(i%30==29){
+//            Image2D rImage(image.domain());
+//            resize(image,rImage);
+//            image = rImage;
+//        }
 
 
 
