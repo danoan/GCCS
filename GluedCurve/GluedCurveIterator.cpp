@@ -62,7 +62,8 @@ GluedCurveIterator<CurveCirculator,LinkIteratorType>::GluedCurveIterator(const G
             cType(other.cType),
             myFlagIsValid(other.myFlagIsValid),
             iteratorStage(other.iteratorStage),
-            currentIterator(other.currentIterator)
+            currentIterator(other.currentIterator),
+            numConnectors(other.numConnectors)
 {
     element = new Z2i::SCell();
 }
@@ -82,6 +83,8 @@ GluedCurveIterator<CurveCirculator,LinkIteratorType>& GluedCurveIterator<CurveCi
     myFlagIsValid = other.myFlagIsValid;
     iteratorStage = other.iteratorStage;
     currentIterator = other.currentIterator;
+
+    numConnectors = other.numConnectors;
 
     element = new Z2i::SCell();
 
