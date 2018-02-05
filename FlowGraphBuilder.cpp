@@ -4,8 +4,9 @@ namespace Stats{
     int gluedEdges;
     int sourceEdges;
     int targetEdges;
-    int externalEdges;
-    int internalEdges;
+    int erodedEdges;
+    int originalEdges;
+    int dilatedEdges;
 
     int makeConvexEdges;
     int escapeEdges;
@@ -35,11 +36,11 @@ void FlowGraphBuilder::randomizeCurve(std::vector<Z2i::SCell>::const_iterator cB
     }while(it!=C);
 }
 
-Stats::MySubGraph FlowGraphBuilder::externalCurveSubgraph(ListDigraph::NodeMap<bool>& node_filter,
-                                                          ListDigraph::ArcMap<bool>& arc_filter )
+Stats::MySubGraph FlowGraphBuilder::curveSubgraph(Curve& curve,
+                                                  ListDigraph::NodeMap<bool>& node_filter,
+                                                  ListDigraph::ArcMap<bool>& arc_filter )
 {
-    node_filter[targetNode] = true;
-    for(auto it=extCurve.begin();it!=extCurve.end();++it){
+    for(auto it=curve.begin();it!=curve.end();++it){
         KSpace::SCell pxDir = KImage.sDirectIncident(*it,KImage.sOrthDir(*it));
         KSpace::SCell pxInd = KImage.sIndirectIncident(*it,KImage.sOrthDir(*it));
 
@@ -54,44 +55,6 @@ Stats::MySubGraph FlowGraphBuilder::externalCurveSubgraph(ListDigraph::NodeMap<b
     return msg;
 }
 
-
-
-Stats::MySubGraph FlowGraphBuilder::particularCurveSubgraph(ListDigraph::NodeMap<bool>& node_filter,
-                                                          ListDigraph::ArcMap<bool>& arc_filter )
-{
-    node_filter[targetNode] = true;
-    for(auto it=extCurve.begin();it!=extCurve.end();++it){
-        KSpace::SCell pxDir = KImage.sDirectIncident(*it,KImage.sOrthDir(*it));
-        KSpace::SCell pxInd = KImage.sIndirectIncident(*it,KImage.sOrthDir(*it));
-
-        if(pxDir.preCell().coordinates[1]<200) continue;
-        if(pxDir.preCell().coordinates[0]>150) continue;
-
-        ListDigraph::Node n1 = coordToNode[pxDir.preCell().coordinates];
-        ListDigraph::Node n2 = coordToNode[pxInd.preCell().coordinates];
-
-        node_filter[n1] = true;
-        node_filter[n2] = true;
-    }
-
-    Stats::MySubGraph msg(fg,node_filter,arc_filter);
-    return msg;
-}
-
-Stats::MySubGraph FlowGraphBuilder::internalCurveSubgraph(ListDigraph::NodeMap<bool>& node_filter,
-                                                          ListDigraph::ArcMap<bool>& arc_filter )
-{
-    node_filter[sourceNode] = true;
-    for(auto it=intCurve.begin();it!=intCurve.end();++it){
-        KSpace::SCell px = KImage.sDirectIncident(*it,KImage.sOrthDir(*it));
-        ListDigraph::Node n = coordToNode[px.preCell().coordinates];
-        node_filter[n] = true;
-    }
-
-
-    Stats::MySubGraph msg(fg,node_filter,arc_filter);
-    return msg;
-}
 
 
 void FlowGraphBuilder::draw()
@@ -107,7 +70,10 @@ void FlowGraphBuilder::draw()
     ListDigraph::NodeMap<bool> isg_node_filter(fg,false);
     ListDigraph::ArcMap<bool> isg_arc_filter(fg,true);
 
-    Stats::MySubGraph isg = internalCurveSubgraph(isg_node_filter,isg_arc_filter);
+    Curve& firstCurve = curvesVector[0];
+    isg_node_filter[sourceNode]=true;
+    isg_node_filter[targetNode]=false;
+    Stats::MySubGraph isg = curveSubgraph(firstCurve,isg_node_filter,isg_arc_filter);
 
     graphToEps(isg,"internalGraph.eps")
             .nodeScale(.0005)
@@ -120,24 +86,12 @@ void FlowGraphBuilder::draw()
     ListDigraph::NodeMap<bool> esg_node_filter(fg,false);
     ListDigraph::ArcMap<bool> esg_arc_filter(fg,true);
 
-    Stats::MySubGraph esg = externalCurveSubgraph(esg_node_filter,esg_arc_filter);
+    Curve& lastCurve = curvesVector[curvesVector.size()-1];
+    esg_node_filter[sourceNode]=false;
+    esg_node_filter[targetNode]=true;
+    Stats::MySubGraph esg = curveSubgraph(lastCurve,esg_node_filter,esg_arc_filter);
 
     graphToEps(esg,"externalGraph.eps")
-            .nodeScale(.0005)
-            .arcWidthScale(0.001)
-            .drawArrows()
-            .arrowWidth(0.1)
-            .coords(coords)
-            .run();
-
-
-
-    ListDigraph::NodeMap<bool> psg_node_filter(fg,false);
-    ListDigraph::ArcMap<bool> psg_arc_filter(fg,true);
-
-    Stats::MySubGraph psg = particularCurveSubgraph(psg_node_filter,psg_arc_filter);
-
-    graphToEps(psg,"particularGraph.eps")
             .nodeScale(.0005)
             .arcWidthScale(0.001)
             .drawArrows()
@@ -148,8 +102,9 @@ void FlowGraphBuilder::draw()
 
 void FlowGraphBuilder::operator()(std::map<Z2i::SCell,double>& weightMap)
 {
-    Stats::internalEdges=0;
-    Stats::externalEdges=0;
+    Stats::erodedEdges=0;
+    Stats::originalEdges=0;
+    Stats::dilatedEdges=0;
     Stats::gluedEdges=0;
 
     Stats::escapeEdges=0;
@@ -160,39 +115,60 @@ void FlowGraphBuilder::operator()(std::map<Z2i::SCell,double>& weightMap)
 
     Stats::extMakeConvexCut=0;
 
-
-
-    createGridCurveEdges(intCurve.begin(),intCurve.end(),weightMap);
-    Stats::internalEdges = Stats::externalEdges;
-
-    Stats::externalEdges = 0;
-    createGridCurveEdges(extCurve.begin(),extCurve.end(),weightMap);
-
-
-    SegCut::ConnectorSeedRangeType seedRange = getSeedRange(KImage,intCurve,extCurve);
-    SegCut::SeedToGluedCurveRangeFunctor stgcF(gluedCurveLength);
-    SegCut::GluedCurveSetRange gcsRange( seedRange.begin(),
-                                 seedRange.end(),
-                                 stgcF);
+//    Stats::erodedEdges = createGridCurveEdges(curvesVector[0].begin(),curvesVector[0].end(),weightMap);
+    Stats::originalEdges = createGridCurveEdges(curvesVector[0].begin(),curvesVector[0].end(),weightMap);
+    Stats::dilatedEdges = createGridCurveEdges(curvesVector[1].begin(),curvesVector[1].end(),weightMap);
 
 
     UnsignedSCellComparison myComp;
     std::set<KSpace::SCell,UnsignedSCellComparison> visitedNodes(myComp);
+    SegCut::SeedToGluedCurveRangeFunctor stgcF(gluedCurveLength);
 
-    createGluedCurveEdges(gcsRange.begin(),gcsRange.end(),weightMap,visitedNodes);
-    createEscapeEdges(visitedNodes);
+    for(auto itP=curvesPairs.begin();itP!=curvesPairs.end();++itP){
+        Curve& fromCurve = curvesVector[itP->first];
+        Curve& toCurve = curvesVector[itP->second];
 
-    createSourceEdges(visitedNodes);
-    createTargetEdgesFromGluedSegments(gcsRange.begin(),gcsRange.end(),weightMap);
-    createTargetEdgesFromExteriorCurve(visitedNodes,weightMap);
+        SegCut::ConnectorSeedRangeType seedRange = getSeedRange(KImage,fromCurve,toCurve);
+        SegCut::GluedCurveSetRange gcsRange( seedRange.begin(),
+                                             seedRange.end(),
+                                             stgcF);
+
+        createGluedCurveEdges(gcsRange.begin(),
+                              gcsRange.end(),
+                              weightMap,
+                              visitedNodes);
+
+        Stats::escapeEdges += createEscapeEdges(visitedNodes,
+                                                fromCurve,
+                                                toCurve);
+    }
+
+    Curve& firstCurve = curvesVector[0];
+    Curve& beforeLastCurve = curvesVector[curvesVector.size()-2];
+    Curve& lastCurve = curvesVector[curvesVector.size()-1];
+
+    Stats::sourceEdges = createSourceEdges(firstCurve,visitedNodes);
 
 
-    std::cout << "External Curve Size::" << extCurve.size() << std::endl;
-    std::cout << "External Edges::" << Stats::externalEdges << std::endl;
+
+    SegCut::ConnectorSeedRangeType seedRange = getSeedRange(KImage,beforeLastCurve,lastCurve);
+    SegCut::GluedCurveSetRange gcsRange( seedRange.begin(),
+                                         seedRange.end(),
+                                         stgcF);
+
+    Stats::targetEdges += createTargetEdgesFromGluedSegments(visitedNodes,gcsRange.begin(),gcsRange.end(),weightMap);
+    Stats::targetEdges += createTargetEdgesFromExteriorCurve(lastCurve,visitedNodes,weightMap);
 
 
-    std::cout << "Internal Curve Size::" << intCurve.size() << std::endl;
-    std::cout << "Internal Edges::" << Stats::internalEdges << std::endl;
+
+    for(auto it=curvesVector.begin();it!=curvesVector.end();++it){
+        std::cout << "Curve size::" << it->size() << std::endl;
+    }
+
+    std::cout << "Eroded Edges::" << Stats::erodedEdges << std::endl;
+    std::cout << "Original Edges::" << Stats::originalEdges << std::endl;
+    std::cout << "Dilated Edges::" << Stats::dilatedEdges << std::endl;
+
 
 
     std::cout << "Glued Edges::" << Stats::gluedEdges << std::endl;
@@ -216,12 +192,14 @@ void FlowGraphBuilder::operator()(std::map<Z2i::SCell,double>& weightMap)
     
 }
 
-void FlowGraphBuilder::createSourceEdges(std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes)
+int FlowGraphBuilder::createSourceEdges(Curve& erodedCurve,
+                                        std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes)
 {
     typedef Curve::InnerPointsRange::ConstIterator IteratorType;
 
+    int c =0;
     KSpace::SCell pixelModel = KImage.sCell( KSpace::Point(1,1),KSpace::POS);
-    for(IteratorType it=intCurve.getInnerPointsRange().begin();it!=intCurve.getInnerPointsRange().end();++it)
+    for(IteratorType it=erodedCurve.getInnerPointsRange().begin();it!=erodedCurve.getInnerPointsRange().end();++it)
     {
         KSpace::SCell directIncidentPixel = KImage.sCell(*it,pixelModel);
 
@@ -233,11 +211,14 @@ void FlowGraphBuilder::createSourceEdges(std::set<KSpace::SCell,UnsignedSCellCom
 
         edgeWeight[a] = 10;
 
-        Stats::sourceEdges++;
+        ++c;
     }
+
+    return c;
 }
 
-bool FlowGraphBuilder::createTargetEdgesFromGluedSegments(SegCut::GluedCurveIteratorPair gluedRangeBegin,
+int FlowGraphBuilder::createTargetEdgesFromGluedSegments(std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes,
+                                                         SegCut::GluedCurveIteratorPair gluedRangeBegin,
                                                           SegCut::GluedCurveIteratorPair gluedRangeEnd,
                                                           std::map<Z2i::SCell,double>& weightMap)
 {
@@ -246,7 +227,7 @@ bool FlowGraphBuilder::createTargetEdgesFromGluedSegments(SegCut::GluedCurveIter
     typedef SegCut::SCellGluedCurveIterator::CurveCirculator CurveCirculator;
 
 
-
+    int c=0;
     CurveCirculator start,end;
     std::queue<LinkIteratorType> connectorsInterval;
 
@@ -257,15 +238,18 @@ bool FlowGraphBuilder::createTargetEdgesFromGluedSegments(SegCut::GluedCurveIter
     }
 
     if(!connectorsInterval.empty()){
-        createFromIteratorsQueue(connectorsInterval,weightMap);
-        return true;
+        createFromIteratorsQueue(visitedNodes,connectorsInterval,weightMap);
     }
+
+    return c;
 
 }
 
-void FlowGraphBuilder::createTargetEdgesFromExteriorCurve(std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes,
-                                                          std::map<Z2i::SCell,double>& weightMap)
+int FlowGraphBuilder::createTargetEdgesFromExteriorCurve(Curve& extCurve,
+                                                         std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes,
+                                                         std::map<Z2i::SCell,double>& weightMap)
 {
+    int c =0;
     for(auto itC = extCurve.begin();itC!=extCurve.end();itC++){
         KSpace::SCell indirectIncidentPixel = KImage.sIndirectIncident(*itC,KImage.sOrthDir(*itC));
         if(visitedNodes.find(indirectIncidentPixel)!=visitedNodes.end()) continue;
@@ -273,12 +257,13 @@ void FlowGraphBuilder::createTargetEdgesFromExteriorCurve(std::set<KSpace::SCell
         visitedNodes.insert(indirectIncidentPixel);
 
         Stats::extMakeConvexCut += weightMap[*itC];
-        Stats::targetEdges++;
+        ++c;
 
         ListDigraph::Arc a;
         connectPixelToNode(indirectIncidentPixel,targetNode,a);
         edgeWeight[a] = 10;
     }
+    return c;
 
 }
 
@@ -350,10 +335,11 @@ void FlowGraphBuilder::createEdgeFromLinel(Curve::SCell& linel,
     edgeWeight[a] = wFactor*weightMap[linel];
 }
 
-void FlowGraphBuilder::createGridCurveEdges(Curve::ConstIterator curveBegin,
+int FlowGraphBuilder::createGridCurveEdges(Curve::ConstIterator curveBegin,
                                             Curve::ConstIterator curveEnd,
                                             std::map<Z2i::SCell,double>& weightMap)
 {
+    int c =0;
     for(auto it=curveBegin;it!=curveEnd;++it){
         Curve::SCell linel = *it;
 
@@ -361,8 +347,10 @@ void FlowGraphBuilder::createGridCurveEdges(Curve::ConstIterator curveBegin,
                             KImage,
                             weightMap);
 
-        Stats::externalEdges++;
+        ++c;
     }
+
+    return c;
 }
 
 void FlowGraphBuilder::createGluedCurveEdges(SegCut::GluedCurveIteratorPair gluedRangeBegin,
@@ -396,12 +384,16 @@ void FlowGraphBuilder::createGluedCurveEdges(SegCut::GluedCurveIteratorPair glue
 
 }
 
-void FlowGraphBuilder::createEscapeEdges(std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes) {
+int FlowGraphBuilder::createEscapeEdges(std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes,
+                                         Curve& fromCurve,
+                                         Curve& toCurve)
+{
 
     UnsignedSCellComparison myComp;
     std::set<KSpace::SCell,UnsignedSCellComparison> forbiddenPoints(myComp);
-    for(auto it=intCurve.begin();it!=intCurve.end();++it)
-    {
+
+    int c =0;
+    for(auto it=fromCurve.begin();it!=fromCurve.end();++it){
         Dimension orthDir = KImage.sOrthDir(*it);
         KSpace::SCell innerPixel = KImage.sDirectIncident(*it,orthDir);
 
@@ -411,7 +403,7 @@ void FlowGraphBuilder::createEscapeEdges(std::set<KSpace::SCell,UnsignedSCellCom
     }
 
 
-    for(auto it=extCurve.begin();it!=extCurve.end();++it)
+    for(auto it=toCurve.begin();it!=toCurve.end();++it)
     {
         Dimension orthDir = KImage.sOrthDir(*it);
         KSpace::SCell innerPixel = KImage.sDirectIncident(*it,orthDir);
@@ -421,7 +413,7 @@ void FlowGraphBuilder::createEscapeEdges(std::set<KSpace::SCell,UnsignedSCellCom
     }
 
 
-    for(Curve::ConstIterator it = intCurve.begin();it!=intCurve.end();++it){
+    for(Curve::ConstIterator it = fromCurve.begin();it!=fromCurve.end();++it){
         Dimension orthDir = KImage.sOrthDir(*it);
         KSpace::SCell candidate = KImage.sIndirectIncident(*it,orthDir); //OutterPixel
 
@@ -430,17 +422,20 @@ void FlowGraphBuilder::createEscapeEdges(std::set<KSpace::SCell,UnsignedSCellCom
         ListDigraph::Arc in,out;
         KSpace::SCell innerPixel = KImage.sDirectIncident(*it,orthDir);
 
-        explore(candidate,forbiddenPoints,visitedNodes);
+        c+=explore(candidate,forbiddenPoints,visitedNodes);
     }
+
+    return c;
 
 }
 
 
-void FlowGraphBuilder::explore(KSpace::SCell candidate,
+int FlowGraphBuilder::explore(KSpace::SCell candidate,
                                std::set<KSpace::SCell,UnsignedSCellComparison>& borderPoints,
                                std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes)
 {
-    if(visitedNodes.find(candidate)!=visitedNodes.end()) return;
+    int c = 0;
+    if(visitedNodes.find(candidate)!=visitedNodes.end()) return c;
 
     visitedNodes.insert(candidate);
     SCells N = KImage.sProperNeighborhood(candidate);
@@ -456,13 +451,13 @@ void FlowGraphBuilder::explore(KSpace::SCell candidate,
                 edgeWeight[a1]=10;
                 edgeWeight[a2]=10;
 
-                Stats::escapeEdges+=2;
+                c+=2;
             }
 
             continue;
         }
 
-        explore(*n,borderPoints,visitedNodes);
+        c += explore(*n,borderPoints,visitedNodes);
 
         ListDigraph::Arc a1,a2;
         createEdgeFromPixels(candidate,*n,a1);
@@ -471,6 +466,8 @@ void FlowGraphBuilder::explore(KSpace::SCell candidate,
         edgeWeight[a1]=10;
         edgeWeight[a2]=10;
 
-        Stats::escapeEdges+=2;
+        c+=2;
     }
+
+    return c;
 }

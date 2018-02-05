@@ -42,13 +42,11 @@ class FlowGraphBuilder{
 public:
     typedef dim2::Point<int> LemonPoint;
 
-    FlowGraphBuilder( Curve intCurve,
-                      Curve extCurve,
+    FlowGraphBuilder( std::vector< Curve > curvesVector,
                       KSpace KImage,
                       unsigned int gluedCurveLength,
                       double fidelityWeight=0.0,
-                      double curvatureWeight=1.0):intCurve(intCurve),
-                                                  extCurve(extCurve),
+                      double curvatureWeight=1.0):curvesVector(curvesVector),
                                                   gluedCurveLength(gluedCurveLength),
                                                   KImage(KImage),
                                                   fFactor(fidelityWeight),wFactor(curvatureWeight),
@@ -62,17 +60,16 @@ public:
 
     };
 
+    void addPair(int i1,int i2){ curvesPairs.push_back( std::pair<int,int>(i1,i2) ); }
+
     void operator()(std::map<Z2i::SCell,double>& weightMap);
     
     void draw();
 
-    Stats::MySubGraph externalCurveSubgraph(ListDigraph::NodeMap<bool>& node_filter,
-                                            ListDigraph::ArcMap<bool>& arc_filter );
-    Stats::MySubGraph internalCurveSubgraph(ListDigraph::NodeMap<bool>& node_filter,
-                                            ListDigraph::ArcMap<bool>& arc_filter);
+    Stats::MySubGraph curveSubgraph(Curve& curve,
+                                    ListDigraph::NodeMap<bool>& node_filter,
+                                    ListDigraph::ArcMap<bool>& arc_filter );
 
-    Stats::MySubGraph particularCurveSubgraph(ListDigraph::NodeMap<bool>& node_filter,
-                                              ListDigraph::ArcMap<bool>& arc_filter );
     
     ListDigraph& graph(){return fg;};
     ListDigraph::Node& source(){return sourceNode;}
@@ -97,7 +94,7 @@ private:
                              KSpace& KImage,
                              std::map<Z2i::SCell,double>& weightMap);
 
-    void createGridCurveEdges(Curve::ConstIterator curveBegin,
+    int createGridCurveEdges(Curve::ConstIterator curveBegin,
                               Curve::ConstIterator curveEnd,
                               std::map<Z2i::SCell,double>& weightMap);
 
@@ -106,10 +103,13 @@ private:
                                std::map<Z2i::SCell,double>& weightMap,
                                std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes);
 
-    void createEscapeEdges(std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes);
+    int createEscapeEdges(std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes,
+                          Curve& fromCurve,
+                          Curve& toCurve);
 
 
-    void createSourceEdges(std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes);
+    int createSourceEdges(Curve& erodedCurve,
+                          std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes);
 
     void connectNodeToPixel(ListDigraph::Node& sourceNode,
                             KSpace::SCell pTarget,
@@ -126,22 +126,27 @@ private:
                               KSpace::SCell pTarget,
                               ListDigraph::Arc& a);
 
-    void explore(KSpace::SCell candidate,
+    int explore(KSpace::SCell candidate,
                  std::set<KSpace::SCell,UnsignedSCellComparison>& borderPoints,
                  std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes);
 
 
-    bool createTargetEdgesFromGluedSegments(SegCut::GluedCurveIteratorPair gluedRangeBegin,
-                                            SegCut::GluedCurveIteratorPair gluedRangeEnd,
-                                            std::map<Z2i::SCell,double>& weightMap);
+    int createTargetEdgesFromGluedSegments(std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes,
+                                           SegCut::GluedCurveIteratorPair gluedRangeBegin,
+                                           SegCut::GluedCurveIteratorPair gluedRangeEnd,
+                                           std::map<Z2i::SCell,double>& weightMap);
 
-    void createTargetEdgesFromExteriorCurve(std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes,
-                                            std::map<Z2i::SCell,double>& weightMap);
+    int createTargetEdgesFromExteriorCurve(Curve& extCurve,
+                                           std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes,
+                                           std::map<Z2i::SCell,double>& weightMap);
 
     template<typename TType>
-    void createFromIteratorsQueue(std::queue<TType> intervals,std::map<Z2i::SCell,double>& weightMap)
+    int createFromIteratorsQueue(std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes,
+                                 std::queue<TType> intervals,std::map<Z2i::SCell,
+                                 double>& weightMap)
     {
 
+        int c=0;
         TType start,end;
         KSpace::SCell pixelModel = KImage.sCell( KSpace::Point(1,1),KSpace::POS);
         while(!intervals.empty()){
@@ -153,19 +158,24 @@ private:
             TType itC = start;
             do{
                 Stats::extMakeConvexCut+= weightMap[*itC];
-
                 KSpace::SCell indirectIncidentPixel = KImage.sIndirectIncident(*itC,KImage.sOrthDir(*itC));
+                KSpace::SCell directIncidentPixel = KImage.sDirectIncident(*itC,KImage.sOrthDir(*itC));
+
+                visitedNodes.insert(directIncidentPixel);
+
                 ListDigraph::Arc a;
                 connectPixelToNode(indirectIncidentPixel,targetNode,a);
                 edgeWeight[a] = 10;
 
-                Stats::targetEdges++;
+                ++c;
 
                 if(itC==end) break;
                 ++itC;
             }while(true);
 
         }
+
+        return c;
 
     }
 
@@ -178,13 +188,13 @@ private:
 
     KSpace KImage;
 
-    Curve intCurve;
-    Curve extCurve;
-
     double fFactor;
     double wFactor;
 
     ListDigraph fg;
+
+    std::vector<Curve> curvesVector;
+    std::vector< std::pair<int,int> > curvesPairs;
 
     std::map<KSpace::Point,ListDigraph::Node> coordToNode;
     ListDigraph::ArcMap<double> edgeWeight;
