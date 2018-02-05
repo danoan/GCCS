@@ -194,6 +194,7 @@ void setGluedCurveWeight(GluedCurveSetRange gcRange,
 
 void prepareFlowGraph(SegCut::Image2D& mask,
                       unsigned int gluedCurveLength,
+                      FlowGraphBuilder** fgb,
                       std::map<Z2i::SCell,double>& weightMap) //it should be an empty pointer
 {
     Curve intCurvePriorGS,extCurvePriorGS;
@@ -235,19 +236,14 @@ void prepareFlowGraph(SegCut::Image2D& mask,
 
 //    Issue::updateGluedWeightUsingFP(seedRange,KImage,weightMap);
 
-    
+
     std::vector< Curve > curvesVector = { intCurvePriorGS,extCurvePriorGS };
-    
-    FlowGraphBuilder fgb(curvesVector,
-                         KImage,
-                         gluedCurveLength);
-    
-    fgb.addPair(0,1);
 
-    fgb(weightMap);
-    fgb.draw();
+    *fgb = new FlowGraphBuilder(curvesVector,
+                                KImage,
+                                gluedCurveLength);
 
-
+    (*fgb)->addPair(0,1);
 }
 
 void drawCurvatureMaps(Image2D& image,
@@ -417,6 +413,58 @@ void drawCurvatureMaps(Image2D& image,
     board.save(makeConvexConnsOutputFilePath.c_str());
 }
 
+typedef SubDigraph< ListDigraph,ListDigraph::NodeMap<bool> > MySubGraph;
+double drawCutUpdateImage(FlowGraphBuilder* fgb,
+                          std::map<Z2i::SCell,double>& weightMap,
+                          MySubGraph** sg, //must be an empty pointer
+                          std::string& cutOutputPath,
+                          Image2D& out,
+                          std::string& imageOutputPath)
+{
+    fgb->operator()(weightMap);
+    fgb->draw();
+
+
+
+    Preflow<ListDigraph,ListDigraph::ArcMap<double> > flow = fgb->preparePreFlow();
+
+    flow.run();
+    double v = flow.flowValue();
+    std::cout << v << std::endl;
+
+    ListDigraph::NodeMap<bool> node_filter(fgb->graph(),false);
+    ListDigraph::ArcMap<bool> arc_filter(fgb->graph(),true);
+    for(ListDigraph::NodeIt n(fgb->graph());n!=INVALID;++n){
+        if( flow.minCut(n) ){
+            node_filter[n] = true;
+        }else{
+            node_filter[n] = false;
+        }
+    }
+    node_filter[fgb->source()]=false;
+
+
+    *sg = new MySubGraph(fgb->graph(),node_filter,arc_filter);
+
+    Palette palette;
+
+    boost::filesystem::path p1(cutOutputPath.c_str());
+    p1.remove_filename();
+    boost::filesystem::create_directories(p1);
+
+    graphToEps(**sg,cutOutputPath.c_str())
+            .coords(fgb->coordsMap())
+            .nodeScale(.0005)
+            .arcWidthScale(0.0005)
+            .drawArrows()
+            .arrowWidth(0.25)
+            .run();
+
+
+
+    return v;
+}
+
 void particularCurve()
 {
     Curve c;
@@ -481,18 +529,20 @@ int main(){
     Patch::solveShift = false;
     Patch::cross_element = false;
 
-    unsigned int gluedCurveLength = 10;
+    unsigned int gluedCurveLength = 7;
 
-    std::string imgPath = "../images/flow-evolution/out46.pgm";
+    std::string imgPath = "../images/flow-evolution/out6-edit.pgm";
     SegCut::Image2D image = GenericReader<SegCut::Image2D>::import(imgPath);
 
-    std::string outImageFolder = "issueout/out46";
-    std::string cutOutputPath;
-    std::string imageOutputPath;
+    std::string outImageFolder = "issueout/out6-edit";
+    std::string cutOutputPath = "issueout/out6-edit/cut.eps";
+    std::string imageOutputPath = "issueout/out6-edit/image.pgm";
 
+    FlowGraphBuilder* fgb;
+    MySubGraph* sg;
 
     KSpace KImage;
-    setKImage("../images/flow-evolution/out46.pgm",KImage);
+    setKImage("../images/flow-evolution/out6-edit.pgm",KImage);
 
     Board2D board;
     Artist EA(KImage,board);
@@ -513,10 +563,19 @@ int main(){
     std::map<Z2i::SCell,double> weightMap;
     prepareFlowGraph(image,
                      gluedCurveLength,
+                     &fgb,
                      weightMap);
 
     drawCurvatureMaps(image,weightMap,outImageFolder,1);
     particularCurve();
+
+    drawCutUpdateImage(fgb,
+                       weightMap,
+                       &sg,
+                       cutOutputPath,
+                       image,
+                       imageOutputPath
+    );
 
     return 0;
 }

@@ -100,7 +100,7 @@ void FlowGraphBuilder::draw()
             .run();
 }
 
-void FlowGraphBuilder::operator()(std::map<Z2i::SCell,double>& weightMap)
+void FlowGraphBuilder::operator()(std::map<Z2i::SCell,double>& weightMap, bool multiplePair)
 {
     Stats::erodedEdges=0;
     Stats::originalEdges=0;
@@ -115,9 +115,9 @@ void FlowGraphBuilder::operator()(std::map<Z2i::SCell,double>& weightMap)
 
     Stats::extMakeConvexCut=0;
 
-//    Stats::erodedEdges = createGridCurveEdges(curvesVector[0].begin(),curvesVector[0].end(),weightMap);
-    Stats::originalEdges = createGridCurveEdges(curvesVector[0].begin(),curvesVector[0].end(),weightMap);
-    Stats::dilatedEdges = createGridCurveEdges(curvesVector[1].begin(),curvesVector[1].end(),weightMap);
+    Stats::erodedEdges = createGridCurveEdges(curvesVector[0].begin(),curvesVector[0].end(),weightMap);
+    Stats::originalEdges = createGridCurveEdges(curvesVector[1].begin(),curvesVector[1].end(),weightMap);
+    Stats::dilatedEdges = createGridCurveEdges(curvesVector[2].begin(),curvesVector[2].end(),weightMap);
 
 
     UnsignedSCellComparison myComp;
@@ -189,7 +189,96 @@ void FlowGraphBuilder::operator()(std::map<Z2i::SCell,double>& weightMap)
 
     coords[sourceNode] = LemonPoint( xavg,yavg);
     coords[targetNode] = LemonPoint( xavg-40,yavg+40);
-    
+}
+
+void FlowGraphBuilder::operator()(std::map<Z2i::SCell,double>& weightMap)
+{
+    Stats::erodedEdges=0;
+    Stats::originalEdges=0;
+    Stats::dilatedEdges=0;
+    Stats::gluedEdges=0;
+
+    Stats::escapeEdges=0;
+    Stats::makeConvexEdges=0;
+
+    Stats::sourceEdges=0;
+    Stats::targetEdges=0;
+
+    Stats::extMakeConvexCut=0;
+
+    Stats::originalEdges = createGridCurveEdges(curvesVector[0].begin(),curvesVector[0].end(),weightMap);
+    Stats::dilatedEdges = createGridCurveEdges(curvesVector[1].begin(),curvesVector[1].end(),weightMap);
+
+
+    UnsignedSCellComparison myComp;
+    std::set<KSpace::SCell,UnsignedSCellComparison> visitedNodes(myComp);
+    SegCut::SeedToGluedCurveRangeFunctor stgcF(gluedCurveLength);
+
+    for(auto itP=curvesPairs.begin();itP!=curvesPairs.end();++itP){
+        Curve& fromCurve = curvesVector[itP->first];
+        Curve& toCurve = curvesVector[itP->second];
+
+        SegCut::ConnectorSeedRangeType seedRange = getSeedRange(KImage,fromCurve,toCurve);
+        SegCut::GluedCurveSetRange gcsRange( seedRange.begin(),
+                                             seedRange.end(),
+                                             stgcF);
+
+        createGluedCurveEdges(gcsRange.begin(),
+                              gcsRange.end(),
+                              weightMap,
+                              visitedNodes);
+
+        Stats::escapeEdges += createEscapeEdges(visitedNodes,
+                                                fromCurve,
+                                                toCurve);
+    }
+
+    Curve& firstCurve = curvesVector[0];
+    Curve& beforeLastCurve = curvesVector[curvesVector.size()-2];
+    Curve& lastCurve = curvesVector[curvesVector.size()-1];
+
+    Stats::sourceEdges = createSourceEdges(firstCurve,visitedNodes);
+
+
+
+    SegCut::ConnectorSeedRangeType seedRange = getSeedRange(KImage,beforeLastCurve,lastCurve);
+    SegCut::GluedCurveSetRange gcsRange( seedRange.begin(),
+                                         seedRange.end(),
+                                         stgcF);
+
+    Stats::targetEdges += createTargetEdgesFromGluedSegments(visitedNodes,gcsRange.begin(),gcsRange.end(),weightMap);
+    Stats::targetEdges += createTargetEdgesFromExteriorCurve(lastCurve,visitedNodes,weightMap);
+
+
+
+    for(auto it=curvesVector.begin();it!=curvesVector.end();++it){
+        std::cout << "Curve size::" << it->size() << std::endl;
+    }
+
+    std::cout << "Eroded Edges::" << Stats::erodedEdges << std::endl;
+    std::cout << "Original Edges::" << Stats::originalEdges << std::endl;
+    std::cout << "Dilated Edges::" << Stats::dilatedEdges << std::endl;
+
+
+
+    std::cout << "Glued Edges::" << Stats::gluedEdges << std::endl;
+    std::cout << "Make Convex Edges::" << Stats::makeConvexEdges << std::endl;
+    std::cout << "Escape Edges::" << Stats::escapeEdges << std::endl;
+
+    std::cout << "Source Edges::" << Stats::sourceEdges << std::endl;
+    std::cout << "Target Edges::" << Stats::targetEdges << std::endl;
+
+    std::cout << "Total Edges::" << countArcs(fg) << std::endl;
+
+
+    std::cout << "External Curve + Make-Convex Cut Value::" << Stats::extMakeConvexCut << std::endl;
+
+
+    xavg=(int) xavg/(countNodes(fg));
+    yavg=(int) yavg/(countNodes(fg));
+
+    coords[sourceNode] = LemonPoint( xavg,yavg);
+    coords[targetNode] = LemonPoint( xavg-40,yavg+40);
 }
 
 int FlowGraphBuilder::createSourceEdges(Curve& erodedCurve,
@@ -252,11 +341,15 @@ int FlowGraphBuilder::createTargetEdgesFromExteriorCurve(Curve& extCurve,
     int c =0;
     for(auto itC = extCurve.begin();itC!=extCurve.end();itC++){
         KSpace::SCell indirectIncidentPixel = KImage.sIndirectIncident(*itC,KImage.sOrthDir(*itC));
-        if(visitedNodes.find(indirectIncidentPixel)!=visitedNodes.end()) continue;
+        Stats::extMakeConvexCut += weightMap[*itC];
+
+        if(visitedNodes.find(indirectIncidentPixel)!=visitedNodes.end()){
+            continue;
+        }
 
         visitedNodes.insert(indirectIncidentPixel);
 
-        Stats::extMakeConvexCut += weightMap[*itC];
+
         ++c;
 
         ListDigraph::Arc a;

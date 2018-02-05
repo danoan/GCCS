@@ -164,8 +164,7 @@ void setGluedCurveWeight(GluedCurveSetRange gcRange,
 void prepareFlowGraph(SegCut::Image2D& mask,
                       unsigned int gluedCurveLength,
                       std::map<Z2i::SCell,double>& weightMap,
-                      FlowGraphBuilder** fgb,
-                      bool toDilate) //it should be an empty pointer
+                      FlowGraphBuilder** fgb) //it should be an empty pointer
 {
     Curve originalCurve,erodedCurve,dilatedCurve;
     KSpace KImage;
@@ -188,7 +187,7 @@ void prepareFlowGraph(SegCut::Image2D& mask,
     board << erodedCurve;
     board.saveEPS("int.eps");
 
-    std::vector< Curve > curvesVector = { originalCurve,dilatedCurve};
+    std::vector< Curve > curvesVector = { erodedCurve,originalCurve,dilatedCurve};
 
     for(auto it=curvesVector.begin();it!=curvesVector.end();++it){
         setGridCurveWeight(*it,
@@ -201,11 +200,11 @@ void prepareFlowGraph(SegCut::Image2D& mask,
     SeedToGluedCurveRangeFunctor stgcF(gluedCurveLength);
 
 
-//    ConnectorSeedRangeType seedRangeErOr = getSeedRange(KImage,erodedCurve,originalCurve);
-//    GluedCurveSetRange gcsRangeErOr( seedRangeErOr.begin(),
-//                                     seedRangeErOr.end(),
-//                                     stgcF);
-//    setGluedCurveWeight(gcsRangeErOr,KImage,gluedCurveLength,weightMap);
+    ConnectorSeedRangeType seedRangeErOr = getSeedRange(KImage,erodedCurve,originalCurve);
+    GluedCurveSetRange gcsRangeErOr( seedRangeErOr.begin(),
+                                     seedRangeErOr.end(),
+                                     stgcF);
+    setGluedCurveWeight(gcsRangeErOr,KImage,gluedCurveLength,weightMap);
 
 
     ConnectorSeedRangeType seedRangeOrDi = getSeedRange(KImage,originalCurve,dilatedCurve);
@@ -214,12 +213,13 @@ void prepareFlowGraph(SegCut::Image2D& mask,
                                      stgcF);
     setGluedCurveWeight(gcsRangeOrDi,KImage,gluedCurveLength,weightMap);
 
+
     *fgb = new FlowGraphBuilder(curvesVector,
                                 KImage,
                                 gluedCurveLength);
 
     (*fgb)->addPair(0,1);
-//  (*fgb)->addPair(1,2);
+    (*fgb)->addPair(1,2);
 }
 
 
@@ -231,7 +231,7 @@ double drawCutUpdateImage(FlowGraphBuilder* fgb,
                           Image2D& out,
                           std::string& imageOutputPath)
 {
-    fgb->operator()(weightMap);
+    fgb->operator()(weightMap,true);
     fgb->draw();
 
 
@@ -318,21 +318,27 @@ void drawCurvatureMaps(Image2D& image,
                        std::string outputFolder,
                        int iteration) {
     Board2D board;
-    Curve intCurve, extCurve;
+    Curve erodedCurve, originalCurve, dilatedCurve;
     KSpace KImage;
 
     SegCut::Image2D dilatedImage(image.domain());
+    SegCut::Image2D erodedImage(image.domain());
+
+    computeBoundaryCurve(originalCurve, KImage, image, 100);
 
     dilate(dilatedImage, image, 1);
-    computeBoundaryCurve(intCurve, KImage, image, 100);
-    computeBoundaryCurve(extCurve, KImage, dilatedImage);
+    computeBoundaryCurve(dilatedCurve, KImage, dilatedImage);
 
-    std::vector<Z2i::SCell> intConnection;
-    std::vector<Z2i::SCell> extConnection;
+    erode(erodedImage, image, 1);
+    computeBoundaryCurve(erodedCurve, KImage, erodedImage);
+
+    std::vector<Z2i::SCell> erodedConnection;
+    std::vector<Z2i::SCell> originalConnection;
+    std::vector<Z2i::SCell> dilatedConnection;
     std::vector<Z2i::SCell> makeConvexConnection;
 
 
-    ConnectorSeedRangeType seedRange = getSeedRange(KImage, intCurve, extCurve);
+    ConnectorSeedRangeType seedRange = getSeedRange(KImage, erodedCurve, originalCurve);
     SeedToGluedCurveRangeFunctor stgcF(10);
     GluedCurveSetRange gcsRange(seedRange.begin(),
                                 seedRange.end(),
@@ -344,10 +350,38 @@ void drawCurvatureMaps(Image2D& image,
         switch (ct) {
 
             case internToExtern:
-                intConnection.push_back(it->first.linkSurfel());
+                erodedConnection.push_back(it->first.linkSurfel());
                 break;
             case externToIntern:
-                extConnection.push_back(it->first.linkSurfel());
+                originalConnection.push_back(it->first.linkSurfel());
+                break;
+            case makeConvex:
+                auto itC = it->first.connectorsBegin();
+                do{
+                    makeConvexConnection.push_back(*itC);
+                    if(itC==it->first.connectorsEnd()) break;
+                    ++itC;
+                }while(true);
+        }
+
+    }
+
+
+    ConnectorSeedRangeType seedRange2 = getSeedRange(KImage, originalCurve, dilatedCurve);
+    GluedCurveSetRange gcsRange2(seedRange2.begin(),
+                                seedRange2.end(),
+                                stgcF);
+
+    for (GluedCurveIteratorPair it = gcsRange2.begin(); it != gcsRange2.end(); ++it) {
+        ConnectorType ct = it->first.connectorType();
+
+        switch (ct) {
+
+            case internToExtern:
+                originalConnection.push_back(it->first.linkSurfel());
+                break;
+            case externToIntern:
+                dilatedConnection.push_back(it->first.linkSurfel());
                 break;
             case makeConvex:
                 auto itC = it->first.connectorsBegin();
@@ -363,58 +397,32 @@ void drawCurvatureMaps(Image2D& image,
     double cmin = 100;
     double cmax = -100;
     for (int i = 0; i < 2; i++) {
-        drawCurvatureMap(intCurve.begin(),
-                         intCurve.end(),
+        drawCurvatureMap(erodedCurve.begin(),
+                         erodedCurve.end(),
                          cmin,
                          cmax,
                          board,
                          weightMap
         );
 
-        drawCurvatureMap(extCurve.begin(),
-                         extCurve.end(),
+        drawCurvatureMap(originalCurve.begin(),
+                         originalCurve.end(),
                          cmin,
                          cmax,
                          board,
                          weightMap
         );
 
-        drawCurvatureMap(intConnection.begin(),
-                         intConnection.end(),
-                         cmin,
-                         cmax,
-                         board,
-                         weightMap
-        );
-    }
-
-    std::string intConnsOutputFilePath = outputFolder +
-                                         "/intconnCurvatureMap" + std::to_string(iteration) + ".eps";
-    board.save(intConnsOutputFilePath.c_str());
-
-    board.clear();
-
-    cmin = 100;
-    cmax = -100;
-    for (int i = 0; i < 2; i++) {
-        drawCurvatureMap(intCurve.begin(),
-                         intCurve.end(),
+        drawCurvatureMap(dilatedCurve.begin(),
+                         dilatedCurve.end(),
                          cmin,
                          cmax,
                          board,
                          weightMap
         );
 
-        drawCurvatureMap(extCurve.begin(),
-                         extCurve.end(),
-                         cmin,
-                         cmax,
-                         board,
-                         weightMap
-        );
-
-        drawCurvatureMap(extConnection.begin(),
-                         extConnection.end(),
+        drawCurvatureMap(erodedConnection.begin(),
+                         erodedConnection.end(),
                          cmin,
                          cmax,
                          board,
@@ -422,27 +430,120 @@ void drawCurvatureMaps(Image2D& image,
         );
     }
 
-    std::string extConnsOutputFilePath = outputFolder +
-                                         "/extconnCurvatureMap" + std::to_string(iteration) + ".eps";
-
-    board.save(extConnsOutputFilePath.c_str());
-
+    std::string erodedConnsOutputFilePath = outputFolder +
+                                         "/erodedConnCurvatureMap" + std::to_string(iteration) + ".eps";
+    board.save(erodedConnsOutputFilePath.c_str());
 
     board.clear();
 
     cmin = 100;
     cmax = -100;
     for (int i = 0; i < 2; i++) {
-        drawCurvatureMap(intCurve.begin(),
-                         intCurve.end(),
+        drawCurvatureMap(erodedCurve.begin(),
+                         erodedCurve.end(),
                          cmin,
                          cmax,
                          board,
                          weightMap
         );
 
-        drawCurvatureMap(extCurve.begin(),
-                         extCurve.end(),
+        drawCurvatureMap(originalCurve.begin(),
+                         originalCurve.end(),
+                         cmin,
+                         cmax,
+                         board,
+                         weightMap
+        );
+
+        drawCurvatureMap(dilatedCurve.begin(),
+                         dilatedCurve.end(),
+                         cmin,
+                         cmax,
+                         board,
+                         weightMap
+        );
+
+        drawCurvatureMap(originalConnection.begin(),
+                         originalConnection.end(),
+                         cmin,
+                         cmax,
+                         board,
+                         weightMap
+        );
+    }
+
+    std::string originalConnsOutputFilePath = outputFolder +
+                                         "/originalConnCurvatureMap" + std::to_string(iteration) + ".eps";
+
+    board.save(originalConnsOutputFilePath.c_str());
+
+    board.clear();
+
+
+    cmin = 100;
+    cmax = -100;
+    for (int i = 0; i < 2; i++) {
+        drawCurvatureMap(erodedCurve.begin(),
+                         erodedCurve.end(),
+                         cmin,
+                         cmax,
+                         board,
+                         weightMap
+        );
+
+        drawCurvatureMap(originalCurve.begin(),
+                         originalCurve.end(),
+                         cmin,
+                         cmax,
+                         board,
+                         weightMap
+        );
+
+        drawCurvatureMap(dilatedCurve.begin(),
+                         dilatedCurve.end(),
+                         cmin,
+                         cmax,
+                         board,
+                         weightMap
+        );
+
+        drawCurvatureMap(dilatedConnection.begin(),
+                         dilatedConnection.end(),
+                         cmin,
+                         cmax,
+                         board,
+                         weightMap
+        );
+    }
+
+    std::string dilatedConnsOutputFilePath = outputFolder +
+                                              "/dilatedConnCurvatureMap" + std::to_string(iteration) + ".eps";
+
+    board.save(dilatedConnsOutputFilePath.c_str());
+
+    board.clear();
+
+    cmin = 100;
+    cmax = -100;
+    for (int i = 0; i < 2; i++) {
+        drawCurvatureMap(erodedCurve.begin(),
+                         erodedCurve.end(),
+                         cmin,
+                         cmax,
+                         board,
+                         weightMap
+        );
+
+        drawCurvatureMap(originalCurve.begin(),
+                         originalCurve.end(),
+                         cmin,
+                         cmax,
+                         board,
+                         weightMap
+        );
+
+        drawCurvatureMap(dilatedCurve.begin(),
+                         dilatedCurve.end(),
                          cmin,
                          cmax,
                          board,
@@ -470,16 +571,24 @@ void drawCurvatureMaps(Image2D& image,
                              weightMap
             );
 
-            drawCurvatureMap(intCurve.begin(),
-                             intCurve.end(),
+            drawCurvatureMap(erodedCurve.begin(),
+                             erodedCurve.end(),
                              cmin,
                              cmax,
                              board,
                              weightMap
             );
 
-            drawCurvatureMap(extCurve.begin(),
-                             extCurve.end(),
+            drawCurvatureMap(originalCurve.begin(),
+                             originalCurve.end(),
+                             cmin,
+                             cmax,
+                             board,
+                             weightMap
+            );
+
+            drawCurvatureMap(dilatedCurve.begin(),
+                             dilatedCurve.end(),
                              cmin,
                              cmax,
                              board,
@@ -514,7 +623,7 @@ int main(){
 
     SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_square.pgm");
 
-    std::string outImageFolder = "output/images/flow-evolution/square-test-same";
+    std::string outImageFolder = "output/images/flow-evolution/square-ED";
     std::string cutOutputPath;
     std::string imageOutputPath;
 
@@ -526,8 +635,7 @@ int main(){
         prepareFlowGraph(image,
                          gluedCurveLength,
                          weightMap,
-                         &fgb,
-                         true);
+                         &fgb);
 
         drawCurvatureMaps(image,
                           weightMap,
@@ -538,11 +646,9 @@ int main(){
         imageOutputPath = outImageFolder + "/out" + std::to_string(i+1) + ".pgm";
 
 
-        if(false){
-            Image2D temp(image.domain());
-            erode(temp,image,1);
-            image = temp;
-        }
+        Image2D temp(image.domain());
+        erode(temp, image, 1);
+        image = temp;
 
         drawCutUpdateImage(fgb,
                            weightMap,
@@ -551,14 +657,6 @@ int main(){
                            image,
                            imageOutputPath
         );
-
-
-//        if(i%30==29){
-//            Image2D rImage(image.domain());
-//            resize(image,rImage);
-//            image = rImage;
-//        }
-
 
 
         std::cout << "OK " << i << std::endl;

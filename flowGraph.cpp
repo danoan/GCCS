@@ -186,44 +186,36 @@ void prepareFlowGraph(SegCut::Image2D& mask,
 //        gluedCurveLength = extCurvePriorGS.size()/2.0;
     }
 
-
-
     Board2D board;
+    board << intCurvePriorGS;
     board << extCurvePriorGS;
     board.saveEPS("int.eps");
 
-    setGridCurveWeight(intCurvePriorGS,
-                       KImage,
-                       weightMap);
+    std::vector< Curve > curvesVector = { intCurvePriorGS,extCurvePriorGS};
 
-    setGridCurveWeight(extCurvePriorGS,
-                       KImage,
-                       weightMap);
-
-    double s = 0;
-    for(auto it=extCurvePriorGS.begin();it!=extCurvePriorGS.end();++it){
-        s+=weightMap[*it];
+    for(auto it=curvesVector.begin();it!=curvesVector.end();++it){
+        setGridCurveWeight(*it,
+                           KImage,
+                           weightMap
+        );
     }
-    std::cout << "External Cut::" << s << std::endl;
 
-    s=0;
-    for(auto it=intCurvePriorGS.begin();it!=intCurvePriorGS.end();++it){
-        s+=weightMap[*it];
-    }
-    std::cout << "Internal Cut::" << s << std::endl;
+
+    SeedToGluedCurveRangeFunctor stgcF(gluedCurveLength);
+
 
     ConnectorSeedRangeType seedRange = getSeedRange(KImage,intCurvePriorGS,extCurvePriorGS);
-    SeedToGluedCurveRangeFunctor stgcF(gluedCurveLength);
     GluedCurveSetRange gcsRange( seedRange.begin(),
                                  seedRange.end(),
                                  stgcF);
-
     setGluedCurveWeight(gcsRange,KImage,gluedCurveLength,weightMap);
 
-    *fgb = new FlowGraphBuilder(intCurvePriorGS,
-                                extCurvePriorGS,
+
+    *fgb = new FlowGraphBuilder(curvesVector,
                                 KImage,
                                 gluedCurveLength);
+
+    (*fgb)->addPair(0,1);
 }
 
 
@@ -514,17 +506,17 @@ int main(){
     Patch::solveShift = false;
     Patch::cross_element = false;
 
-    unsigned int gluedCurveLength = 5;
+    unsigned int gluedCurveLength = 7;
 
-    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/out54.pgm");
+    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_square.pgm");
 
-    std::string outImageFolder = "output/images/flow-evolution/problematic_8";
+    std::string outImageFolder = "output/images/flow-evolution/square-7";
     std::string cutOutputPath;
     std::string imageOutputPath;
 
     FlowGraphBuilder* fgb;
     MySubGraph* sg;
-    for(int i=54;i<55;++i)
+    for(int i=0;i<200;++i)
     {
         std::map<Z2i::SCell,double> weightMap;
         prepareFlowGraph(image,

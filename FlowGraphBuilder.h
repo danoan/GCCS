@@ -63,6 +63,7 @@ public:
     void addPair(int i1,int i2){ curvesPairs.push_back( std::pair<int,int>(i1,i2) ); }
 
     void operator()(std::map<Z2i::SCell,double>& weightMap);
+    void operator()(std::map<Z2i::SCell,double>& weightMap, bool multiplePair);
     
     void draw();
 
