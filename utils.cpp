@@ -86,7 +86,6 @@ void curvatureEstimatorsGridCurve(UtilsTypes::Curve::ConstIterator begin,
         ++ip;
     }while(ip<=nL);
 
-
 }
 
 void curvatureEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,

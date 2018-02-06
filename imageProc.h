@@ -32,6 +32,12 @@ void computeBoundaryCurve(ImageProcTypes::Curve &boundCurve,
 void computeBoundaryCurve(ImageProcTypes::Curve &boundCurve,
                           ImageProcTypes::KSpace &KImage,
                           const ImageProcTypes::Image2D &image,
+                          unsigned int thresh_value,
+                          ImageProcTypes::Z2i::SCell imageBel);
+
+void computeBoundaryCurve(ImageProcTypes::Curve &boundCurve,
+                          ImageProcTypes::KSpace &KImage,
+                          const ImageProcTypes::Image2D &image,
                           const ImageProcTypes::Image2D &mask,
                           unsigned int thresh_value=0);
 

@@ -90,36 +90,36 @@ ConnectorSeedRange<CellularSpace,
 
 
 
-    {
-        std::vector<MatchPair> visitedPairs;
-        extensionConnectors(externalCurveCirculator,externalCurveCirculator,true,visitedPairs);
-
-        std::vector<SCell> SCells;
-        auto it = externalCurveCirculator;
-        do {
-            SCells.push_back(*it);
-            ++it;
-        } while (it != externalCurveCirculator);
-
-        std::vector<SCell> newSCells;
-        {
-            auto it = SCells.rbegin();
-            do {
-                SCell newLinel = KImage.sCell(*it);
-                KImage.sSetSign(newLinel, !KImage.sSign(*it));
-
-                newSCells.push_back(newLinel);
-                ++it;;
-            } while (it != SCells.rend());
-        }
-
-        Curve c2;
-        c2.initFromSCellsVector(newSCells);
-
-        DGtal::Circulator<Curve::ConstIterator> revExtCirc(c2.begin(), c2.begin(), c2.end());
-        extensionConnectors(revExtCirc, externalCurveCirculator, false, visitedPairs);
-
-    }
+//    {
+//        std::vector<MatchPair> visitedPairs;
+//        extensionConnectors(externalCurveCirculator,externalCurveCirculator,true,visitedPairs);
+//
+//        std::vector<SCell> SCells;
+//        auto it = externalCurveCirculator;
+//        do {
+//            SCells.push_back(*it);
+//            ++it;
+//        } while (it != externalCurveCirculator);
+//
+//        std::vector<SCell> newSCells;
+//        {
+//            auto it = SCells.rbegin();
+//            do {
+//                SCell newLinel = KImage.sCell(*it);
+//                KImage.sSetSign(newLinel, !KImage.sSign(*it));
+//
+//                newSCells.push_back(newLinel);
+//                ++it;;
+//            } while (it != SCells.rend());
+//        }
+//
+//        Curve c2;
+//        c2.initFromSCellsVector(newSCells);
+//
+//        DGtal::Circulator<Curve::ConstIterator> revExtCirc(c2.begin(), c2.begin(), c2.end());
+//        extensionConnectors(revExtCirc, externalCurveCirculator, false, visitedPairs);
+//
+//    }
 
 
 //    {

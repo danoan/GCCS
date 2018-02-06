@@ -208,3 +208,26 @@ void computeBoundaryCurve(ImageProcTypes::Curve &boundCurve,
 
     boundCurve.initFromSCellsVector(boundarySCells);
 }
+
+void computeBoundaryCurve(ImageProcTypes::Curve &boundCurve,
+                          ImageProcTypes::KSpace &KImage,
+                          const ImageProcTypes::Image2D &image,
+                          unsigned int thresh_value,
+                          ImageProcTypes::Z2i::SCell imageBel)
+{
+    ImageProcTypes::Domain imageDomain = image.domain();
+
+    ImageProcTypes::SurfelAdjacency<ImageProcTypes::KSpace::dimension> SAdj(true);
+    KImage.init(imageDomain.lowerBound(),imageDomain.upperBound(),true);
+
+    ImageProcTypes::ThreshPredicate imagePredicate (image,thresh_value);
+
+    std::vector<ImageProcTypes::Z2i::SCell> boundarySCells;
+    ImageProcTypes::Surfaces<ImageProcTypes::KSpace>::track2DBoundary(boundarySCells,
+                                                                      KImage,
+                                                                      SAdj,
+                                                                      imagePredicate,
+                                                                      imageBel);
+
+    boundCurve.initFromSCellsVector(boundarySCells);
+}

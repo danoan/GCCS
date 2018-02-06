@@ -506,11 +506,11 @@ int main(){
     Patch::solveShift = false;
     Patch::cross_element = false;
 
-    unsigned int gluedCurveLength = 7;
+    unsigned int gluedCurveLength = 3;
 
-    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_square.pgm");
+    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_triangle.pgm");
 
-    std::string outImageFolder = "output/images/flow-evolution/square-7";
+    std::string outImageFolder = "output/images/flow-evolution/triangle/triangle-3-no-MC";
     std::string cutOutputPath;
     std::string imageOutputPath;
 

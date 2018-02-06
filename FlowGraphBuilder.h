@@ -78,6 +78,7 @@ public:
 
     ListDigraph::NodeMap< LemonPoint >& coordsMap(){return coords;}
     ListDigraph::NodeMap<Z2i::SCell>& pixelsMap(){return pixelMap;}
+    ListDigraph::ArcMap<double>& getEdgeWeight(){return edgeWeight;}
     
     
     Preflow <ListDigraph,ListDigraph::ArcMap<double> > preparePreFlow(){
@@ -93,7 +94,8 @@ private:
 
     void createEdgeFromLinel(Curve::SCell& linel,
                              KSpace& KImage,
-                             std::map<Z2i::SCell,double>& weightMap);
+                             std::map<Z2i::SCell,double>& weightMap,
+                             bool invert=false);
 
     int createGridCurveEdges(Curve::ConstIterator curveBegin,
                               Curve::ConstIterator curveEnd,
@@ -181,6 +183,7 @@ private:
     }
 
 
+
 private:
     int xavg=0;
     int yavg=0;
@@ -198,9 +201,10 @@ private:
     std::vector< std::pair<int,int> > curvesPairs;
 
     std::map<KSpace::Point,ListDigraph::Node> coordToNode;
-    ListDigraph::ArcMap<double> edgeWeight;
+
     ListDigraph::NodeMap<Z2i::SCell> pixelMap;
     ListDigraph::NodeMap< LemonPoint > coords;
+    ListDigraph::ArcMap<double> edgeWeight;
 
     ListDigraph::Node sourceNode;
     ListDigraph::Node targetNode;

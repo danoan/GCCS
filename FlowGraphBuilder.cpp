@@ -415,15 +415,23 @@ void FlowGraphBuilder::createEdgeFromPixels(KSpace::SCell pSource,
 
 void FlowGraphBuilder::createEdgeFromLinel(Curve::SCell& linel,
                                            KSpace& KImage,
-                                           std::map<Z2i::SCell,double>& weightMap)
+                                           std::map<Z2i::SCell,double>& weightMap,
+                                           bool invert)
 {
     Z2i::SCell directPixel = KImage.sDirectIncident(linel,KImage.sOrthDir(linel));
     Z2i::SCell indirectPixel = KImage.sIndirectIncident(linel,KImage.sOrthDir(linel));
 
     ListDigraph::Arc a;
-    createEdgeFromPixels(directPixel,
-                         indirectPixel,
-                         a);
+    if(invert){
+        createEdgeFromPixels(indirectPixel,
+                             directPixel,
+                             a);
+    }else{
+        createEdgeFromPixels(directPixel,
+                             indirectPixel,
+                             a);
+    }
+
 
     edgeWeight[a] = wFactor*weightMap[linel];
 }
@@ -463,9 +471,18 @@ void FlowGraphBuilder::createGluedCurveEdges(SegCut::GluedCurveIteratorPair glue
                 Stats::gluedEdges++;
             }
 
-            createEdgeFromLinel(linel,
-                                KImage,
-                                weightMap);
+            if(begin.connectorType()==makeConvex){
+                createEdgeFromLinel(linel,
+                                    KImage,
+                                    weightMap,
+                                    false);
+            }else{
+                createEdgeFromLinel(linel,
+                                    KImage,
+                                    weightMap,
+                                    true);
+            }
+
 
             visitedNodes.insert( KImage.sIndirectIncident(linel,KImage.sOrthDir(linel)) );
 

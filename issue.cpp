@@ -15,6 +15,25 @@ using namespace DGtal::Z2i;
 
 using namespace UtilsTypes;
 
+
+void getCutFilter(ListDigraph& fg,
+                  Preflow<ListDigraph,ListDigraph::ArcMap<double> >& flow,
+                  ListDigraph::NodeMap<bool>& nodesInTheCut,
+                  ListDigraph::ArcMap<bool>& arcsInTheCut)
+{
+
+    for(ListDigraph::ArcIt a(fg);a!=INVALID;++a){
+        ListDigraph::Node s =fg.source(a);
+        ListDigraph::Node t =fg.target(a);
+
+        if( (nodesInTheCut[s] && !nodesInTheCut[t])  )
+        {
+            arcsInTheCut[a] = true;
+        }
+    }
+
+}
+
 void testConnectdeness(std::string imgFilePath)
 {
     KSpace KImage;
@@ -419,34 +438,148 @@ double drawCutUpdateImage(FlowGraphBuilder* fgb,
                           MySubGraph** sg, //must be an empty pointer
                           std::string& cutOutputPath,
                           Image2D& out,
-                          std::string& imageOutputPath)
-{
+                          std::string& imageOutputPath) {
     fgb->operator()(weightMap);
     fgb->draw();
 
 
-
-    Preflow<ListDigraph,ListDigraph::ArcMap<double> > flow = fgb->preparePreFlow();
+    Preflow<ListDigraph, ListDigraph::ArcMap<double> > flow = fgb->preparePreFlow();
 
     flow.run();
     double v = flow.flowValue();
-    std::cout << v << std::endl;
+    std::cout << "flow value::" << v << std::endl;
 
-    ListDigraph::NodeMap<bool> node_filter(fgb->graph(),false);
-    ListDigraph::ArcMap<bool> arc_filter(fgb->graph(),true);
-    for(ListDigraph::NodeIt n(fgb->graph());n!=INVALID;++n){
-        if( flow.minCut(n) ){
+    ListDigraph::NodeMap<bool> node_filter(fgb->graph(), false);
+    ListDigraph::ArcMap<bool> arc_filter(fgb->graph(), true);
+    for (ListDigraph::NodeIt n(fgb->graph()); n != INVALID; ++n) {
+        if (flow.minCut(n)) {
             node_filter[n] = true;
-        }else{
+        } else {
             node_filter[n] = false;
         }
     }
-    node_filter[fgb->source()]=false;
+
+
+    KSpace KImage;
+    Image2D tempMask = GenericReader<Image2D>::import("../images/flow-evolution/out6-mask.pgm");
+
+    KImage.init(tempMask.domain().lowerBound(), tempMask.domain().upperBound(), true);
+    Curve tempCurveMask;
+
+    {
+        KSpace::SCell pixelModel = KImage.sCell(DGtal::Z2i::RealVector(1, 1), true);
+        KSpace::SCell imagePixel = KImage.sCell(DGtal::Z2i::RealVector(241, 265), pixelModel);
+        KSpace::SCell imageBel = KImage.sLowerIncident(imagePixel)[0];
+
+        computeBoundaryCurve(tempCurveMask, KImage, tempMask, 0, imageBel);
+    }
+
+
+    UnsignedSCellComparison uscmp;
+    std::set<KSpace::SCell,UnsignedSCellComparison> myComp(uscmp);
+    std::set<KSpace::SCell> pixelsInTheMask;
+    for(auto it =tempCurveMask.begin();it!=tempCurveMask.end();++it){
+        KSpace::SCell s = KImage.sDirectIncident(*it,KImage.sOrthDir(*it));
+        KSpace::SCell t = KImage.sIndirectIncident(*it,KImage.sOrthDir(*it));
+        pixelsInTheMask.insert(s);
+        pixelsInTheMask.insert(t);
+    }
+
+
+    ListDigraph::ArcMap<bool> arcsInTheCut(fgb->graph(),false);
+    getCutFilter(fgb->graph(),flow,node_filter,arcsInTheCut);
+
+    Palette palette;
+    ListDigraph::ArcMap<int> arcColors(fgb->graph());
+    double stemp = 0;
+    for(ListDigraph::ArcIt a(fgb->graph());a!=INVALID;++a){
+        if(arcsInTheCut[a]){
+            arcColors[a] = 2;
+            ListDigraph::Node s,t;
+            s = fgb->graph().source(a);
+            t = fgb->graph().target(a);
+
+            KSpace::SCell scellS = fgb->pixelsMap()[s];
+            KSpace::SCell scellT = fgb->pixelsMap()[t];
+
+            if( pixelsInTheMask.find(scellS)!= pixelsInTheMask.end() ||
+                pixelsInTheMask.find(scellT)!=pixelsInTheMask.end() )
+            {
+                arcColors[a] = 1;
+                std::cout << fgb->coordsMap()[s] << "," << fgb->coordsMap()[t] << std::endl;
+            }
+
+            stemp += fgb->getEdgeWeight()[a];
+        }
+    }
+
+
+    std::vector< std::pair< KSpace::Vector, KSpace::Vector> > toRemove =
+            { std::pair< KSpace::Vector,KSpace::Vector >( KSpace::Vector(491,539), KSpace::Vector(489,539) ),
+              std::pair< KSpace::Vector,KSpace::Vector >( KSpace::Vector(491,539), KSpace::Vector(491,541) ),
+              std::pair< KSpace::Vector,KSpace::Vector >( KSpace::Vector(491,539), KSpace::Vector(493,539) ),
+              std::pair< KSpace::Vector,KSpace::Vector >( KSpace::Vector(495,539), KSpace::Vector(493,539) ),
+              std::pair< KSpace::Vector,KSpace::Vector >( KSpace::Vector(495,539), KSpace::Vector(495,541) ),
+            };
+
+
+    std::vector< std::pair< KSpace::Vector, KSpace::Vector> > toAdd =
+            { std::pair< KSpace::Vector,KSpace::Vector >( KSpace::Vector(491,535), KSpace::Vector(491,537) ),
+              std::pair< KSpace::Vector,KSpace::Vector >( KSpace::Vector(493,537), KSpace::Vector(491,537) ),
+              std::pair< KSpace::Vector,KSpace::Vector >( KSpace::Vector(495,537), KSpace::Vector(495,539) ),
+              std::pair< KSpace::Vector,KSpace::Vector >( KSpace::Vector(497,539), KSpace::Vector(495,539) ),
+            };
+
+
+
+    std::cout << "Sum edges on the cut filter:: " << stemp << std::endl;
+
+
+    double sumToRemove=0;
+    double sumToAdd=0;
+    for(ListDigraph::ArcIt a(fgb->graph());a!=INVALID;++a){
+        ListDigraph::Node s,t;
+        s = fgb->graph().source(a);
+        t = fgb->graph().target(a);
+
+        KSpace::SCell scellS = fgb->pixelsMap()[s];
+        KSpace::SCell scellT = fgb->pixelsMap()[t];
+
+        for(auto it=toRemove.begin();it!=toRemove.end();it++){
+            if( KImage.sKCoords(scellS) == it->first &&
+                KImage.sKCoords(scellT) == it->second )
+            {
+                std::cout << "Remove Edge " << it->first << it->second << " weight::" << fgb->getEdgeWeight()[a] << std::endl;
+                sumToRemove += fgb->getEdgeWeight()[a];
+                break;
+            }
+        }
+
+        for(auto it=toAdd.begin();it!=toAdd.end();it++){
+            if( KImage.sKCoords(scellS) == it->first &&
+                KImage.sKCoords(scellT) == it->second )
+            {
+                sumToAdd += fgb->getEdgeWeight()[a];
+                break;
+            }
+        }
+
+    }
+
+    std::cout << "Sum to Remove::" << sumToRemove << std::endl;
+    std::cout << "Sum to Add::" << sumToAdd << std::endl;
+
+    graphToEps(fgb->graph(),"cutEdges.eps")
+            .nodeScale(.0005)
+            .arcWidthScale(0.001)
+            .drawArrows()
+            .arrowWidth(0.1)
+            .arcColors(composeMap(palette,arcColors))
+            .coords(fgb->coordsMap())
+            .run();
 
 
     *sg = new MySubGraph(fgb->graph(),node_filter,arc_filter);
-
-    Palette palette;
 
     boost::filesystem::path p1(cutOutputPath.c_str());
     p1.remove_filename();
@@ -531,18 +664,18 @@ int main(){
 
     unsigned int gluedCurveLength = 7;
 
-    std::string imgPath = "../images/flow-evolution/out6-edit.pgm";
+    std::string imgPath = "../images/flow-evolution/out20.pgm";
     SegCut::Image2D image = GenericReader<SegCut::Image2D>::import(imgPath);
 
-    std::string outImageFolder = "issueout/out6-edit";
-    std::string cutOutputPath = "issueout/out6-edit/cut.eps";
-    std::string imageOutputPath = "issueout/out6-edit/image.pgm";
+    std::string outImageFolder = "issueout/out20";
+    std::string cutOutputPath = "issueout/out20/cut.eps";
+    std::string imageOutputPath = "issueout/out20/image.pgm";
 
     FlowGraphBuilder* fgb;
     MySubGraph* sg;
 
     KSpace KImage;
-    setKImage("../images/flow-evolution/out6-edit.pgm",KImage);
+    setKImage("../images/flow-evolution/out20.pgm",KImage);
 
     Board2D board;
     Artist EA(KImage,board);
