@@ -6,7 +6,6 @@
 
 #include "typeDefs.h"
 #include "imageProc.h"
-#include "Patch/patch.h"
 #include "utils.h"
 
 namespace ArtistTypes{

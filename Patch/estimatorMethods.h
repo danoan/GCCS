@@ -11,8 +11,6 @@
 
 
 namespace Patch{
-    extern bool solveShift;
-
     using namespace DGtal;
     using namespace DGtal::Z2i;
 

@@ -33,7 +33,10 @@ public:
     typedef std::pair<GCIterator,GCIterator> Output;
 
 public:
+    ConnectorSeedToGluedCurveRange(){};
     ConnectorSeedToGluedCurveRange(unsigned int distance):distance(distance){};
+
+    void init(unsigned int distance){this->distance=distance;}
 
     Output operator()(const ConnectorSeedType& it) const;
 

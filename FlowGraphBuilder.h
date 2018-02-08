@@ -14,21 +14,11 @@ using namespace lemon;
 
 #include "typeDefs.h"
 #include "utils.h"
+#include "ImageFlowData.h"
 
-namespace Stats{
-    extern int gluedEdges;
-    extern int sourceEdges;
-    extern int targetEdges;
-    extern int externalEdges;
-    extern int internalEdges;
-
-    extern int makeConvexEdges;
-    extern int escapeEdges;
-
-    extern double extMakeConvexCut;
-
-    typedef SubDigraph< ListDigraph,ListDigraph::NodeMap<bool> > MySubGraph;
-}
+namespace Development{
+      extern bool invertGluedArcs;  
+};
 
 class UnsignedSCellComparison{
 public:
@@ -40,19 +30,33 @@ public:
 class FlowGraphBuilder{
 
 public:
-    typedef dim2::Point<int> LemonPoint;
+    friend class FlowGraphDebug;
 
-    FlowGraphBuilder( std::vector< Curve > curvesVector,
-                      KSpace KImage,
-                      unsigned int gluedCurveLength,
-                      double fidelityWeight=0.0,
-                      double curvatureWeight=1.0):curvesVector(curvesVector),
-                                                  gluedCurveLength(gluedCurveLength),
-                                                  KImage(KImage),
-                                                  fFactor(fidelityWeight),wFactor(curvatureWeight),
-                                                  edgeWeight(fg),
-                                                  pixelMap(fg),
-                                                  coords(fg)
+    enum ArcType{
+        SourceArc,TargetArc,GluedArc,CurveArc,EscapeArc,MakeConvexArc,
+    };
+
+    typedef dim2::Point<int> LemonPoint;
+    typedef SubDigraph< ListDigraph,ListDigraph::NodeMap<bool> > SubGraph;
+    typedef Preflow <ListDigraph,ListDigraph::ArcMap<double> > Flow;
+
+    typedef std::set<KSpace::SCell,UnsignedSCellComparison> UnsignedSCellSet;
+
+    typedef std::map<KSpace::Point,ListDigraph::Node> CoordToNodeMap;
+
+    typedef ListDigraph::NodeMap<Z2i::SCell> NodeToPixelMap;
+    typedef ListDigraph::NodeMap< LemonPoint > NodeToCoordMap;
+
+    typedef ListDigraph::ArcMap<double> ArcWeightMap;
+    typedef ListDigraph::ArcMap<ArcType> ArcTypeMap;
+
+    typedef std::map<Z2i::SCell,double> LinelWeightMap;
+
+    FlowGraphBuilder( ImageFlowData& imageFlowData):imageFlowData(imageFlowData),
+                                                    pixelMap(fg),
+                                                    coords(fg),
+                                                    arcWeight(fg),
+                                                    arcType(fg)
     {
         srand(time(NULL));
         sourceNode = fg.addNode();
@@ -60,58 +64,47 @@ public:
 
     };
 
-    void addPair(int i1,int i2){ curvesPairs.push_back( std::pair<int,int>(i1,i2) ); }
-
+    void initializeStats();
     void operator()(std::map<Z2i::SCell,double>& weightMap);
-    void operator()(std::map<Z2i::SCell,double>& weightMap, bool multiplePair);
-    
-    void draw();
 
-    Stats::MySubGraph curveSubgraph(Curve& curve,
-                                    ListDigraph::NodeMap<bool>& node_filter,
-                                    ListDigraph::ArcMap<bool>& arc_filter );
 
-    
+
     ListDigraph& graph(){return fg;};
     ListDigraph::Node& source(){return sourceNode;}
     ListDigraph::Node& target(){return targetNode;}
 
     ListDigraph::NodeMap< LemonPoint >& coordsMap(){return coords;}
     ListDigraph::NodeMap<Z2i::SCell>& pixelsMap(){return pixelMap;}
-    ListDigraph::ArcMap<double>& getEdgeWeight(){return edgeWeight;}
+    ListDigraph::ArcMap<double>& getEdgeWeight(){return arcWeight;}
     
     
-    Preflow <ListDigraph,ListDigraph::ArcMap<double> > preparePreFlow(){
-        Preflow <ListDigraph,ListDigraph::ArcMap<double> > flow(fg,edgeWeight,sourceNode,targetNode);
+    Flow preparePreFlow(){
+        Flow flow(fg,arcWeight,sourceNode,targetNode);
         return flow;
     }
 
 private:
-    void randomizeCurve(std::vector<Z2i::SCell>::const_iterator cBegin,
-                        std::vector<Z2i::SCell>::const_iterator cEnd,
-                        int size,
-                        std::vector<Z2i::SCell>& scellsRand);
 
-    void createEdgeFromLinel(Curve::SCell& linel,
-                             KSpace& KImage,
-                             std::map<Z2i::SCell,double>& weightMap,
-                             bool invert=false);
+    void createArcFromLinel(Curve::SCell& linel,
+                            std::map<Z2i::SCell,double>& weightMap,
+                            ArcType at,
+                            bool invert=false);
 
-    int createGridCurveEdges(Curve::ConstIterator curveBegin,
-                              Curve::ConstIterator curveEnd,
-                              std::map<Z2i::SCell,double>& weightMap);
+    void createCurveArcs(Curve::ConstIterator curveBegin,
+                         Curve::ConstIterator curveEnd,
+                         std::map<Z2i::SCell,double>& weightMap);
 
-    void createGluedCurveEdges(SegCut::GluedCurveIteratorPair gluedRangeBegin,
-                               SegCut::GluedCurveIteratorPair gluedRangeEnd,
-                               std::map<Z2i::SCell,double>& weightMap,
-                               std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes);
+    void createGluedArcs(SegCut::GluedCurveIteratorPair gluedRangeBegin,
+                         SegCut::GluedCurveIteratorPair gluedRangeEnd,
+                         std::map<Z2i::SCell,double>& weightMap,
+                         UnsignedSCellSet& visitedNodes);
 
-    int createEscapeEdges(std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes,
-                          Curve& fromCurve,
-                          Curve& toCurve);
+    void createEscapeArcs(Curve& fromCurve,
+                          Curve& toCurve,
+                          UnsignedSCellSet& visitedNodes);
 
 
-    int createSourceEdges(Curve& erodedCurve,
+    void createSourceArcs(Curve& erodedCurve,
                           std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes);
 
     void connectNodeToPixel(ListDigraph::Node& sourceNode,
@@ -125,89 +118,46 @@ private:
     void createNodeFromPixel(KSpace::SCell pixel,
                              ListDigraph::Node& node);
 
-    void createEdgeFromPixels(KSpace::SCell pSource,
+    void createArcFromPixels(KSpace::SCell pSource,
                               KSpace::SCell pTarget,
                               ListDigraph::Arc& a);
 
-    int explore(KSpace::SCell candidate,
-                 std::set<KSpace::SCell,UnsignedSCellComparison>& borderPoints,
-                 std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes);
+    void explore(KSpace::SCell candidate,
+                 UnsignedSCellSet& forbiddenPoints,
+                 UnsignedSCellSet& visitedNodes);
 
 
-    int createTargetEdgesFromGluedSegments(std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes,
-                                           SegCut::GluedCurveIteratorPair gluedRangeBegin,
+    void createTargetArcsFromGluedSegments(SegCut::GluedCurveIteratorPair gluedRangeBegin,
                                            SegCut::GluedCurveIteratorPair gluedRangeEnd,
-                                           std::map<Z2i::SCell,double>& weightMap);
+                                           std::map<Z2i::SCell,double>& weightMap,
+                                           UnsignedSCellSet& visitedNodes);
 
-    int createTargetEdgesFromExteriorCurve(Curve& extCurve,
-                                           std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes,
-                                           std::map<Z2i::SCell,double>& weightMap);
+    void createTargetArcsFromExteriorCurve(Curve& extCurve,
+                                           UnsignedSCellSet& visitedNodes);
 
     template<typename TType>
-    int createFromIteratorsQueue(std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes,
-                                 std::queue<TType> intervals,std::map<Z2i::SCell,
-                                 double>& weightMap)
-    {
-
-        int c=0;
-        TType start,end;
-        KSpace::SCell pixelModel = KImage.sCell( KSpace::Point(1,1),KSpace::POS);
-        while(!intervals.empty()){
-            start = intervals.front();
-            intervals.pop();
-            end = intervals.front();
-            intervals.pop();
-
-            TType itC = start;
-            do{
-                Stats::extMakeConvexCut+= weightMap[*itC];
-                KSpace::SCell indirectIncidentPixel = KImage.sIndirectIncident(*itC,KImage.sOrthDir(*itC));
-                KSpace::SCell directIncidentPixel = KImage.sDirectIncident(*itC,KImage.sOrthDir(*itC));
-
-                visitedNodes.insert(directIncidentPixel);
-
-                ListDigraph::Arc a;
-                connectPixelToNode(indirectIncidentPixel,targetNode,a);
-                edgeWeight[a] = 10;
-
-                ++c;
-
-                if(itC==end) break;
-                ++itC;
-            }while(true);
-
-        }
-
-        return c;
-
-    }
+    int createFromIteratorsQueue(std::queue<TType> intervals,
+                                 std::map<Z2i::SCell,double>& weightMap,
+                                 UnsignedSCellSet& visitedNodes);
 
 
 
 private:
-    int xavg=0;
-    int yavg=0;
-
-    unsigned int gluedCurveLength;
-
-    KSpace KImage;
-
-    double fFactor;
-    double wFactor;
+    ImageFlowData imageFlowData;
 
     ListDigraph fg;
 
-    std::vector<Curve> curvesVector;
-    std::vector< std::pair<int,int> > curvesPairs;
-
-    std::map<KSpace::Point,ListDigraph::Node> coordToNode;
-
-    ListDigraph::NodeMap<Z2i::SCell> pixelMap;
-    ListDigraph::NodeMap< LemonPoint > coords;
-    ListDigraph::ArcMap<double> edgeWeight;
-
     ListDigraph::Node sourceNode;
     ListDigraph::Node targetNode;
+
+    CoordToNodeMap coordToNode;
+
+    NodeToPixelMap pixelMap;
+    NodeToCoordMap coords;
+
+    ArcWeightMap arcWeight;
+    ArcTypeMap arcType;
+
 };
 
 #endif //SEGBYCUT_FLOWGRAPHBUILDER_H

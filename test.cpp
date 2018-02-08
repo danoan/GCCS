@@ -174,10 +174,10 @@ void runTests(const std::string& imgPath,
 void testSequence()
 {
     std::string outputRootPath = "../output/tests";
-    if(Patch::solveShift)
-        outputRootPath += "/no-Patch";
+    if(Development::solveShift)
+        outputRootPath += "/solve-shift";
     else
-        outputRootPath += "/Patch";
+        outputRootPath += "/average";
     
     runTests("../images/graph-weight-test/last_image.pgm",
              outputRootPath + "/last_image");
@@ -192,23 +192,26 @@ void testSequence()
              outputRootPath + "/disk");
 }
 
-namespace Patch{
+namespace Development{
     bool solveShift;
-    bool cross_element;
+    bool crossElement;
+
+    bool makeConvexArcs;
+    bool invertGluedArcs;
 };
 
-namespace UtilsTypes
-{
-    std::function< double(double) > toDouble = [](double x){return x;};
-};
 
 int main()
 {
-    Patch::solveShift = true;
-    Patch::cross_element = false;
-    
+    Development::crossElement = false;
+
+    Development::makeConvexArcs = false;
+    Development::invertGluedArcs = false;
+
+    Development::solveShift = true;
     testSequence();
-    Patch::solveShift = false;
+
+    Development::solveShift = false;
     testSequence();
 
 }

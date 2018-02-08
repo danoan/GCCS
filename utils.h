@@ -9,6 +9,10 @@
 #include "imageProc.h"
 #include "Patch/patch.h"
 
+namespace Development{
+    extern bool solveShift;
+}
+
 namespace UtilsTypes{
     using namespace DGtal;
     using namespace DGtal::Z2i;
@@ -60,9 +64,6 @@ void tangentEstimatorsConnections(UtilsTypes::GluedCurveIteratorPair begin,
                                   std::vector< UtilsTypes::TangentVector >& estimations);
 
 
-void normalizeAroundNeighbors(std::vector<double>& v, int radius);
-void normalizeAroundNeighbors(std::vector<UtilsTypes::TangentVector>& v, int radius);
-
 void setKImage(std::string imgFilePath,KSpace& KImage);
 
 void setCurves(std::string imgFilePath,
@@ -72,6 +73,14 @@ void setCurves(std::string imgFilePath,
 UtilsTypes::ConnectorSeedRangeType getSeedRange(UtilsTypes::KSpace& KImage,
                                                 UtilsTypes::Curve& intCurve,
                                                 UtilsTypes::Curve& extCurve);
+
+
+void randomizeCurve(std::vector<Z2i::SCell>::const_iterator cBegin,
+                    std::vector<Z2i::SCell>::const_iterator cEnd,
+                    int size,
+                    std::vector<Z2i::SCell>& scellsRand);
+
+
 template<typename SCellIteratorType>
 void invertCurve(KSpace& KImage,
                  SCellIteratorType begin,

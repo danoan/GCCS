@@ -1,5 +1,11 @@
 #include "utils.h"
 
+namespace UtilsTypes
+{
+    std::function< double(double) > toDouble = [](double x){return x;};
+};
+
+
 void drawCurvatureMap(std::vector<Z2i::SCell>::const_iterator begin,
                       std::vector<Z2i::SCell>::const_iterator end,
                       double& cmin,
@@ -7,6 +13,7 @@ void drawCurvatureMap(std::vector<Z2i::SCell>::const_iterator begin,
                       Board2D& board,
                       std::map<Z2i::SCell,double>& weightMap)
 {
+    if(begin==end) return;
     std::vector<double> values;
 
     auto it=begin;
@@ -69,7 +76,7 @@ void curvatureEstimatorsGridCurve(UtilsTypes::Curve::ConstIterator begin,
                                               negativeEstimations);
     }
 
-    if(Patch::solveShift){
+    if(Development::solveShift){
         //Solve Shift
         positiveEstimations.push_back(positiveEstimations[0]);
         positiveEstimations.erase(positiveEstimations.begin());
@@ -131,7 +138,7 @@ void curvatureEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
                                           rangeNegativeCurve.end(),
                                           negativeEstimations);
 
-    if(Patch::solveShift){
+    if(Development::solveShift){
         //Solve Shift
         positiveEstimations.push_back(positiveEstimations[0]);
         positiveEstimations.erase(positiveEstimations.begin());
@@ -148,34 +155,6 @@ void curvatureEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
         ++ip;
     }while(ip<=nL);
 }
-
-void normalizeAroundNeighbors(std::vector<double>& v, int radius)
-{
-    std::vector<double> temp = v;
-    double s;
-    for(int i=radius;i<v.size()-radius;++i){
-        s=0;
-        for(int j=-radius;j<=radius;++j){
-            s+=temp[i+j];
-        }
-        v[i] = s/(2*radius+1);
-    }
-}
-
-void normalizeAroundNeighbors(std::vector<UtilsTypes::TangentVector>& v, int radius)
-{
-    std::vector<UtilsTypes::TangentVector> temp = v;
-    UtilsTypes::TangentVector s;
-    for(int i=radius;i<v.size()-radius;++i){
-        s = UtilsTypes::TangentVector(0,0);
-        for(int j=-radius;j<=radius;++j){
-            s+=temp[i+j];
-            s = s.getNormalized();
-        }
-        v[i] = s;
-    }
-}
-
 
 void curvatureEstimatorsConnections(UtilsTypes::GluedCurveIteratorPair begin,
                                     UtilsTypes::GluedCurveIteratorPair end,
@@ -254,7 +233,7 @@ void tangentEstimatorsGridCurve(UtilsTypes::Curve::ConstIterator begin,
                                             negativeEstimations);
     }
 
-    if(Patch::solveShift){
+    if(Development::solveShift){
         //Solve Shift
         positiveEstimations.push_back(positiveEstimations[0]);
         positiveEstimations.erase(positiveEstimations.begin());
@@ -312,7 +291,7 @@ void tangentEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
                                         rangeNegativeCurve.end(),
                                         negativeEstimations);
 
-    if(Patch::solveShift){
+    if(Development::solveShift){
         //Solve Shift
         positiveEstimations.push_back(positiveEstimations[0]);
         positiveEstimations.erase(positiveEstimations.begin());
@@ -382,11 +361,11 @@ void setCurves(std::string imgFilePath,
     UtilsTypes::Image2D image = GenericReader<UtilsTypes::Image2D>::import(imgFilePath);
     KSpace KImage;
 
-    computeBoundaryCurve(intCurve,KImage,image);
+    ImageProc::computeBoundaryCurve(image,intCurve,0);
 
     UtilsTypes::Image2D dilatedImage(image.domain());
-    dilate(dilatedImage,imgFilePath,1);
-    computeBoundaryCurve(extCurve,KImage,dilatedImage);
+    ImageProc::dilate(dilatedImage,imgFilePath,1);
+    ImageProc::computeBoundaryCurve(dilatedImage,extCurve,0);
 }
 
 UtilsTypes::ConnectorSeedRangeType getSeedRange(KSpace& KImage,
@@ -407,6 +386,28 @@ UtilsTypes::ConnectorSeedRangeType getSeedRange(KSpace& KImage,
                                                             extCirculator );
 
     return seedRange;
+}
+
+void randomizeCurve(std::vector<Z2i::SCell>::const_iterator cBegin,
+                    std::vector<Z2i::SCell>::const_iterator cEnd,
+                    int size,
+                    std::vector<Z2i::SCell>& scellsRand)
+{
+    DGtal::Circulator<std::vector<Z2i::SCell>::const_iterator> C(cBegin,
+                                                                 cBegin,
+                                                                 cEnd);
+
+    int inc = rand()%size;
+    while(inc>0){
+        ++C;
+        --inc;
+    }
+
+    DGtal::Circulator<std::vector<Z2i::SCell>::const_iterator> it = C;
+    do{
+        scellsRand.push_back(*it);
+        ++it;
+    }while(it!=C);
 }
 
 

@@ -14,6 +14,10 @@
 
 #include "ConnectorSeed.h"
 
+namespace Development{
+    extern bool makeConvexArcs;
+}
+
 enum LinelType{
     Up=0,Left=1,Down=2,Right=3
 };
