@@ -19,7 +19,7 @@ set(FLOW_FILES FlowGraphBuilder.cpp ImageFlowData.cpp ImageFlowDataDebug.cpp Flo
 
 add_executable(moduleTest test.cpp  ${SOURCE_FILES})
 
-add_executable(flowGraph flowGraph.cpp ${SOURCE_FILES} ${FLOW_FILES} )
+add_executable(flowGraph flowGraph.cpp ${SOURCE_FILES} ${FLOW_FILES} compensatingFlow.cpp)
 add_executable(issue issue.cpp ${SOURCE_FILES} ${FLOW_FILES} )
 add_executable(testFlowGraphQuery testModules/testFlowGraphQuery.cpp ${SOURCE_FILES} ${FLOW_FILES} )
 
