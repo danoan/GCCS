@@ -5,7 +5,7 @@ void FlowGraphBuilder::operator()(LinelWeightMap& weightMap)
 {
     for(auto it=imageFlowData.curveDataBegin();it!=imageFlowData.curveDataEnd();++it)
     {
-        createCurveArcs(it->curve.begin(),it->curve.end(),weightMap);
+        createCurveArcs(it->curve.begin(),it->curve.end(),it->curveType,weightMap);
     }
 
 
@@ -39,6 +39,7 @@ void FlowGraphBuilder::operator()(LinelWeightMap& weightMap)
     createTargetArcsFromExteriorCurve(imageFlowData.getMostOuterCurve(),
                                       visitedNodes);
 
+    setTerminalsCoordinates();
 
 }
 
@@ -193,14 +194,22 @@ void FlowGraphBuilder::createArcFromLinel(Curve::SCell& linel,
 
 void FlowGraphBuilder::createCurveArcs(Curve::ConstIterator curveBegin,
                                      Curve::ConstIterator curveEnd,
+                                     ImageFlowData::CurveType ct,
                                      std::map<Z2i::SCell,double>& weightMap)
 {
+    ArcType at;
+    if( ct==ImageFlowData::CurveType::OriginalCurve ){
+        at = ArcType::InternalCurveArc;
+    }else{
+        at = ArcType::ExternalCurveArc;
+    }
+
     for(auto it=curveBegin;it!=curveEnd;++it){
         Curve::SCell linel = *it;
 
         createArcFromLinel(linel,
                            weightMap,
-                           ArcType::CurveArc);
+                           at);
     }
 }
 
@@ -369,4 +378,24 @@ int FlowGraphBuilder::createFromIteratorsQueue(std::queue<TType> intervals,std::
 
     }
 
+}
+
+void FlowGraphBuilder::setTerminalsCoordinates()
+{
+    double x=0;
+    double y=0;
+    double i=0;
+    for(ListDigraph::NodeIt n(fg);n!=INVALID;++n)
+    {
+        if(n==sourceNode || n==targetNode) continue;
+
+        x+=coords[n][0];
+        y+=coords[n][1];
+        i+=1;
+    }
+    x/=i;
+    y/=i;
+
+    coords[sourceNode] = LemonPoint(x,y);
+    coords[targetNode] = LemonPoint(x+40,y+40);
 }

@@ -9,6 +9,8 @@ using namespace DGtal;
 using namespace DGtal::Z2i;
 
 #include "utils.h"
+#include "weightSettings.h"
+
 #include "Artist.h"
 #include "FlowGraphBuilder.h"
 #include "ImageFlowDataDebug.h"
@@ -51,146 +53,6 @@ void testConnectdeness(std::string imgFilePath)
         GridCurve<KSpace> gc;
         gc.initFromSCellsRange(begin,end);
         ++gluedCurveNumber;
-    }
-
-}
-
-
-void tangentWeight(Curve::ConstIterator begin,
-                   Curve::ConstIterator end,
-                   KSpace& KImage,
-                   std::vector< TangentVector >& estimationsTangent,
-                   std::vector< double >& tangentWeightVector)
-{
-    auto it = begin;
-    int i =0;
-    do{
-        UtilsTypes::KSpace::Point pTarget = KImage.sCoords( KImage.sDirectIncident(*it,*KImage.sDirs(*it)) );
-        UtilsTypes::KSpace::Point pSource = KImage.sCoords( KImage.sIndirectIncident(*it,*KImage.sDirs(*it)) );
-
-        UtilsTypes::KSpace::Point scellVector = pTarget-pSource;
-
-        tangentWeightVector.push_back( fabs( estimationsTangent[i].dot(scellVector) ) );
-        ++it;
-        ++i;
-    }while(it!=end);
-}
-
-void setGridCurveWeight(Curve curvePriorGS,
-                        KSpace& KImage,
-                        std::map<Z2i::SCell,double>& weightMap)
-{
-    std::vector<double> curvatureEstimations;
-    curvatureEstimatorsGridCurve(curvePriorGS.begin(),
-                                 curvePriorGS.end(),
-                                 KImage,
-                                 curvatureEstimations);
-
-
-    updateToSquared(curvatureEstimations.begin(),curvatureEstimations.end());
-
-
-    std::vector<TangentVector> tangentEstimations;
-    tangentEstimatorsGridCurve(curvePriorGS.begin(),
-                               curvePriorGS.end(),
-                               KImage,
-                               tangentEstimations);
-
-
-    std::vector<double> tangentWeightVector;
-    tangentWeight(curvePriorGS.begin(),
-                  curvePriorGS.end(),
-                  KImage,
-                  tangentEstimations,
-                  tangentWeightVector);
-
-
-    {
-        int i =0;
-        for(auto it=curvePriorGS.begin();it!=curvePriorGS.end();++it){
-            weightMap[*it] = curvatureEstimations[i];
-            ++i;
-        }
-    }
-
-    {
-        int i =0;
-        for(auto it=curvePriorGS.begin();it!=curvePriorGS.end();++it){
-            weightMap[*it] *=tangentWeightVector[i];
-            ++i;
-        }
-    }
-
-}
-
-void setGluedCurveWeight(GluedCurveSetRange::ConstIterator gcsRangeBegin,
-                         GluedCurveSetRange::ConstIterator gcsRangeEnd,
-                         KSpace& KImage,
-                         unsigned int gluedCurveLength,
-                         std::map<Z2i::SCell,double>& weightMap)
-{
-    std::vector<double> estimationsCurvature;
-    curvatureEstimatorsConnections(gcsRangeBegin,gcsRangeEnd,KImage,gluedCurveLength,estimationsCurvature);
-
-    updateToSquared(estimationsCurvature.begin(),estimationsCurvature.end());
-
-    {
-        int i = 0;
-        for (GluedCurveIteratorPair it = gcsRangeBegin; it != gcsRangeEnd; ++it) {
-
-            auto itC = it->first.connectorsBegin();
-            do{
-                weightMap[*itC] = estimationsCurvature[i];
-                ++i;
-                if(itC==it->first.connectorsEnd()) break;
-                ++itC;
-            }while(true);
-
-        }
-    }
-
-    std::vector<TangentVector> estimationsTangent;
-    tangentEstimatorsConnections(gcsRangeBegin,gcsRangeEnd,KImage,gluedCurveLength,estimationsTangent);
-
-
-    std::vector<double> tangentWeightVector;
-    {
-        GluedCurveIteratorPair it = gcsRangeBegin;
-        int i = 0;
-        for (GluedCurveIteratorPair it = gcsRangeBegin; it != gcsRangeEnd; ++it) {
-
-            auto itC = it->first.connectorsBegin();
-            do {
-
-                KSpace::SCell linel = *itC;
-
-                UtilsTypes::KSpace::Point pTarget = KImage.sCoords(KImage.sDirectIncident(linel, *KImage.sDirs(linel)));
-                UtilsTypes::KSpace::Point pSource = KImage.sCoords(KImage.sIndirectIncident(linel, *KImage.sDirs(linel)));
-
-                UtilsTypes::KSpace::Point scellVector = pTarget - pSource;
-
-                tangentWeightVector.push_back(fabs(estimationsTangent[i].dot(scellVector)));
-
-                ++i;
-                if(itC==it->first.connectorsEnd()) break;
-                ++itC;
-            }while(true);
-
-        }
-
-    }
-
-    {
-        int i = 0;
-        for (GluedCurveIteratorPair it = gcsRangeBegin; it != gcsRangeEnd; ++it) {
-            auto itC = it->first.connectorsBegin();
-            do {
-                weightMap[*itC]*= tangentWeightVector[i];
-                ++i;
-                if(itC==it->first.connectorsEnd()) break;
-                ++itC;
-            }while(true);
-        }
     }
 
 }

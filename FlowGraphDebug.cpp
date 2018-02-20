@@ -76,5 +76,21 @@ void FlowGraphDebug::getCutFilter(Preflow<ListDigraph,ListDigraph::ArcMap<double
 
 }
 
+void FlowGraphDebug::highlightArcs(ListDigraph::ArcMap<int>& arcColors,
+                                   std::string imageOutputPath)
+{
+
+    Palette palette;
+
+    graphToEps(fgb.graph(),imageOutputPath.c_str())
+            .coords(fgb.coordsMap())
+            .nodeScale(.0005)
+            .arcWidthScale(0.0005)
+            .arcColors((composeMap(palette,arcColors)))
+            .drawArrows()
+            .arrowWidth(0.25)
+            .run();
+}
+
 
 

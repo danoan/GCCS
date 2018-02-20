@@ -31,9 +31,10 @@ class FlowGraphBuilder{
 
 public:
     friend class FlowGraphDebug;
+    friend class FlowGraphQuery;
 
     enum ArcType{
-        SourceArc,TargetArc,GluedArc,CurveArc,EscapeArc,MakeConvexArc,
+        SourceArc,TargetArc,GluedArc,InternalCurveArc,ExternalCurveArc,EscapeArc,MakeConvexArc,
     };
 
     typedef dim2::Point<int> LemonPoint;
@@ -92,6 +93,7 @@ private:
 
     void createCurveArcs(Curve::ConstIterator curveBegin,
                          Curve::ConstIterator curveEnd,
+                         ImageFlowData::CurveType ct,
                          std::map<Z2i::SCell,double>& weightMap);
 
     void createGluedArcs(SegCut::GluedCurveIteratorPair gluedRangeBegin,
@@ -140,6 +142,7 @@ private:
                                  std::map<Z2i::SCell,double>& weightMap,
                                  UnsignedSCellSet& visitedNodes);
 
+    void setTerminalsCoordinates();
 
 
 private:

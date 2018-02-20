@@ -18,6 +18,9 @@ public:
     void drawCutGraph(std::string outputFolder,
                       std::string suffix);
 
+    void highlightArcs(ListDigraph::ArcMap<int>& arcColors,
+                       std::string imageOutputPath);
+
 
 private:
 

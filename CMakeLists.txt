@@ -15,12 +15,17 @@ LINK_DIRECTORIES(${DGTAL_LIBRARY_DIRS})
 
 
 set(SOURCE_FILES imageProc.cpp Artist.cpp Patch/estimatorMethods.cpp utils.cpp)
+set(FLOW_FILES FlowGraphBuilder.cpp ImageFlowData.cpp ImageFlowDataDebug.cpp FlowGraphDebug.cpp FlowGraphQuery.cpp weightSettings.cpp)
 
 add_executable(moduleTest test.cpp  ${SOURCE_FILES})
-add_executable(flowGraph flowGraph.cpp ${SOURCE_FILES} FlowGraphBuilder.cpp ImageFlowData.cpp ImageFlowDataDebug.cpp FlowGraphDebug.cpp)
-add_executable(issue issue.cpp ${SOURCE_FILES} FlowGraphBuilder.cpp ImageFlowData.cpp ImageFlowDataDebug.cpp FlowGraphDebug.cpp)
+
+add_executable(flowGraph flowGraph.cpp ${SOURCE_FILES} ${FLOW_FILES} )
+add_executable(issue issue.cpp ${SOURCE_FILES} ${FLOW_FILES} )
+add_executable(testFlowGraphQuery testModules/testFlowGraphQuery.cpp ${SOURCE_FILES} ${FLOW_FILES} )
+
 
 target_link_libraries(moduleTest ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
-target_link_libraries(flowGraph ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 
+target_link_libraries(flowGraph ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(issue ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
+target_link_libraries(testFlowGraphQuery ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
