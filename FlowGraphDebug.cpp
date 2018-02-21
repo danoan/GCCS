@@ -5,84 +5,94 @@
 void FlowGraphDebug::drawCutGraph(std::string outputFolder,
                                   std::string suffix)
 {
-    FlowGraphBuilder::Flow flow = fgb.preparePreFlow();
-    flow.run();
+    FlowGraphBuilder::FlowComputer flowComputer = fgb.preparePreFlow();
+    flowComputer.run();
 
     ListDigraph::ArcMap<bool> arcsInTheCut(fgb.graph(),false);
-    getCutFilter(flow,
-                 arcsInTheCut);
+    fgq.sourceComponent(arcsInTheCut);
 
-    ListDigraph::NodeMap<bool> nodeFilter(fgb.graph(),true);
-    ListDigraph::ArcMap<bool> arcFilter(fgb.graph(),true);
+    suffix = "CutGraph-" + suffix;
+    highlightArcs(arcsInTheCut,outputFolder,suffix);
+}
 
-    nodeFilter[fgb.source()] = false;
-    nodeFilter[fgb.target()] = false;
+void FlowGraphDebug::drawRefundGraph(std::string outputFolder,
+                                     std::string suffix)
+{
+    FilterComposer<ListDigraph::ArcMap<bool>,ListDigraph::ArcIt> filterComposer(fgb.graph());
 
-    FlowGraphBuilder::SubGraph subgraph(fgb.graph(),
-                                        nodeFilter,
-                                        arcFilter);
+    ListDigraph::ArcMap<bool> refundArcsFilter(fgb.graph(),false);
+    fgq.filterArcs(refundArcsFilter,FlowGraphBuilder::ArcType::RefundArc,true);
 
-    Palette palette;
-    FlowGraphBuilder::SubGraph::ArcMap<int> arcColors(subgraph,0);
+    ListDigraph::ArcMap<bool> externalArcsFilter(fgb.graph(),false);
+    fgq.filterArcs(externalArcsFilter,FlowGraphBuilder::ArcType::ExternalCurveArc,true);
 
-    for(FlowGraphBuilder::SubGraph::ArcIt a(subgraph);a!=INVALID;++a)
+    filterComposer+refundArcsFilter+externalArcsFilter;
+
+    suffix = suffix + "-RefundArcs";
+    highlightArcs(filterComposer(),outputFolder,suffix);
+}
+
+
+void FlowGraphDebug::highlightArcs(ListDigraph::ArcMap<bool>& arcFilter,
+                                   std::string imageOutputFolder,
+                                   std::string suffix)
+{
+
+    ListDigraph::NodeMap<bool> allNodes(fgb.graph(),true);
+
+    ListDigraph::ArcMap<int> arcColors(fgb.graph(),0);
+
+    for(ListDigraph::ArcIt a(fgb.graph());a!=INVALID;++a)
     {
-        if(arcsInTheCut[a]){
+        if(arcFilter[a])
+        {
             arcColors[a] = 1;
         }
     }
 
-
-    std::string imageOutputPath = outputFolder + "/cutGraph" + suffix + ".eps";
-    boost::filesystem::path p1(imageOutputPath.c_str());
-    p1.remove_filename();
-    boost::filesystem::create_directories(p1);
-
-    graphToEps(subgraph,imageOutputPath.c_str())
-            .coords(fgb.coordsMap())
-            .nodeScale(.0005)
-            .arcWidthScale(0.0005)
-            .arcColors((composeMap(palette,arcColors)))
-            .drawArrows()
-            .arrowWidth(0.25)
-            .run();
-}
-
-
-
-void FlowGraphDebug::getCutFilter(Preflow<ListDigraph,ListDigraph::ArcMap<double> >& flow,
-                                  ListDigraph::ArcMap<bool>& arcsInTheCut)
-{
-    ListDigraph::NodeMap<bool> nodesInTheCut(fgb.graph());
-
-    for(ListDigraph::NodeIt n(fgb.graph());n!=INVALID;++n){
-        if( flow.minCut(n) ){
-            nodesInTheCut[n] = true;
-        }else{
-            nodesInTheCut[n] = false;
-        }
-    }
-    nodesInTheCut[fgb.source()]=false;
-
-    for(ListDigraph::ArcIt a(fgb.graph());a!=INVALID;++a){
-        ListDigraph::Node s =fgb.graph().source(a);
-        ListDigraph::Node t =fgb.graph().target(a);
-
-        if( (nodesInTheCut[s] && !nodesInTheCut[t])  )
-        {
-            arcsInTheCut[a] = true;
-        }
-    }
-
+    highlightArcs(allNodes,
+                  arcFilter,
+                  arcColors,
+                  imageOutputFolder,
+                  suffix);
 }
 
 void FlowGraphDebug::highlightArcs(ListDigraph::ArcMap<int>& arcColors,
-                                   std::string imageOutputPath)
+                                   std::string imageOutputFolder,
+                                   std::string suffix)
+{
+
+    ListDigraph::NodeMap<bool> allNodes(fgb.graph(),true);
+    ListDigraph::ArcMap<bool> allArcs(fgb.graph(),true);
+
+    highlightArcs(allNodes,
+                  allArcs,
+                  arcColors,
+                  imageOutputFolder,
+                  suffix);
+}
+
+
+void FlowGraphDebug::highlightArcs(ListDigraph::NodeMap<bool>& nodeFilter,
+                                   ListDigraph::ArcMap<bool>& arcFilter,
+                                   ListDigraph::ArcMap<int>& arcColors,
+                                   std::string imageOutputFolder,
+                                   std::string suffix)
 {
 
     Palette palette;
 
-    graphToEps(fgb.graph(),imageOutputPath.c_str())
+    std::string imageOutputPath = imageOutputFolder + "/" + suffix + ".eps";
+
+    boost::filesystem::path p2(imageOutputPath.c_str());
+    p2.remove_filename();
+    boost::filesystem::create_directories(p2);
+
+    FlowGraphBuilder::SubGraph sg(fgb.graph(),
+                                  nodeFilter,
+                                  arcFilter);
+
+    graphToEps(sg,imageOutputPath.c_str())
             .coords(fgb.coordsMap())
             .nodeScale(.0005)
             .arcWidthScale(0.0005)
@@ -91,6 +101,7 @@ void FlowGraphDebug::highlightArcs(ListDigraph::ArcMap<int>& arcColors,
             .arrowWidth(0.25)
             .run();
 }
+
 
 
 

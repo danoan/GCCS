@@ -22,6 +22,17 @@ public:
 public:
     FlowGraphQuery(FlowGraphBuilder& fgb):fgb(fgb){};
 
+    void sourceComponent(ListDigraph::ArcMap<bool>& cutFilter);
+
+    void sourceComponent(ListDigraph::NodeMap<bool>& nodeFilter,
+                         ListDigraph::ArcMap<bool>& arcFilter,
+                         ListDigraph::ArcMap<bool>& cutFilter);
+
+    template<typename MappedType>
+    void filterArcs(ListDigraph::ArcMap<MappedType>& retArcFilter,
+                    FlowGraphBuilder::ArcType at,
+                    MappedType valueForTrue);
+
     ArcPairIterator gluedEdgePairsBegin();
     ArcPairIterator gluedEdgePairsEnd();
 
@@ -32,15 +43,27 @@ private:
     void setGluedEdgePairsOnCut();
     void setDetourArcs();
 
-    FlowGraphBuilder::SubGraph sourceComponnent(ListDigraph::NodeMap<bool>& nodeFilter,
-                                                ListDigraph::ArcMap<bool>& arcFilter,
-                                                ListDigraph::ArcMap<bool>& cutFilter);
-
 private:
     FlowGraphBuilder& fgb;
 
     std::vector< ArcPair > gluedEdgePairsOnCut;
     std::map< ArcPair, std::vector< ListDigraph::Arc > > detourArcs;
 };
+
+
+template<typename MappedType>
+void FlowGraphQuery::filterArcs(ListDigraph::ArcMap<MappedType>& retArcFilter,
+                                FlowGraphBuilder::ArcType at,
+                                MappedType valueForTrue)
+{
+    for(ListDigraph::ArcIt a(fgb.graph());a!=INVALID;++a)
+    {
+        if(fgb.getArcType(a)==at)
+        {
+            retArcFilter[a] =valueForTrue;
+        }
+
+    }
+}
 
 #endif

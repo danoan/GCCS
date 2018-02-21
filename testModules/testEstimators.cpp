@@ -1,7 +1,7 @@
 
-#include "typeDefs.h"
-#include "utils.h"
-#include "Artist.h"
+#include "../typeDefs.h"
+#include "../utils.h"
+#include "../Artist.h"
 
 using namespace DGtal;
 using namespace DGtal::Z2i;
@@ -173,9 +173,9 @@ void runTests(const std::string& imgPath,
 
 void testSequence()
 {
-    std::string outputRootPath = "../output/tests";
+    std::string outputRootPath = "../output/testModules/testEstimators";
     if(Development::solveShift)
-        outputRootPath += "/solve-shift";
+        outputRootPath += "/solve-shift+average";
     else
         outputRootPath += "/average";
     

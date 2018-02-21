@@ -34,12 +34,12 @@ public:
     friend class FlowGraphQuery;
 
     enum ArcType{
-        SourceArc,TargetArc,GluedArc,InternalCurveArc,ExternalCurveArc,EscapeArc,MakeConvexArc,
+        SourceArc,TargetArc,GluedArc,InternalCurveArc,ExternalCurveArc,EscapeArc,MakeConvexArc,RefundArc
     };
 
     typedef dim2::Point<int> LemonPoint;
     typedef SubDigraph< ListDigraph,ListDigraph::NodeMap<bool> > SubGraph;
-    typedef Preflow <ListDigraph,ListDigraph::ArcMap<double> > Flow;
+    typedef Preflow <ListDigraph,ListDigraph::ArcMap<double> > FlowComputer;
 
     typedef std::set<KSpace::SCell,UnsignedSCellComparison> UnsignedSCellSet;
 
@@ -77,12 +77,18 @@ public:
     ListDigraph::NodeMap< LemonPoint >& coordsMap(){return coords;}
     ListDigraph::NodeMap<Z2i::SCell>& pixelsMap(){return pixelMap;}
     ListDigraph::ArcMap<double>& getEdgeWeight(){return arcWeight;}
+
+    ArcType getArcType(const ListDigraph::Arc& a){ return arcType[a]; }
     
     
-    Flow preparePreFlow(){
-        Flow flow(fg,arcWeight,sourceNode,targetNode);
+    FlowComputer preparePreFlow(){
+        FlowComputer flow(fg,arcWeight,sourceNode,targetNode);
         return flow;
     }
+
+    void addRefundArc(ListDigraph::Node& u,
+                      ListDigraph::Node& v,
+                      double weight);
 
 private:
 
@@ -156,7 +162,7 @@ private:
     CoordToNodeMap coordToNode;
 
     NodeToPixelMap pixelMap;
-    NodeToCoordMap coords;
+    NodeToCoordMap coords;  //KCoords
 
     ArcWeightMap arcWeight;
     ArcTypeMap arcType;

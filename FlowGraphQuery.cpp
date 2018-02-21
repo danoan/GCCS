@@ -1,11 +1,20 @@
 #include "FlowGraphQuery.h"
 
-
-FlowGraphBuilder::SubGraph FlowGraphQuery::sourceComponnent(ListDigraph::NodeMap<bool>& nodeFilter,
-                                                            ListDigraph::ArcMap<bool>& arcFilter,
-                                                            ListDigraph::ArcMap<bool>& cutFilter)
+void FlowGraphQuery::sourceComponent(ListDigraph::ArcMap<bool>& cutFilter)
 {
-    FlowGraphBuilder::Flow flow = fgb.preparePreFlow();
+    ListDigraph::NodeMap<bool> allNodes(fgb.graph(),true);
+    ListDigraph::ArcMap<bool> allArcs(fgb.graph(),true);
+
+    sourceComponent(allNodes,
+                    allArcs,
+                    cutFilter);
+}
+
+void FlowGraphQuery::sourceComponent(ListDigraph::NodeMap<bool>& nodeFilter,
+                                     ListDigraph::ArcMap<bool>& arcFilter,
+                                     ListDigraph::ArcMap<bool>& cutFilter)
+{
+    FlowGraphBuilder::FlowComputer flow = fgb.preparePreFlow();
     flow.run();
 
     for(ListDigraph::ArcIt a(fgb.graph());a!=INVALID;++a)
@@ -25,8 +34,6 @@ FlowGraphBuilder::SubGraph FlowGraphQuery::sourceComponnent(ListDigraph::NodeMap
 
     nodeFilter[fgb.source()]=false;
     nodeFilter[fgb.target()]=false;
-
-    return FlowGraphBuilder::SubGraph(fgb.graph(),nodeFilter,arcFilter);
 }
 
 
@@ -37,9 +44,11 @@ void FlowGraphQuery::setGluedEdgePairsOnCut()
     ListDigraph::ArcMap<bool> arcFilter(fgb.graph(),false);
     ListDigraph::ArcMap<bool> cutFilter(fgb.graph(),false);
 
-    FlowGraphBuilder::SubGraph sc = sourceComponnent(nodeFilter,
-                                                     arcFilter,
-                                                     cutFilter);
+    sourceComponent(nodeFilter,
+                    arcFilter,
+                    cutFilter);
+
+    FlowGraphBuilder::SubGraph sc(fgb.graph(),nodeFilter,arcFilter);
 
 
     ListDigraph::Node firstNode;
@@ -115,13 +124,13 @@ void FlowGraphQuery::setGluedEdgePairsOnCut()
 
 FlowGraphQuery::ArcPairIterator FlowGraphQuery::gluedEdgePairsBegin()
 {
-    if(gluedEdgePairsOnCut.size()==0) setGluedEdgePairsOnCut();
+    gluedEdgePairsOnCut.clear();
+    setGluedEdgePairsOnCut();
     return gluedEdgePairsOnCut.begin();
 }
 
 FlowGraphQuery::ArcPairIterator FlowGraphQuery::gluedEdgePairsEnd()
 {
-    if(gluedEdgePairsOnCut.size()==0) setGluedEdgePairsOnCut();
     return gluedEdgePairsOnCut.end();
 }
 
@@ -166,14 +175,14 @@ void FlowGraphQuery::setDetourArcs()
 
 FlowGraphQuery::DetourArcMapIterator FlowGraphQuery::detourArcsBegin()
 {
-    if(detourArcs.size()==0) setDetourArcs();
+    detourArcs.clear();
+    setDetourArcs();
     return detourArcs.begin();
 }
 
 
 FlowGraphQuery::DetourArcMapIterator FlowGraphQuery::detourArcsEnd()
 {
-    if(detourArcs.size()==0) setDetourArcs();
     return detourArcs.end();
 }
 

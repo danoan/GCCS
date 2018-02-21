@@ -62,22 +62,33 @@ void computeFlow(SegCut::Image2D& image,
             std::cout << myGraph.id( api->first ) << "::" << myGraph.id(api->second) << std::endl;
             i++;
         }
-        fgd.highlightArcs(highligthGluedEdgePair, "highlightGluedEdgePair.eps");
+        fgd.highlightArcs(highligthGluedEdgePair, outputFolder,"highlightGluedEdgePair");
     }
 
 
     {
         std::cout << "DetourArcs" << std::endl;
         ListDigraph::ArcMap<int> highlightDetourArcs(myGraph, 0);
+        ListDigraph::ArcMap<int> highligthGluedEdgePairSecond(myGraph, 0);
         int i=1;
         for (FlowGraphQuery::DetourArcMapIterator dami = fgq.detourArcsBegin(); dami != fgq.detourArcsEnd(); ++dami) {
+            FlowGraphQuery::ArcPair key = dami->first;
+
             for (FlowGraphQuery::DetourArcIterator dai = dami->second.begin(); dai != dami->second.end(); ++dai) {
                 highlightDetourArcs[*dai] = i;
                 std::cout << myGraph.id(*dai) << std::endl;
             }
+
+            highligthGluedEdgePairSecond[key.first] = i;
+            highligthGluedEdgePairSecond[key.second] = i;
+
             i++;
         }
-        fgd.highlightArcs(highlightDetourArcs, "highlightDetourArcs.eps");
+        fgd.highlightArcs(highlightDetourArcs, outputFolder,"highlightDetourArcs");
+
+        fgd.highlightArcs(highligthGluedEdgePairSecond, outputFolder,"highlightGluedEdgePairSecond");
+
+
     }
 
 
@@ -90,12 +101,12 @@ int main() {
     Development::makeConvexArcs = false;
     Development::invertGluedArcs = false;
 
-    unsigned int gluedCurveLength = 7;
+    unsigned int gluedCurveLength = 5;
 
     std::string imgPath = "../images/flow-evolution/single_square.pgm";
     SegCut::Image2D image = GenericReader<SegCut::Image2D>::import(imgPath);
 
-    std::string outputFolder = "../output/testFlowGraphQuery/single-square";
+    std::string outputFolder = "../output/testModules/FlowGraphQuery";
 
 
     KSpace KImage;

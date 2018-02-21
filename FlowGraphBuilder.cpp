@@ -399,3 +399,12 @@ void FlowGraphBuilder::setTerminalsCoordinates()
     coords[sourceNode] = LemonPoint(x,y);
     coords[targetNode] = LemonPoint(x+40,y+40);
 }
+
+void FlowGraphBuilder::addRefundArc(ListDigraph::Node& u,
+                                    ListDigraph::Node& v,
+                                    double weight)
+{
+    ListDigraph::Arc a1 = fg.addArc(u,v);
+    arcWeight[a1] = weight;
+    arcType[a1] = ArcType::RefundArc;
+}

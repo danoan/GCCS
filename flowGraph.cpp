@@ -63,7 +63,7 @@ void computeFlow(SegCut::Image2D& image,
     fgb(weightMap);
 
 
-    FlowGraphBuilder::Flow flow = fgb.preparePreFlow();
+    FlowGraphBuilder::FlowComputer flow = fgb.preparePreFlow();
     flow.run();
 
     ListDigraph::NodeMap<bool> node_filter(fgb.graph(),false);

@@ -123,6 +123,11 @@ public:
     Curve& getMostInnerCurve();
     Curve& getMostOuterCurve();
 
+    int getGluedCurveLength(){ return gluedCurveLength; }
+
+    Image2D& getOriginalImage(){ return originalImage; }
+    Image2D& getDilatedImage(){ return dilatedImage; }
+
 private:
     friend class ImageFlowDataDebug;
 
