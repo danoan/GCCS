@@ -166,7 +166,8 @@ void FlowGraphBuilder::createArcFromPixels(KSpace::SCell pSource,
     a = fg.addArc(sourcePixelNode,targetPixelNode);
 }
 
-void FlowGraphBuilder::createArcFromLinel(Curve::SCell& linel,
+void FlowGraphBuilder::createArcFromLinel(ListDigraph::Arc& a,
+                                          Curve::SCell& linel,
                                           std::map<Z2i::SCell,double>& weightMap,
                                           ArcType at,
                                           bool invert)
@@ -176,7 +177,6 @@ void FlowGraphBuilder::createArcFromLinel(Curve::SCell& linel,
     Z2i::SCell directPixel = KImage.sDirectIncident(linel,KImage.sOrthDir(linel));
     Z2i::SCell indirectPixel = KImage.sIndirectIncident(linel,KImage.sOrthDir(linel));
 
-    ListDigraph::Arc a;
     if(invert){
         createArcFromPixels(indirectPixel,
                             directPixel,
@@ -190,6 +190,22 @@ void FlowGraphBuilder::createArcFromLinel(Curve::SCell& linel,
 
     arcWeight[a] = weightMap[linel];
     arcType[a] = at;
+    arcSCell[a] = linel;
+    scellArc[linel] = a;
+}
+
+void FlowGraphBuilder::createArcFromLinel(Curve::SCell& linel,
+                                          std::map<Z2i::SCell,double>& weightMap,
+                                          ArcType at,
+                                          bool invert)
+{
+    ListDigraph::Arc a;
+    createArcFromLinel(a,
+                       linel,
+                       weightMap,
+                       at,
+                       invert);
+
 }
 
 void FlowGraphBuilder::createCurveArcs(Curve::ConstIterator curveBegin,
@@ -233,10 +249,16 @@ void FlowGraphBuilder::createGluedArcs(SegCut::GluedCurveIteratorPair gluedRange
                                    ArcType::MakeConvexArc,
                                    false);
             }else{
-                createArcFromLinel(linel,
+                ListDigraph::Arc a;
+                createArcFromLinel(a,
+                                   linel,
                                    weightMap,
                                    ArcType::GluedArc,
                                    Development::invertGluedArcs);
+
+
+                arcCirculator[a] = CirculatorPair(begin.curveSegment1End(),
+                                                  begin.curveSegment2Begin());
             }
 
 

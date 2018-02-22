@@ -44,12 +44,22 @@ public:
     typedef std::set<KSpace::SCell,UnsignedSCellComparison> UnsignedSCellSet;
 
     typedef std::map<KSpace::Point,ListDigraph::Node> CoordToNodeMap;
+    typedef std::map<KSpace::SCell,ListDigraph::Arc> SCellArcMap;
 
     typedef ListDigraph::NodeMap<Z2i::SCell> NodeToPixelMap;
     typedef ListDigraph::NodeMap< LemonPoint > NodeToCoordMap;
 
     typedef ListDigraph::ArcMap<double> ArcWeightMap;
     typedef ListDigraph::ArcMap<ArcType> ArcTypeMap;
+    typedef ListDigraph::ArcMap<Z2i::SCell> ArcSCellMap;
+
+
+    typedef Curve::ConstIterator SCellIteratorType;
+    typedef DGtal::Circulator<SCellIteratorType> SCellCirculator;
+
+    typedef std::pair<SCellCirculator,SCellCirculator> CirculatorPair;
+    typedef ListDigraph::ArcMap<CirculatorPair> ArcCirculatorMap;
+
 
     typedef std::map<Z2i::SCell,double> LinelWeightMap;
 
@@ -57,7 +67,9 @@ public:
                                                     pixelMap(fg),
                                                     coords(fg),
                                                     arcWeight(fg),
-                                                    arcType(fg)
+                                                    arcType(fg),
+                                                    arcCirculator(fg),
+                                                    arcSCell(fg)
     {
         srand(time(NULL));
         sourceNode = fg.addNode();
@@ -65,9 +77,7 @@ public:
 
     };
 
-    void initializeStats();
     void operator()(std::map<Z2i::SCell,double>& weightMap);
-
 
 
     ListDigraph& graph(){return fg;};
@@ -91,6 +101,12 @@ public:
                       double weight);
 
 private:
+
+    void createArcFromLinel(ListDigraph::Arc& a,
+                            Curve::SCell& linel,
+                            std::map<Z2i::SCell,double>& weightMap,
+                            ArcType at,
+                            bool invert);
 
     void createArcFromLinel(Curve::SCell& linel,
                             std::map<Z2i::SCell,double>& weightMap,
@@ -166,6 +182,10 @@ private:
 
     ArcWeightMap arcWeight;
     ArcTypeMap arcType;
+    ArcCirculatorMap arcCirculator; //Valid entries only for Glued Arcs
+    ArcSCellMap arcSCell;   //Valid entries only for Curve Arcs
+
+    SCellArcMap scellArc;
 
 };
 

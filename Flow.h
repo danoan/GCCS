@@ -40,8 +40,8 @@ public:
     double weight(ListDigraph::Arc& arc){ return fgb.getEdgeWeight()[arc]; }
 
     void detourArcsFilter(ListDigraph::ArcMap<bool> & detourArcs);
-    std::map< FlowGraphQuery::ArcPair, std::vector< ListDigraph::Arc > >::const_iterator detourArcsMapBegin(){ return fgq.detourArcsBegin(); };
-    std::map< FlowGraphQuery::ArcPair, std::vector< ListDigraph::Arc > >::const_iterator detourArcsMapEnd(){ return fgq.detourArcsEnd(); };
+    std::map< FlowGraphQuery::ArcPair, std::set< ListDigraph::Arc > >::const_iterator detourArcsMapBegin(){ return fgq.detourArcsBegin(); };
+    std::map< FlowGraphQuery::ArcPair, std::set< ListDigraph::Arc > >::const_iterator detourArcsMapEnd(){ return fgq.detourArcsEnd(); };
 
     void addRefundArcs(ListDigraph::Arc& intExtArc,
                        ListDigraph::Arc& extIntArc,

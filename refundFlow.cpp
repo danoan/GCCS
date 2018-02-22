@@ -106,7 +106,6 @@ void computeFlow(SegCut::Image2D& image,
     Image2D partialImage = f1.baseImage();
     Image2D previousPartialImage = f1.baseImage();
     while( true ) {
-
         FlowGraphDebug fgd(f1);
 
         ListDigraph::ArcMap<bool> detourArcs(f1.graph(),false);
@@ -114,6 +113,8 @@ void computeFlow(SegCut::Image2D& image,
 
         ListDigraph::ArcMap<double> arcDiff(f1.graph());
 
+
+        partialImage = f1.baseImage();
         updateAndCompare(f1,
                          partialImage,
                          detourArcs,
@@ -129,7 +130,7 @@ void computeFlow(SegCut::Image2D& image,
         for(auto it = f1.detourArcsMapBegin();it!=f1.detourArcsMapEnd();++it)
         {
             FlowGraphQuery::ArcPair key = it->first;
-            const std::vector<ListDigraph::Arc> &values = it->second;
+            const std::set<ListDigraph::Arc> &values = it->second;
 
             s=0;
             n=0;
@@ -139,7 +140,7 @@ void computeFlow(SegCut::Image2D& image,
                 ++n;
             }
 
-            s/=(2*n);
+            s/=2;
 
             f1.addRefundArcs(key.first,key.second,s);
         }
@@ -157,6 +158,8 @@ void computeFlow(SegCut::Image2D& image,
         currentCutValue = f1.cutValue();
 
         iteration++;
+
+        std::cout << currentCutValue << std::endl;
     };
 
     std::cout<< "iterations: " << iteration << std::endl;
@@ -166,7 +169,6 @@ void computeFlow(SegCut::Image2D& image,
 
     std::cout << "Cut Value: " << currentCutValue << std::endl;
     std::cout << "Energy Value: " << actualEnergyValue << std::endl;
-
 
 }
 
@@ -233,12 +235,12 @@ int main(){
     Development::makeConvexArcs = false;
     Development::invertGluedArcs = false;
 
-    unsigned int gluedCurveLength = 20;
+    unsigned int gluedCurveLength = 5;
 
-    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_square.pgm");
+    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_triangle.pgm");
     SegCut::Image2D imageOut = image;
 
-    std::string outputFolder = "../output/refundFlow/square/square-20";
+    std::string outputFolder = "../output/refundFlow/triangle/triangle-5+Length";
 
     for(int i=0;i<200;++i)
     {

@@ -11,14 +11,30 @@ using namespace lemon;
 
 #include "FlowGraphBuilder.h"
 
+class SCellToArc
+{
+public:
+    typedef DGtal::Z2i::SCell SCell;
+
+    SCellToArc(FlowGraphBuilder::SCellArcMap& map):scellArc(map){};
+
+    ListDigraph::Arc operator()(const SCell& a) const
+    {
+        return scellArc[a];
+    }
+
+private:
+    FlowGraphBuilder::SCellArcMap& scellArc;
+};
+
 class FlowGraphQuery
 {
 public:
     typedef std::pair< ListDigraph::Arc, ListDigraph::Arc > ArcPair;
     typedef std::vector<ArcPair>::const_iterator ArcPairIterator;
 
-    typedef std::map< ArcPair, std::vector< ListDigraph::Arc > >::const_iterator DetourArcMapIterator;
-    typedef std::vector< ListDigraph::Arc >::const_iterator DetourArcIterator;
+    typedef std::map< ArcPair, std::set< ListDigraph::Arc > >::const_iterator DetourArcMapIterator;
+    typedef std::set< ListDigraph::Arc >::const_iterator DetourArcIterator;
 public:
     FlowGraphQuery(FlowGraphBuilder& fgb):fgb(fgb){};
 
@@ -49,11 +65,27 @@ private:
     void setGluedEdgePairsOnCut();
     void setDetourArcs();
 
+    template<typename IteratorType>
+    void insertSCellFromArc(std::set<ListDigraph::Arc>& v,
+                            SCellToArc& staFunctor,
+                            IteratorType begin,
+                            int items);
+
+    template<typename IteratorType,typename LimitIteratorType>
+    void insertSCellFromArc(std::set<ListDigraph::Arc>& v,
+                            SCellToArc& staFunctor,
+                            IteratorType begin,
+                            LimitIteratorType limitIterator,
+                            int items);
+
+    //Deprecated
+    void setDetourArcsAsExternalArcs();
+
 private:
     FlowGraphBuilder& fgb;
 
     std::vector< ArcPair > gluedEdgePairsOnCut;
-    std::map< ArcPair, std::vector< ListDigraph::Arc > > detourArcs;
+    std::map< ArcPair, std::set< ListDigraph::Arc > > detourArcs;
 };
 
 
@@ -80,6 +112,48 @@ void FlowGraphQuery::filterArcs(FlowGraphBuilder& fgb,
             retArcFilter[a] =valueForTrue;
         }
 
+    }
+}
+
+template<typename IteratorType>
+void FlowGraphQuery::insertSCellFromArc(std::set<ListDigraph::Arc>& v,
+                                        SCellToArc& staFunctor,
+                                        IteratorType begin,
+                                        int items)
+{
+    ConstIteratorAdapter<IteratorType,SCellToArc,ListDigraph::Arc> itAdapter(begin,
+                                                                             staFunctor);
+
+    unsigned long int initialSize = v.size();
+    v.insert(itAdapter,walkCirculator(itAdapter,items) );
+    if(initialSize+items!=v.size()){
+        std::cout << "Collision of " << initialSize+items-v.size() << " items" << std::endl;
+    }
+}
+
+template<typename IteratorType,typename LimitIteratorType>
+void FlowGraphQuery::insertSCellFromArc(std::set<ListDigraph::Arc>& v,
+                                        SCellToArc& staFunctor,
+                                        IteratorType begin,
+                                        LimitIteratorType limitIterator,
+                                        int items)
+{
+    ConstIteratorAdapter<IteratorType,SCellToArc,ListDigraph::Arc> itAdapter(begin,
+                                                                             staFunctor);
+
+    int n =0;
+    ListDigraph::Arc a = staFunctor(*limitIterator);
+    while(n<items)
+    {
+        if(*itAdapter==a) break;
+//        std::cout << fgb.graph().id(*itAdapter) << "?" << fgb.arcType[*itAdapter] << "::" << fgb.graph().id(a) << "?" << fgb.arcType[a] << std::endl;
+        v.insert(*itAdapter);
+        ++itAdapter;
+        ++n;
+    }
+
+    if(n!=items){
+        std::cout << "Limit condition reached: " << n << " of " << items << " items included" << std::endl;
     }
 }
 

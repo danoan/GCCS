@@ -56,12 +56,13 @@ void Flow::initImageFlowDataAsInFlow(ImageFlowData& newImageFlowData)
 void Flow::detourArcsFilter(ListDigraph::ArcMap<bool>& detourArcs)
 {
     for (FlowGraphQuery::DetourArcMapIterator dami = fgq.detourArcsBegin(); dami != fgq.detourArcsEnd(); ++dami) {
-        const std::vector<ListDigraph::Arc> &values = dami->second;
+        const std::set<ListDigraph::Arc> &values = dami->second;
 
         for (FlowGraphQuery::DetourArcIterator dai = values.begin(); dai != values.end(); ++dai) {
             detourArcs[*dai] =true;
 
-            if( fgb.getArcType(*dai) != FlowGraphBuilder::ArcType::ExternalCurveArc) throw "Not ExternalCurveArc identified as a DetourArc.";
+            if( fgb.getArcType(*dai) != FlowGraphBuilder::ArcType::ExternalCurveArc &&
+                fgb.getArcType(*dai) != FlowGraphBuilder::ArcType::InternalCurveArc) throw "A not CurveArc has been identified as a DetourArc.";
         }
     }
 }
@@ -146,8 +147,6 @@ void Flow::updateImage(Image2D& updatedImage)
     for(std::vector<SCell>::const_iterator it=pixelsInTheGraph.begin();it!=pixelsInTheGraph.end();++it)
     {
         Z2i::Point p = KImage.sCoords(*it);
-        if(updatedImage(p)==255) continue;
-
         updatedImage.setValue(p,255);
     }
 
@@ -156,21 +155,7 @@ void Flow::updateImage(Image2D& updatedImage)
 
 bool Flow::hasChanges(Image2D& im1, Image2D& im2)
 {
-    ListDigraph::NodeMap<bool> pixelsFilter(fgb.graph(),false);
-    getPixelsFilter(pixelsFilter);
-
-    std::vector<Z2i::SCell> pixelsInTheGraph;
-    pixels(pixelsInTheGraph,
-           pixelsFilter);
-
-    KSpace& KImage = imageFlowData.getKSpace();
-    for(std::vector<SCell>::const_iterator it=pixelsInTheGraph.begin();it!=pixelsInTheGraph.end();++it)
-    {
-        Z2i::Point p = KImage.sCoords(*it);
-        if(im1(p)!=im2(p)) return true;
-    }
-
-    return false;
+    return im1!=im2;
 }
 
 void Flow::pixels(std::vector<SCell>& pixelsVector,

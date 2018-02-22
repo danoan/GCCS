@@ -135,7 +135,44 @@ FlowGraphQuery::ArcPairIterator FlowGraphQuery::gluedEdgePairsEnd()
 }
 
 
+
 void FlowGraphQuery::setDetourArcs()
+{
+    SCellToArc staFunctor(fgb.scellArc);
+    int length = 15;
+    for(ArcPairIterator ait = gluedEdgePairsBegin();ait!=gluedEdgePairsEnd();++ait)
+    {
+        ListDigraph::Arc intToExt = ait->first;
+        ListDigraph::Arc extToInt = ait->second;
+
+        FlowGraphBuilder::CirculatorPair cIn = fgb.arcCirculator[intToExt];
+        FlowGraphBuilder::CirculatorPair cEx = fgb.arcCirculator[extToInt];
+
+
+        std::set<ListDigraph::Arc>& workingSet = detourArcs[*ait];
+
+
+        FlowGraphBuilder::SCellCirculator beginRightExternal = cIn.second;
+        ReverseIterator<FlowGraphBuilder::SCellCirculator> beginLeftExternal(cEx.first);
+
+
+        ReverseIterator<FlowGraphBuilder::SCellCirculator> beginRightInternal(cIn.first);
+        FlowGraphBuilder::SCellCirculator beginLeftInternal(cEx.second);
+
+
+        insertSCellFromArc(workingSet,staFunctor,beginRightExternal,beginLeftExternal,length);
+        insertSCellFromArc(workingSet,staFunctor,beginRightInternal,length);
+
+
+
+        insertSCellFromArc(workingSet,staFunctor,beginLeftExternal,beginRightExternal,length);
+        insertSCellFromArc(workingSet,staFunctor,beginLeftInternal,length);
+
+    }
+}
+
+//Deprecated
+void FlowGraphQuery::setDetourArcsAsExternalArcs()
 {
     for(ArcPairIterator ait = gluedEdgePairsBegin();ait!=gluedEdgePairsEnd();++ait)
     {
@@ -150,7 +187,7 @@ void FlowGraphQuery::setDetourArcs()
         std::stack<ListDigraph::Node> traverseStack;
         traverseStack.push((fgb.graph().source(intToExt)));
 
-        std::vector<ListDigraph::Arc>& workingVector = detourArcs[*ait];
+        std::set<ListDigraph::Arc>& workingSet = detourArcs[*ait];
         while(!traverseStack.empty())
         {
             currentNode = traverseStack.top(); traverseStack.pop();
@@ -165,7 +202,7 @@ void FlowGraphQuery::setDetourArcs()
                 traverseStack.push( fgb.graph().target(oai) );
                 if(fgb.arcType[oai]==FlowGraphBuilder::ArcType::ExternalCurveArc)
                 {
-                    workingVector.push_back(oai);
+                    workingSet.insert(oai);
                 }
             }
         }
