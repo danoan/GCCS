@@ -33,6 +33,12 @@ public:
                     FlowGraphBuilder::ArcType at,
                     MappedType valueForTrue);
 
+    template<typename MappedType>
+    static void filterArcs(FlowGraphBuilder& fgb,
+                           ListDigraph::ArcMap<MappedType>& retArcFilter,
+                           FlowGraphBuilder::ArcType at,
+                           MappedType valueForTrue);
+
     ArcPairIterator gluedEdgePairsBegin();
     ArcPairIterator gluedEdgePairsEnd();
 
@@ -54,6 +60,17 @@ private:
 template<typename MappedType>
 void FlowGraphQuery::filterArcs(ListDigraph::ArcMap<MappedType>& retArcFilter,
                                 FlowGraphBuilder::ArcType at,
+                                MappedType valueForTrue) {
+    FlowGraphQuery::filterArcs(fgb,
+                               retArcFilter,
+                               at,
+                               valueForTrue);
+}
+
+template<typename MappedType>
+void FlowGraphQuery::filterArcs(FlowGraphBuilder& fgb,
+                                ListDigraph::ArcMap<MappedType>& retArcFilter,
+                                FlowGraphBuilder::ArcType at,
                                 MappedType valueForTrue)
 {
     for(ListDigraph::ArcIt a(fgb.graph());a!=INVALID;++a)
@@ -65,5 +82,6 @@ void FlowGraphQuery::filterArcs(ListDigraph::ArcMap<MappedType>& retArcFilter,
 
     }
 }
+
 
 #endif

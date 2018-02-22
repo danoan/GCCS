@@ -27,7 +27,6 @@ void Flow::matchFlows(ListDigraph::ArcMap<int>& mapping,
         if (unifiedArcMapping.find(arcF2Key) != unifiedArcMapping.end()) {
             ListDigraph::Arc arcF1 = unifiedArcMapping[arcF2Key];
             mapping[arcF1] = f2.graph().id(arcF2);
-            std::cout << f2.graph().id(arcF2) << std::endl;
         }
     }
 
@@ -111,29 +110,33 @@ void Flow::setArcsWeight()
 }
 
 
-void Flow::updateImage(Image2D& updatedImage)
+void Flow::getPixelsFilter(ListDigraph::NodeMap<bool>& pixelsFilter)
 {
     ListDigraph::NodeMap<bool> nodeFilter(fgb.graph(),false);
     ListDigraph::ArcMap<bool> arcFilter(fgb.graph(),false);
     ListDigraph::ArcMap<bool> cutFilter(fgb.graph(),false);
 
     fgq.sourceComponent(nodeFilter,
-                         arcFilter,
-                         cutFilter);
+                        arcFilter,
+                        cutFilter);
 
 
     FlowGraphBuilder::SubGraph subgraph(graph(),
                                         nodeFilter,
                                         arcFilter);
 
-    ListDigraph::NodeMap<bool> pixelsFilter(fgb.graph(),false);
     for(FlowGraphBuilder::SubGraph::ArcIt a(subgraph);a!=INVALID;++a)
     {
         pixelsFilter[ subgraph.source(a) ] = true;
     }
     pixelsFilter[fgb.source()] = false;
     pixelsFilter[fgb.target()] = false;
+}
 
+void Flow::updateImage(Image2D& updatedImage)
+{
+    ListDigraph::NodeMap<bool> pixelsFilter(fgb.graph(),false);
+    getPixelsFilter(pixelsFilter);
 
     KSpace& KImage = imageFlowData.getKSpace();
     std::vector<Z2i::SCell> pixelsInTheGraph;
@@ -143,10 +146,31 @@ void Flow::updateImage(Image2D& updatedImage)
     for(std::vector<SCell>::const_iterator it=pixelsInTheGraph.begin();it!=pixelsInTheGraph.end();++it)
     {
         Z2i::Point p = KImage.sCoords(*it);
+        if(updatedImage(p)==255) continue;
+
         updatedImage.setValue(p,255);
     }
 
     fillHoles(updatedImage);
+}
+
+bool Flow::hasChanges(Image2D& im1, Image2D& im2)
+{
+    ListDigraph::NodeMap<bool> pixelsFilter(fgb.graph(),false);
+    getPixelsFilter(pixelsFilter);
+
+    std::vector<Z2i::SCell> pixelsInTheGraph;
+    pixels(pixelsInTheGraph,
+           pixelsFilter);
+
+    KSpace& KImage = imageFlowData.getKSpace();
+    for(std::vector<SCell>::const_iterator it=pixelsInTheGraph.begin();it!=pixelsInTheGraph.end();++it)
+    {
+        Z2i::Point p = KImage.sCoords(*it);
+        if(im1(p)!=im2(p)) return true;
+    }
+
+    return false;
 }
 
 void Flow::pixels(std::vector<SCell>& pixelsVector,

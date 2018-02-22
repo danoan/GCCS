@@ -30,16 +30,43 @@ using namespace UtilsTypes;
 
 
 
+double computeEnergyValue(Image2D& image,
+                          ImageFlowData& model)
+{
+    ImageFlowData imf(image);
+    imf.init(model.getFlowMode(),model.getGluedCurveLength());
 
+
+
+    Flow f(imf);
+    std::map<Z2i::SCell,double>& weightMap = f.getWeightMap();
+
+    ListDigraph::ArcMap<bool> internalArcs(f.graph(),false);
+    FlowGraphQuery::filterArcs(f.graphBuilder(),
+                               internalArcs,
+                               FlowGraphBuilder::ArcType::InternalCurveArc,
+                               true);
+
+
+    double s = 0;
+    for(ListDigraph::ArcIt a(f.graph());a!=INVALID;++a)
+    {
+        if(internalArcs[a]){
+            s+= f.weight(a);
+        }
+    }
+
+    return s;
+
+}
 
 
 void updateAndCompare(Flow& f1,
+                      Image2D& out,
                       ListDigraph::ArcMap<bool>& arcFilter,
                       ListDigraph::ArcMap<double>& arcDiff)
 {
-    Image2D out = f1.baseImage();
     f1.updateImage(out);
-
 
     ImageFlowData imageFlowData(out);
     f1.initImageFlowDataAsInFlow(imageFlowData);
@@ -58,7 +85,6 @@ void updateAndCompare(Flow& f1,
         }
     }
 
-
 }
 
 void computeFlow(SegCut::Image2D& image,
@@ -76,16 +102,27 @@ void computeFlow(SegCut::Image2D& image,
     double previousCutValue = f1.cutValue();
     double currentCutValue = previousCutValue*10;
     int iteration = 1;
-    while( fabs( (previousCutValue-currentCutValue)/previousCutValue ) > 0.01 || iteration < 10 ) {
+
+    Image2D partialImage = f1.baseImage();
+    Image2D previousPartialImage = f1.baseImage();
+    while( true ) {
+
         FlowGraphDebug fgd(f1);
 
         ListDigraph::ArcMap<bool> detourArcs(f1.graph(),false);
         f1.detourArcsFilter(detourArcs);
 
         ListDigraph::ArcMap<double> arcDiff(f1.graph());
+
         updateAndCompare(f1,
+                         partialImage,
                          detourArcs,
                          arcDiff);
+
+        if(!f1.hasChanges(partialImage,previousPartialImage))
+            break;
+
+        previousPartialImage = partialImage;
 
         double s;
         int n;
@@ -123,7 +160,13 @@ void computeFlow(SegCut::Image2D& image,
     };
 
     std::cout<< "iterations: " << iteration << std::endl;
+
     f1.updateImage(out);
+    double actualEnergyValue = computeEnergyValue(out,imageFlowData);
+
+    std::cout << "Cut Value: " << currentCutValue << std::endl;
+    std::cout << "Energy Value: " << actualEnergyValue << std::endl;
+
 
 }
 
@@ -190,12 +233,12 @@ int main(){
     Development::makeConvexArcs = false;
     Development::invertGluedArcs = false;
 
-    unsigned int gluedCurveLength = 5;
+    unsigned int gluedCurveLength = 20;
 
-    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_triangle.pgm");
+    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_square.pgm");
     SegCut::Image2D imageOut = image;
 
-    std::string outputFolder = "../output/refundFlow/triangle/triangle-5";
+    std::string outputFolder = "../output/refundFlow/square/square-20";
 
     for(int i=0;i<200;++i)
     {

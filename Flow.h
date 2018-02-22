@@ -43,11 +43,6 @@ public:
     std::map< FlowGraphQuery::ArcPair, std::vector< ListDigraph::Arc > >::const_iterator detourArcsMapBegin(){ return fgq.detourArcsBegin(); };
     std::map< FlowGraphQuery::ArcPair, std::vector< ListDigraph::Arc > >::const_iterator detourArcsMapEnd(){ return fgq.detourArcsEnd(); };
 
-    template<typename MappedType>
-    void filterArcs(ListDigraph::ArcMap<MappedType>& retArcFilter,
-                    FlowGraphBuilder::ArcType at,
-                    MappedType valueForTrue);
-
     void addRefundArcs(ListDigraph::Arc& intExtArc,
                        ListDigraph::Arc& extIntArc,
                        double weight);
@@ -58,10 +53,13 @@ public:
     double cutValue();
 
     void updateImage(Image2D& out);
+    bool hasChanges(Image2D& im1, Image2D& im2);
+    FlowGraphBuilder& graphBuilder(){return fgb;}
 
 
 private:
     void setArcsWeight();
+    void getPixelsFilter(ListDigraph::NodeMap<bool>& pixelsFilter);
     void pixels(std::vector<SCell>& pixelsVector,
                 ListDigraph::NodeMap<bool>& nodeFilter);
     void fillHoles(Image2D& out);

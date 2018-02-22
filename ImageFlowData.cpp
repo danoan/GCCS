@@ -36,7 +36,6 @@ ImageFlowData& ImageFlowData::operator=(const ImageFlowData& other)
     return *this;
 }
 
-
 ImageFlowData::CurveData& ImageFlowData::addNewCurve(CurveType ct)
 {
     CurveData cd;
