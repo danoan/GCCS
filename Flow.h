@@ -56,6 +56,8 @@ public:
     bool hasChanges(Image2D& im1, Image2D& im2);
     FlowGraphBuilder& graphBuilder(){return fgb;}
 
+    void shiftWeight(double v);
+
 
 private:
     void setArcsWeight();

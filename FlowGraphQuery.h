@@ -141,21 +141,81 @@ void FlowGraphQuery::insertSCellFromArc(std::set<ListDigraph::Arc>& v,
     ConstIteratorAdapter<IteratorType,SCellToArc,ListDigraph::Arc> itAdapter(begin,
                                                                              staFunctor);
 
-    int n =0;
+    unsigned long int initialSize = v.size();
     ListDigraph::Arc a = staFunctor(*limitIterator);
+    int n=0;
     while(n<items)
     {
         if(*itAdapter==a) break;
-//        std::cout << fgb.graph().id(*itAdapter) << "?" << fgb.arcType[*itAdapter] << "::" << fgb.graph().id(a) << "?" << fgb.arcType[a] << std::endl;
+
+        std::cout << fgb.pixelMap[ fgb.graph().source(*itAdapter) ] << " -> " <<  fgb.pixelMap[ fgb.graph().target(*itAdapter) ] << "::ID " << fgb.graph().id(*itAdapter) << std::endl;
+
         v.insert(*itAdapter);
         ++itAdapter;
-        ++n;
+        n++;
     }
 
-    if(n!=items){
-        std::cout << "Limit condition reached: " << n << " of " << items << " items included" << std::endl;
+    if(initialSize+items!=v.size()){
+        std::cout << "(*)Collision of " << initialSize+items-v.size() << " items" << std::endl;
     }
 }
+
+
+template<typename MapType,typename IteratorType>
+class FilterComposer
+{
+public:
+    typedef MapType FilterType;
+
+public:
+    FilterComposer(ListDigraph& graph):baseGraph(graph),
+                                       initialMap(graph,false){};
+
+    FilterComposer& operator*(FilterType& otherMap)
+    {
+        for(IteratorType it(baseGraph);it!=INVALID;++it)
+        {
+            if(otherMap[it] && initialMap[it])
+            {
+                initialMap[it]=true;
+            }
+        }
+
+        return *this;
+    }
+
+    FilterComposer& operator+(FilterType& otherMap)
+    {
+        for(IteratorType it(baseGraph);it!=INVALID;++it)
+        {
+            if(otherMap[it])
+            {
+                initialMap[it]=true;
+            }
+        }
+
+        return *this;
+    }
+
+    FilterComposer& operator-(FilterType& otherMap)
+    {
+        for(IteratorType it(baseGraph);it!=INVALID;++it)
+        {
+            if(otherMap[it])
+            {
+                initialMap[it]=false;
+            }
+        }
+
+        return *this;
+    }
+
+    FilterType& operator()(){return initialMap;}
+
+public:
+    ListDigraph& baseGraph;
+    FilterType initialMap;
+};
 
 
 #endif

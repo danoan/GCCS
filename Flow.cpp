@@ -203,3 +203,11 @@ void Flow::fillHoles(Image2D& out)
         }
     }
 }
+
+void Flow::shiftWeight(double v)
+{
+    for(ListDigraph::ArcIt a(fgb.graph());a!=INVALID;++a)
+    {
+        fgb.getEdgeWeight()[a]+=v;
+    }
+}

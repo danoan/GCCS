@@ -64,7 +64,8 @@ double computeEnergyValue(Image2D& image,
 void updateAndCompare(Flow& f1,
                       Image2D& out,
                       ListDigraph::ArcMap<bool>& arcFilter,
-                      ListDigraph::ArcMap<double>& arcDiff)
+                      ListDigraph::ArcMap<double>& arcDiff,
+                      double lowestNegativeDiffWeight)
 {
     f1.updateImage(out);
 
@@ -81,7 +82,9 @@ void updateAndCompare(Flow& f1,
         if(arcFilter[arcF1])
         {
             ListDigraph::Arc arcF2 = f2.graph().arcFromId( arcsMatch[arcF1] );
-            arcDiff[arcF1] = f2.weight(arcF2) - f1.weight(arcF1);
+            double adjustedF1Weight = (f1.weight(arcF1)+lowestNegativeDiffWeight);
+            arcDiff[arcF1] = f2.weight(arcF2) - adjustedF1Weight  ;
+//            std::cout << f2.weight(arcF2) - adjustedF1Weight << "::" << f2.weight(arcF2) << "::" << adjustedF1Weight << std::endl;
         }
     }
 
@@ -105,6 +108,8 @@ void computeFlow(SegCut::Image2D& image,
 
     Image2D partialImage = f1.baseImage();
     Image2D previousPartialImage = f1.baseImage();
+    std::set<FlowGraphQuery::ArcPair> usedKeys;
+    double lowestNegativeDiffWeight = 0;
     while( true ) {
         FlowGraphDebug fgd(f1);
 
@@ -118,7 +123,8 @@ void computeFlow(SegCut::Image2D& image,
         updateAndCompare(f1,
                          partialImage,
                          detourArcs,
-                         arcDiff);
+                         arcDiff,
+                         lowestNegativeDiffWeight);
 
         if(!f1.hasChanges(partialImage,previousPartialImage))
             break;
@@ -129,7 +135,15 @@ void computeFlow(SegCut::Image2D& image,
         int n;
         for(auto it = f1.detourArcsMapBegin();it!=f1.detourArcsMapEnd();++it)
         {
+            //If a key has been already used, it should not be used again.
             FlowGraphQuery::ArcPair key = it->first;
+            if(usedKeys.find(key)!=usedKeys.end())
+            {
+                std::cout << "Found used key" << std::endl;
+                continue;
+            }
+            usedKeys.insert(key);
+
             const std::set<ListDigraph::Arc> &values = it->second;
 
             s=0;
@@ -139,10 +153,20 @@ void computeFlow(SegCut::Image2D& image,
                 s+= arcDiff[*vit];
                 ++n;
             }
-
+            std::cout << n << " diff arcs totalizing " << s << std::endl;
             s/=2;
 
-            f1.addRefundArcs(key.first,key.second,s);
+            //Flow graph arcs must not have negative weights
+            if(s<lowestNegativeDiffWeight){
+                std::cout << "New Lowest " << s << "::Shift weights by " << lowestNegativeDiffWeight-s << std::endl;
+                f1.shiftWeight(lowestNegativeDiffWeight-s);
+                lowestNegativeDiffWeight = s;
+
+                f1.addRefundArcs(key.first,key.second,0);
+            }else{
+                f1.addRefundArcs(key.first,key.second,s-lowestNegativeDiffWeight);
+            }
+            break;
         }
 
 

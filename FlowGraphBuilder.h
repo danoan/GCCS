@@ -34,7 +34,7 @@ public:
     friend class FlowGraphQuery;
 
     enum ArcType{
-        SourceArc,TargetArc,GluedArc,InternalCurveArc,ExternalCurveArc,EscapeArc,MakeConvexArc,RefundArc
+        SourceArc,TargetArc,IntExtGluedArc,ExtIntGluedArc,InternalCurveArc,ExternalCurveArc,EscapeArc,MakeConvexArc,RefundArc
     };
 
     typedef dim2::Point<int> LemonPoint;

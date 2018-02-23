@@ -48,31 +48,46 @@ void FlowGraphQuery::setGluedEdgePairsOnCut()
                     arcFilter,
                     cutFilter);
 
-    FlowGraphBuilder::SubGraph sc(fgb.graph(),nodeFilter,arcFilter);
+    ListDigraph::ArcMap<bool> intExtGluedArcsFilter (fgb.graph(),false);
+    filterArcs(intExtGluedArcsFilter,FlowGraphBuilder::ArcType::IntExtGluedArc,true);
+
+    ListDigraph::ArcMap<bool> refundArcsFilter (fgb.graph(),false);
+    filterArcs(refundArcsFilter,FlowGraphBuilder::ArcType::RefundArc,true);
+
+    FilterComposer<ListDigraph::ArcMap<bool>,ListDigraph::ArcIt> arcFilterComposer(fgb.graph());
+    (arcFilterComposer+arcFilter)-intExtGluedArcsFilter+cutFilter-refundArcsFilter;
+
+    FlowGraphBuilder::SubGraph sc(fgb.graph(),nodeFilter,arcFilterComposer.initialMap);
+
+    graphToEps(sc,"vamola.eps")
+            .coords(fgb.coordsMap())
+            .nodeScale(.0005)
+            .arcWidthScale(0.0005)
+            .drawArrows()
+            .arrowWidth(0.25)
+            .run();
 
 
-    ListDigraph::Node firstNode;
+    std::stack<ListDigraph::Arc> intExtGluedArcs;
+    for(FlowGraphBuilder::SubGraph::ArcIt a(sc);a!=INVALID;++a)
     {
-        //First node must be an internal node.
-
-        ListDigraph::Arc firstArc;
-        sc.first(firstArc);
-
-        while(fgb.arcType[firstArc]!=FlowGraphBuilder::ArcType::InternalCurveArc){
-            sc.next(firstArc);
+        if(fgb.arcType[a]==FlowGraphBuilder::ArcType::IntExtGluedArc &&
+           cutFilter[a])
+        {
+            intExtGluedArcs.push(a);
         }
-
-        firstNode = sc.source(firstArc);
     }
 
 
+    std::queue<ListDigraph::Arc> arcQueue;
+    std::stack<ListDigraph::Node> traverseStack;
+    ListDigraph::NodeMap<bool> visitedNodes(fgb.graph(), false);
+    ListDigraph::Node currentNode;
+    while(!intExtGluedArcs.empty())
     {
-        ListDigraph::NodeMap<bool> visitedNodes(fgb.graph(), false);
-
-        std::queue<ListDigraph::Arc> arcQueue;
-        std::stack<ListDigraph::Node> traverseStack;
-
-        ListDigraph::Node currentNode;
+        ListDigraph::Arc a = intExtGluedArcs.top(); intExtGluedArcs.pop();
+        arcQueue.push(a);
+        ListDigraph::Node firstNode = sc.source(a);
 
         traverseStack.push(firstNode);
         while(!traverseStack.empty()){
@@ -81,13 +96,13 @@ void FlowGraphQuery::setGluedEdgePairsOnCut()
 
             visitedNodes[currentNode] = true;
 
-            for(ListDigraph::OutArcIt oai(fgb.graph(), currentNode);oai!=INVALID;++oai)
+            for(FlowGraphBuilder::SubGraph::OutArcIt oai(sc, currentNode);oai!=INVALID;++oai)
             {
                 traverseStack.push(sc.target(oai));
 
 
-                if(fgb.arcType[oai]==FlowGraphBuilder::ArcType::GluedArc &&
-                   cutFilter[oai])
+                if( fgb.arcType[oai]==FlowGraphBuilder::ArcType::ExtIntGluedArc &&
+                    cutFilter[oai])
                 {
                     arcQueue.push(oai);
                 }
@@ -95,18 +110,10 @@ void FlowGraphQuery::setGluedEdgePairsOnCut()
 
         }
 
-        /*
-         * The graph needs to be traversed one node at time in order to guarantee the correct order.
-         * The first gluedEdge added in arcQueue will necessarily be a extToInt edge.
-         *
-         * A glued edge pair points to different directions on the graph, leading to a shifting on
-         * the arcQueue. The first element will actually match with the last one.
-         */
+    }
 
-        ListDigraph::Arc a = arcQueue.front();
-        arcQueue.push(a);
-        arcQueue.pop();
 
+    {
         if(arcQueue.size()%2==1) throw "arcQueue has an odd number os elements";
 
         while(!arcQueue.empty())
@@ -139,7 +146,7 @@ FlowGraphQuery::ArcPairIterator FlowGraphQuery::gluedEdgePairsEnd()
 void FlowGraphQuery::setDetourArcs()
 {
     SCellToArc staFunctor(fgb.scellArc);
-    int length = 15;
+    int length = 2;
     for(ArcPairIterator ait = gluedEdgePairsBegin();ait!=gluedEdgePairsEnd();++ait)
     {
         ListDigraph::Arc intToExt = ait->first;
@@ -153,20 +160,30 @@ void FlowGraphQuery::setDetourArcs()
 
 
         FlowGraphBuilder::SCellCirculator beginRightExternal = cIn.second;
-        ReverseIterator<FlowGraphBuilder::SCellCirculator> beginLeftExternal(cEx.first);
+        insertSCellFromArc(workingSet,staFunctor,beginRightExternal,length);
+
+        FlowGraphBuilder::SCellCirculator endLeftExternal(cEx.first);
+        ++endLeftExternal;
+        FlowGraphBuilder::SCellCirculator beginLeftExternal = walkCirculator(endLeftExternal,-length);
+
+        insertSCellFromArc(workingSet,staFunctor,beginLeftExternal,length);
 
 
-        ReverseIterator<FlowGraphBuilder::SCellCirculator> beginRightInternal(cIn.first);
         FlowGraphBuilder::SCellCirculator beginLeftInternal(cEx.second);
+        insertSCellFromArc(workingSet,staFunctor,beginLeftInternal,length);
 
 
-        insertSCellFromArc(workingSet,staFunctor,beginRightExternal,beginLeftExternal,length);
+        FlowGraphBuilder::SCellCirculator endRightInternal(cIn.first);
+        ++endRightInternal;
+        FlowGraphBuilder::SCellCirculator beginRightInternal = walkCirculator(endRightInternal,-length);
+
         insertSCellFromArc(workingSet,staFunctor,beginRightInternal,length);
 
 
-
-        insertSCellFromArc(workingSet,staFunctor,beginLeftExternal,beginRightExternal,length);
-        insertSCellFromArc(workingSet,staFunctor,beginLeftInternal,length);
+        if(fgb.arcType[fgb.scellArc[*beginRightExternal]]!=FlowGraphBuilder::ArcType::ExternalCurveArc) throw std::runtime_error("External Arc Expected");
+        if(fgb.arcType[fgb.scellArc[*beginLeftExternal]]!=FlowGraphBuilder::ArcType::ExternalCurveArc) throw std::runtime_error("External Arc Expected");
+        if(fgb.arcType[fgb.scellArc[*beginRightInternal]]!=FlowGraphBuilder::ArcType::InternalCurveArc) throw std::runtime_error("Internal Arc Expected");
+        if(fgb.arcType[fgb.scellArc[*beginLeftInternal]]!=FlowGraphBuilder::ArcType::InternalCurveArc) throw std::runtime_error("Internal Arc");
 
     }
 }

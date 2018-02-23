@@ -39,6 +39,7 @@ void FlowGraphDebug::highlightArcs(ListDigraph::ArcMap<bool>& arcFilter,
 {
 
     ListDigraph::NodeMap<bool> allNodes(fgb.graph(),true);
+    ListDigraph::ArcMap<bool> allArcs(fgb.graph(),true);
 
     ListDigraph::ArcMap<int> arcColors(fgb.graph(),0);
 

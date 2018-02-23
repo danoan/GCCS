@@ -45,48 +45,5 @@ private:
     FlowGraphQuery fgq;
 };
 
-template<typename MapType,typename IteratorType>
-class FilterComposer
-{
-public:
-    typedef MapType FilterType;
-
-public:
-    FilterComposer(ListDigraph& graph):baseGraph(graph),
-                                       initialMap(graph,false){};
-
-    FilterComposer& operator*(FilterType& otherMap)
-    {
-        for(IteratorType it(baseGraph);it!=INVALID;++it)
-        {
-            if(otherMap[it] && initialMap[it])
-            {
-                initialMap[it]=true;
-            }
-        }
-
-        return *this;
-    }
-
-    FilterComposer& operator+(FilterType& otherMap)
-    {
-        for(IteratorType it(baseGraph);it!=INVALID;++it)
-        {
-            if(otherMap[it])
-            {
-                initialMap[it]=true;
-            }
-        }
-
-        return *this;
-    }
-
-    FilterType& operator()(){return initialMap;}
-
-public:
-    ListDigraph& baseGraph;
-    FilterType initialMap;
-};
-
 
 #endif //SEGBYCUT_FLOWGRAPHDEBUG_H

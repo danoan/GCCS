@@ -189,6 +189,7 @@ void FlowGraphBuilder::createArcFromLinel(ListDigraph::Arc& a,
 
 
     arcWeight[a] = weightMap[linel];
+//    std::cout << "BUILDER::ID "  << fg.id(a) << "::" << arcWeight[a] << std::endl;
     arcType[a] = at;
     arcSCell[a] = linel;
     scellArc[linel] = a;
@@ -250,10 +251,11 @@ void FlowGraphBuilder::createGluedArcs(SegCut::GluedCurveIteratorPair gluedRange
                                    false);
             }else{
                 ListDigraph::Arc a;
+                ArcType at = begin.connectorType()==ConnectorType::internToExtern?IntExtGluedArc:ExtIntGluedArc;
                 createArcFromLinel(a,
                                    linel,
                                    weightMap,
-                                   ArcType::GluedArc,
+                                   at,
                                    Development::invertGluedArcs);
 
 
