@@ -40,6 +40,8 @@ public:
                        std::string imageOutputFolder,
                        std::string suffix);
 
+    double energyValue(ListDigraph::ArcMap<bool>& arcFilter);
+
 private:
     FlowGraphBuilder& fgb;
     FlowGraphQuery fgq;

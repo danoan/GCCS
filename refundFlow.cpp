@@ -90,6 +90,25 @@ void updateAndCompare(Flow& f1,
 
 }
 
+void energyComparisson(Flow& f1)
+{
+    FlowGraphDebug fgd(f1);
+
+    ListDigraph::ArcMap<bool> externalArcs(f1.graph());
+    FlowGraphQuery::filterArcs(f1.graphBuilder(),
+                               externalArcs,
+                               FlowGraphBuilder::ArcType::ExternalCurveArc,
+                               true);
+
+    ListDigraph::ArcMap<bool> internalArcs(f1.graph());
+    FlowGraphQuery::filterArcs(f1.graphBuilder(),
+                               internalArcs,
+                               FlowGraphBuilder::ArcType::InternalCurveArc,
+                               true);
+
+    std::cout << fgd.energyValue(externalArcs) << "::" << fgd.energyValue(internalArcs) << std::endl;
+}
+
 void computeFlow(SegCut::Image2D& image,
                  unsigned int gluedCurveLength,
                  Image2D& out,
@@ -102,9 +121,12 @@ void computeFlow(SegCut::Image2D& image,
                        gluedCurveLength);
 
     Flow f1(imageFlowData);
+
+
     double previousCutValue = f1.cutValue();
     double currentCutValue = previousCutValue*10;
     int iteration = 1;
+
 
     Image2D partialImage = f1.baseImage();
     Image2D previousPartialImage = f1.baseImage();
@@ -112,6 +134,9 @@ void computeFlow(SegCut::Image2D& image,
     double lowestNegativeDiffWeight = 0;
     while( true ) {
         FlowGraphDebug fgd(f1);
+
+        std::string suffix = "RefundArcs-" + std::to_string(mainIteration) + "-" + std::to_string(iteration);
+        fgd.drawCutGraph(outputFolder,suffix);
 
         ListDigraph::ArcMap<bool> detourArcs(f1.graph(),false);
         f1.detourArcsFilter(detourArcs);
@@ -157,28 +182,19 @@ void computeFlow(SegCut::Image2D& image,
             s/=2;
 
             //Flow graph arcs must not have negative weights
-            if(s<lowestNegativeDiffWeight){
-                std::cout << "New Lowest " << s << "::Shift weights by " << lowestNegativeDiffWeight-s << std::endl;
-                f1.shiftWeight(lowestNegativeDiffWeight-s);
-                lowestNegativeDiffWeight = s;
-
+            if(s<0){
                 f1.addRefundArcs(key.first,key.second,0);
             }else{
-                f1.addRefundArcs(key.first,key.second,s-lowestNegativeDiffWeight);
+                f1.addRefundArcs(key.first,key.second,s);
             }
-            break;
         }
 
 
-        std::string suffix = "RefundArcs-" + std::to_string(mainIteration) + "-" + std::to_string(iteration);
-        fgd.drawCutGraph(outputFolder,suffix);
         fgd.drawRefundGraph(outputFolder,suffix);
         fgd.highlightArcs(detourArcs,
                           outputFolder,
                           "DetourArcs-" + std::to_string(mainIteration) + "-" + std::to_string(iteration) );
 
-
-        previousCutValue = currentCutValue;
         currentCutValue = f1.cutValue();
 
         iteration++;

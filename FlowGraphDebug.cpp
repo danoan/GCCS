@@ -103,6 +103,20 @@ void FlowGraphDebug::highlightArcs(ListDigraph::NodeMap<bool>& nodeFilter,
             .run();
 }
 
+double FlowGraphDebug::energyValue(ListDigraph::ArcMap<bool>& arcFilter)
+{
+    double s = 0;
+    for(ListDigraph::ArcIt a(fgb.graph());a!=INVALID;++a)
+    {
+        if(arcFilter[a])
+        {
+            s+=fgb.arcWeight[a];
+        }
+
+    }
+    return s;
+}
+
 
 
 

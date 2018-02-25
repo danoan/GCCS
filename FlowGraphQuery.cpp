@@ -146,7 +146,7 @@ FlowGraphQuery::ArcPairIterator FlowGraphQuery::gluedEdgePairsEnd()
 void FlowGraphQuery::setDetourArcs()
 {
     SCellToArc staFunctor(fgb.scellArc);
-    int length = 2;
+    int length = 4;
     for(ArcPairIterator ait = gluedEdgePairsBegin();ait!=gluedEdgePairsEnd();++ait)
     {
         ListDigraph::Arc intToExt = ait->first;

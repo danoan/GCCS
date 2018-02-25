@@ -56,7 +56,11 @@ public:
     bool hasChanges(Image2D& im1, Image2D& im2);
     FlowGraphBuilder& graphBuilder(){return fgb;}
 
-    void shiftWeight(double v);
+    void shiftWeight(double v,
+                     ListDigraph::ArcMap<bool>& externalArc,
+                     ListDigraph::ArcMap<bool>& internalArc,
+                     ListDigraph::ArcMap<bool>& intExtGluedArc,
+                     ListDigraph::ArcMap<bool>& extIntGluedArc);
 
 
 private:

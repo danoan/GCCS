@@ -204,10 +204,39 @@ void Flow::fillHoles(Image2D& out)
     }
 }
 
-void Flow::shiftWeight(double v)
+void Flow::shiftWeight(double v,
+                       ListDigraph::ArcMap<bool>& externalArc,
+                       ListDigraph::ArcMap<bool>& internalArc,
+                       ListDigraph::ArcMap<bool>& intExtGluedArc,
+                       ListDigraph::ArcMap<bool>& extIntGluedArc)
 {
+    int extCount=0;
+    int intCount=0;
+    int intExtCount=0;
+    int extIntCount=0;
     for(ListDigraph::ArcIt a(fgb.graph());a!=INVALID;++a)
     {
-        fgb.getEdgeWeight()[a]+=v;
+        if(externalArc[a]) extCount++;
+        if(internalArc[a]) intCount++;
+        if(intExtGluedArc[a]) intExtCount++;
+        if(extIntGluedArc[a]) extIntCount++;
     }
+
+    double extFactor=1.0;
+    double intFactor = (double) extCount/intCount;
+    double intExtFactor = (double) extCount/intExtCount;
+    double extIntFactor = (double) extCount/extIntCount;
+
+    int n=0;
+    for(ListDigraph::ArcIt a(fgb.graph());a!=INVALID;++a)
+    {
+        if(externalArc[a]) fgb.getEdgeWeight()[a]+=v;
+        if(internalArc[a]) fgb.getEdgeWeight()[a]+=intFactor*v;
+        if(intExtGluedArc[a]) fgb.getEdgeWeight()[a]+=intExtFactor*v;
+        if(extIntGluedArc[a]) fgb.getEdgeWeight()[a]+=extIntFactor*v;
+
+        ++n;
+    }
+
+    std::cout << "Total shifts::" << n << std::endl;
 }
