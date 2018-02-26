@@ -74,17 +74,15 @@ void updateAndCompare(Flow& f1,
 
     Flow f2(imageFlowData);
 
-    ListDigraph::ArcMap<int> arcsMatch(f1.graph());
+    ListDigraph::ArcMap<int> arcsMatch(f1.graph(),-1);
     Flow::matchFlows(arcsMatch,f1,f2);
 
     for(ListDigraph::ArcIt arcF1(f1.graph());arcF1!=INVALID;++arcF1)
     {
-        if(arcFilter[arcF1])
+        if(arcFilter[arcF1] && arcsMatch[arcF1]!=-1)
         {
             ListDigraph::Arc arcF2 = f2.graph().arcFromId( arcsMatch[arcF1] );
-            double adjustedF1Weight = (f1.weight(arcF1)+lowestNegativeDiffWeight);
-            arcDiff[arcF1] = f2.weight(arcF2) - adjustedF1Weight  ;
-//            std::cout << f2.weight(arcF2) - adjustedF1Weight << "::" << f2.weight(arcF2) << "::" << adjustedF1Weight << std::endl;
+            arcDiff[arcF1] = f2.weight(arcF2) - f1.weight(arcF1);
         }
     }
 
