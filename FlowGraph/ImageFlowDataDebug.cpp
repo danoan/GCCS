@@ -1,7 +1,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 #include "ImageFlowDataDebug.h"
-#include "utils.h"
+#include "../utils.h"
 
 ImageFlowDataDebug::ImageFlowDataDebug(ImageFlowData& imageFlowData):imageFlowData(imageFlowData)
 {

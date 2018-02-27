@@ -9,12 +9,12 @@ using namespace DGtal;
 using namespace DGtal::Z2i;
 
 #include "utils.h"
-#include "weightSettings.h"
+#include "FlowGraph/weightSettings.h"
 
 #include "Artist.h"
-#include "FlowGraphBuilder.h"
-#include "ImageFlowDataDebug.h"
-#include "FlowGraphDebug.h"
+#include "FlowGraph/FlowGraphBuilder.h"
+#include "FlowGraph/ImageFlowDataDebug.h"
+#include "FlowGraph/FlowGraphDebug.h"
 
 using namespace UtilsTypes;
 

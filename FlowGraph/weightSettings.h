@@ -6,7 +6,8 @@
 #include "DGtal/io/readers/GenericReader.h"
 #include "DGtal/io/writers/GenericWriter.h"
 
-#include "utils.h"
+#include "../utils.h"
+#include "ImageFlowData.h"
 
 namespace WeightSettingsTypes
 {
@@ -31,5 +32,7 @@ void setGluedCurveWeight(WeightSettingsTypes::GluedCurveSetRange::ConstIterator 
                          KSpace& KImage,
                          unsigned int gluedCurveLength,
                          std::map<Z2i::SCell,double>& weightMap);
+
+void setArcsWeight(ImageFlowData& imageFlowData,std::map<Z2i::SCell,double>& weightMap);
 
 #endif //SEGBYCUT_WEIGHTSETTINGS_H

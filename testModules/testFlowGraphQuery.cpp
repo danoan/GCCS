@@ -1,9 +1,30 @@
+#include <lemon/list_graph.h>
+#include <lemon/graph_to_eps.h>
 
-#include "../weightSettings.h"
+#include <lemon/preflow.h>
+#include <lemon/adaptors.h>
 
-#include "../FlowGraphBuilder.h"
-#include "../FlowGraphQuery.h"
-#include "../FlowGraphDebug.h"
+using namespace lemon;
+
+
+#include "boost/filesystem.hpp"
+
+#include <DGtal/io/boards/Board2D.h>
+#include <boost/filesystem/path.hpp>
+#include "DGtal/io/readers/GenericReader.h"
+#include "DGtal/io/writers/GenericWriter.h"
+
+using namespace DGtal;
+using namespace DGtal::Z2i;
+
+#include "../utils.h"
+#include "../FlowGraph/weightSettings.h"
+
+#include "../FlowGraph/FlowGraphBuilder.h"
+#include "../FlowGraph/FlowGraphQuery.h"
+#include "../FlowGraph/FlowGraphDebug.h"
+
+using namespace UtilsTypes;
 
 namespace Development{
     bool solveShift;
@@ -12,6 +33,39 @@ namespace Development{
     bool makeConvexArcs;
     bool invertGluedArcs;
 };
+
+double computeEnergyValue(Image2D& image,
+                          ImageFlowData& model)
+{
+    ImageFlowData imf(image);
+    imf.init(model.getFlowMode(),model.getGluedCurveLength());
+
+    std::map<Z2i::SCell,double> weightMap;
+
+
+    FlowGraph f;
+    FlowGraphBuilder fgb(f,imf,weightMap);
+
+
+    ListDigraph::ArcMap<bool> internalArcs(f.graph(),false);
+    FlowGraphQuery::filterArcs(f,
+                               internalArcs,
+                               FlowGraph::ArcType::InternalCurveArc,
+                               true);
+
+
+    double s = 0;
+    for(ListDigraph::ArcIt a(f.graph());a!=INVALID;++a)
+    {
+        if(internalArcs[a]){
+            s+= f.weight(a);
+        }
+    }
+
+    return s;
+
+}
+
 
 void computeFlow(SegCut::Image2D& image,
                  unsigned int gluedCurveLength,
@@ -25,37 +79,26 @@ void computeFlow(SegCut::Image2D& image,
                        gluedCurveLength);
 
 
-    for(auto it=imageFlowData.curveDataBegin();it!=imageFlowData.curveDataEnd();++it)
-    {
-        setGridCurveWeight(it->curve,
-                           imageFlowData.getKSpace(),
-                           weightMap
-        );
-    }
+    setArcsWeight(imageFlowData,weightMap);
 
-    for(auto it=imageFlowData.curvePairBegin();it!=imageFlowData.curvePairEnd();++it)
-    {
-        setGluedCurveWeight( it->gcsRangeBegin(),
-                             it->gcsRangeEnd(),
-                             imageFlowData.getKSpace(),
-                             gluedCurveLength,
-                             weightMap);
-    }
+    FlowGraph fg;
+    FlowGraphBuilder fgb(fg,imageFlowData,weightMap);
 
-    FlowGraphBuilder fgb(imageFlowData);
-    fgb(weightMap);
 
-    FlowGraphDebug fgd(fgb);
+    FlowGraphDebug fgd(fg);
     fgd.drawCutGraph("../cmake-build-debug","cutDebug");
 
-    FlowGraphQuery fgq(fgb);
-    ListDigraph& myGraph = fgb.graph();
+    ListDigraph& myGraph = fg.graph();
 
     {
         std::cout << "GluedEdgePairs" << std::endl;
+
+        FlowGraphQuery::ArcPairSet gluedArcPairSet;
+        FlowGraphQuery::gluedArcPairSet(fg,gluedArcPairSet);
+
         ListDigraph::ArcMap<int> highligthGluedEdgePair(myGraph, 0);
         int i = 1;
-        for (FlowGraphQuery::ArcPairIterator api = fgq.gluedEdgePairsBegin(); api != fgq.gluedEdgePairsEnd(); ++api) {
+        for (FlowGraphQuery::ArcPairIterator api = gluedArcPairSet.begin(); api != gluedArcPairSet.end(); ++api) {
             highligthGluedEdgePair[api->first] = i;
             highligthGluedEdgePair[api->second] = i;
 
@@ -68,10 +111,14 @@ void computeFlow(SegCut::Image2D& image,
 
     {
         std::cout << "DetourArcs" << std::endl;
+
+        FlowGraphQuery::DetourArcMap detourArcMap;
+        FlowGraphQuery::detourArcMap(fg,detourArcMap);
+
         ListDigraph::ArcMap<int> highlightDetourArcs(myGraph, 0);
         ListDigraph::ArcMap<int> highligthGluedEdgePairSecond(myGraph, 0);
         int i=1;
-        for (FlowGraphQuery::DetourArcMapIterator dami = fgq.detourArcsBegin(); dami != fgq.detourArcsEnd(); ++dami) {
+        for (FlowGraphQuery::DetourArcMapIterator dami = detourArcMap.begin(); dami != detourArcMap.end(); ++dami) {
             FlowGraphQuery::ArcPair key = dami->first;
 
             for (FlowGraphQuery::DetourArcIterator dai = dami->second.begin(); dai != dami->second.end(); ++dai) {
@@ -103,7 +150,7 @@ int main() {
 
     unsigned int gluedCurveLength = 5;
 
-    std::string imgPath = "../images/flow-evolution/0.pgm";
+    std::string imgPath = "../images/flow-evolution/single_square.pgm";
     SegCut::Image2D image = GenericReader<SegCut::Image2D>::import(imgPath);
 
     std::string outputFolder = "../output/testModules/FlowGraphQuery";
@@ -118,6 +165,7 @@ int main() {
                 weightMap,
                 outputFolder,
                 "");
+
 
     return 0;
 }

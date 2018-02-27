@@ -7,9 +7,7 @@
 #include "ConnectorSeedRange.h"
 #include "ConnectorFunctor.h"
 
-#include "imageProc.h"
-
-
+#include "../imageProc.h"
 
 class ImageFlowData{
 
@@ -124,6 +122,8 @@ public:
     Curve& getMostOuterCurve();
 
     int getGluedCurveLength(){ return gluedCurveLength; }
+    int getConsecutiveGluedPairDistance(){ return consecutiveGluedPairDistance; }
+    int getDiffDistance(){ return diffDistance; }
 
     Image2D& getOriginalImage(){ return originalImage; }
     Image2D& getDilatedImage(){ return dilatedImage; }
@@ -134,6 +134,8 @@ private:
     bool itIsInitialized;
     FlowMode flowMode;
     int gluedCurveLength;
+    int consecutiveGluedPairDistance;
+    int diffDistance;
 
     KSpace KImage;
     Image2D originalImage,dilatedImage,erodedImage;

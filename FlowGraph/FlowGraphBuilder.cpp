@@ -1,8 +1,16 @@
 #include "FlowGraphBuilder.h"
 
-
-void FlowGraphBuilder::operator()(LinelWeightMap& weightMap)
+FlowGraphBuilder::FlowGraphBuilder(FlowGraph& fg,
+                                   ImageFlowData& imageFlowData,
+                                   LinelWeightMap& weightMap):imageFlowData(imageFlowData),
+                                                              weightMap(weightMap),
+                                                              fg(fg)
 {
+    fg.gluedCurveLength = imageFlowData.getGluedCurveLength();
+    fg.consecutiveGluedPairDistance = imageFlowData.getConsecutiveGluedPairDistance();
+    fg.diffDistance = imageFlowData.getDiffDistance();
+
+
     for(auto it=imageFlowData.curveDataBegin();it!=imageFlowData.curveDataEnd();++it)
     {
         createCurveArcs(it->curve.begin(),it->curve.end(),it->curveType,weightMap);
@@ -10,7 +18,7 @@ void FlowGraphBuilder::operator()(LinelWeightMap& weightMap)
 
 
     UnsignedSCellComparison myComp;
-    std::set<KSpace::SCell,UnsignedSCellComparison> visitedNodes(myComp);
+    UnsignedSCellSet visitedNodes(myComp);
 
     for(auto it=imageFlowData.curvePairBegin();it!=imageFlowData.curvePairEnd();++it)
     {
@@ -45,7 +53,7 @@ void FlowGraphBuilder::operator()(LinelWeightMap& weightMap)
 
 
 void FlowGraphBuilder::createSourceArcs(Curve& erodedCurve,
-                                        std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes)
+                                        UnsignedSCellSet& visitedNodes)
 {
     typedef Curve::InnerPointsRange::ConstIterator IteratorType;
 
@@ -60,27 +68,27 @@ void FlowGraphBuilder::createSourceArcs(Curve& erodedCurve,
         visitedNodes.insert(directIncidentPixel);
 
         ListDigraph::Arc a;
-        connectNodeToPixel(sourceNode,directIncidentPixel,a);
+        connectNodeToPixel(fg.sourceNode,directIncidentPixel,a);
 
-        arcWeight[a] = 10;
-        arcType[a] = ArcType::SourceArc;
+        fg.arcWeightMap[a] = 10;
+        fg.arcTypeMap[a] = FlowGraph::ArcType::SourceArc;
     }
 }
 
-void FlowGraphBuilder::createTargetArcsFromGluedSegments(SegCut::GluedCurveIteratorPair gluedRangeBegin,
-                                                        SegCut::GluedCurveIteratorPair gluedRangeEnd,
-                                                        std::map<Z2i::SCell,double>& weightMap,
-                                                        std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes)
+void FlowGraphBuilder::createTargetArcsFromGluedSegments(ImageFlowData::GluedCurveIteratorPair gluedRangeBegin,
+                                                         ImageFlowData::GluedCurveIteratorPair gluedRangeEnd,
+                                                         LinelWeightMap& weightMap,
+                                                         UnsignedSCellSet& visitedNodes)
 {
     typedef Curve::OuterPointsRange::ConstIterator IteratorType;
-    typedef SegCut::SCellGluedCurveIterator::LinkIteratorType LinkIteratorType;
-    typedef SegCut::SCellGluedCurveIterator::CurveCirculator CurveCirculator;
+    typedef ImageFlowData::SCellGluedCurveIterator::LinkIteratorType LinkIteratorType;
+    typedef ImageFlowData::SCellGluedCurveIterator::CurveCirculator CurveCirculator;
 
 
     CurveCirculator start,end;
     std::queue<LinkIteratorType> connectorsInterval;
 
-    for(SegCut::GluedCurveIteratorPair gcIt = gluedRangeBegin;gcIt!=gluedRangeEnd;++gcIt){
+    for(ImageFlowData::GluedCurveIteratorPair gcIt = gluedRangeBegin;gcIt!=gluedRangeEnd;++gcIt){
         if(gcIt->first.connectorType()!=makeConvex) continue;
         connectorsInterval.push(gcIt->first.connectorsBegin());
         connectorsInterval.push(gcIt->first.connectorsEnd());
@@ -93,7 +101,7 @@ void FlowGraphBuilder::createTargetArcsFromGluedSegments(SegCut::GluedCurveItera
 }
 
 void FlowGraphBuilder::createTargetArcsFromExteriorCurve(Curve& extCurve,
-                                                        std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes)
+                                                         UnsignedSCellSet& visitedNodes)
 {
     KSpace& KImage = imageFlowData.getKSpace();
 
@@ -108,10 +116,10 @@ void FlowGraphBuilder::createTargetArcsFromExteriorCurve(Curve& extCurve,
 
 
         ListDigraph::Arc a;
-        connectPixelToNode(indirectIncidentPixel,targetNode,a);
+        connectPixelToNode(indirectIncidentPixel,fg.targetNode,a);
 
-        arcWeight[a] = 10;
-        arcType[a] = ArcType::TargetArc;
+        fg.arcWeightMap[a] = 10;
+        fg.arcTypeMap[a] = FlowGraph::ArcType::TargetArc;
     }
 
 }
@@ -121,16 +129,16 @@ void FlowGraphBuilder::createNodeFromPixel(KSpace::SCell pixel,
 {
     Z2i::Point pixelCoord = pixel.preCell().coordinates;
 
-    if(coordToNode.find(pixelCoord)==coordToNode.end())
+    if(fg.coordToNode.find(pixelCoord)==fg.coordToNode.end())
     {
-        coordToNode[pixelCoord] = fg.addNode();
+        fg.coordToNode[pixelCoord] = fg.digraph.addNode();
     }
 
-    node = coordToNode[pixelCoord];
-    pixelMap[ node ] = pixel;
+    node = fg.coordToNode[pixelCoord];
+    fg.pixelMap[ node ] = pixel;
 
-    coords[node] = LemonPoint( pixelCoord[0],
-                               pixelCoord[1]);
+    fg.coords[node] = LemonPoint( pixelCoord[0],
+                                  pixelCoord[1]);
 }
 
 void FlowGraphBuilder::connectNodeToPixel(ListDigraph::Node& sourceNode,
@@ -140,7 +148,7 @@ void FlowGraphBuilder::connectNodeToPixel(ListDigraph::Node& sourceNode,
     ListDigraph::Node targetNode;
     createNodeFromPixel(pTarget,targetNode);
 
-    a = fg.addArc(sourceNode,targetNode);
+    a = fg.digraph.addArc(sourceNode,targetNode);
 }
 
 void FlowGraphBuilder::connectPixelToNode(KSpace::SCell pSource,
@@ -150,12 +158,14 @@ void FlowGraphBuilder::connectPixelToNode(KSpace::SCell pSource,
     ListDigraph::Node sourceNode;
     createNodeFromPixel(pSource,sourceNode);
 
-    a = fg.addArc(sourceNode,targetNode);
+    a = fg.digraph.addArc(sourceNode,targetNode);
 }
 
-void FlowGraphBuilder::createArcFromPixels(KSpace::SCell pSource,
+void FlowGraphBuilder::createArcFromPixels(ListDigraph::Arc& arc,
+                                           KSpace::SCell pSource,
                                            KSpace::SCell pTarget,
-                                           ListDigraph::Arc& a)
+                                           FlowGraph::ArcType at,
+                                           double weight)
 {
     ListDigraph::Node sourcePixelNode;
     ListDigraph::Node targetPixelNode;
@@ -163,13 +173,28 @@ void FlowGraphBuilder::createArcFromPixels(KSpace::SCell pSource,
     createNodeFromPixel(pSource,sourcePixelNode);
     createNodeFromPixel(pTarget,targetPixelNode);
 
-    a = fg.addArc(sourcePixelNode,targetPixelNode);
+    addArc(arc,sourcePixelNode,targetPixelNode,at,weight);
 }
 
-void FlowGraphBuilder::createArcFromLinel(ListDigraph::Arc& a,
+void FlowGraphBuilder::createArcFromPixels(KSpace::SCell pSource,
+                                           KSpace::SCell pTarget,
+                                           FlowGraph::ArcType at,
+                                           double weight)
+{
+    ListDigraph::Node sourcePixelNode;
+    ListDigraph::Node targetPixelNode;
+
+    createNodeFromPixel(pSource,sourcePixelNode);
+    createNodeFromPixel(pTarget,targetPixelNode);
+
+    ListDigraph::Arc arc;
+    addArc(arc,sourcePixelNode,targetPixelNode,at,weight);
+}
+
+void FlowGraphBuilder::createArcFromLinel(ListDigraph::Arc& arc,
                                           Curve::SCell& linel,
-                                          std::map<Z2i::SCell,double>& weightMap,
-                                          ArcType at,
+                                          LinelWeightMap& weightMap,
+                                          FlowGraph::ArcType at,
                                           bool invert)
 {
     KSpace& KImage = imageFlowData.getKSpace();
@@ -178,47 +203,47 @@ void FlowGraphBuilder::createArcFromLinel(ListDigraph::Arc& a,
     Z2i::SCell indirectPixel = KImage.sIndirectIncident(linel,KImage.sOrthDir(linel));
 
     if(invert){
-        createArcFromPixels(indirectPixel,
-                            directPixel,
-                            a);
-    }else{
-        createArcFromPixels(directPixel,
+        createArcFromPixels(arc,
                             indirectPixel,
-                            a);
+                            directPixel,
+                            at,
+                            weightMap[linel]);
+    }else{
+        createArcFromPixels(arc,
+                            directPixel,
+                            indirectPixel,
+                            at,
+                            weightMap[linel]);
     }
 
-
-    arcWeight[a] = weightMap[linel];
-//    std::cout << "BUILDER::ID "  << fg.id(a) << "::" << arcWeight[a] << std::endl;
-    arcType[a] = at;
-    arcSCell[a] = linel;
-    scellArc[linel] = a;
+    fg.arcSCellMap[arc] = linel;
+    fg.scellArcMap[linel] = arc;
 }
 
 void FlowGraphBuilder::createArcFromLinel(Curve::SCell& linel,
-                                          std::map<Z2i::SCell,double>& weightMap,
-                                          ArcType at,
+                                          LinelWeightMap& weightMap,
+                                          FlowGraph::ArcType at,
                                           bool invert)
 {
-    ListDigraph::Arc a;
-    createArcFromLinel(a,
+    ListDigraph::Arc arc;
+    createArcFromLinel(arc,
                        linel,
                        weightMap,
                        at,
                        invert);
-
 }
+
 
 void FlowGraphBuilder::createCurveArcs(Curve::ConstIterator curveBegin,
                                      Curve::ConstIterator curveEnd,
                                      ImageFlowData::CurveType ct,
-                                     std::map<Z2i::SCell,double>& weightMap)
+                                     LinelWeightMap& weightMap)
 {
-    ArcType at;
+    FlowGraph::ArcType at;
     if( ct==ImageFlowData::CurveType::OriginalCurve ){
-        at = ArcType::InternalCurveArc;
+        at = FlowGraph::ArcType::InternalCurveArc;
     }else{
-        at = ArcType::ExternalCurveArc;
+        at = FlowGraph::ArcType::ExternalCurveArc;
     }
 
     for(auto it=curveBegin;it!=curveEnd;++it){
@@ -226,19 +251,20 @@ void FlowGraphBuilder::createCurveArcs(Curve::ConstIterator curveBegin,
 
         createArcFromLinel(linel,
                            weightMap,
-                           at);
+                           at,
+                           false);
     }
 }
 
-void FlowGraphBuilder::createGluedArcs(SegCut::GluedCurveIteratorPair gluedRangeBegin,
-                                       SegCut::GluedCurveIteratorPair gluedRangeEnd,
-                                       std::map<Z2i::SCell,double>& weightMap,
-                                       std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes)
+void FlowGraphBuilder::createGluedArcs(ImageFlowData::GluedCurveIteratorPair gluedRangeBegin,
+                                       ImageFlowData::GluedCurveIteratorPair gluedRangeEnd,
+                                       LinelWeightMap& weightMap,
+                                       UnsignedSCellSet& visitedNodes)
 {
     KSpace& KImage = imageFlowData.getKSpace();
 
     for(auto it=gluedRangeBegin;it!=gluedRangeEnd;++it){
-        SegCut::SCellGluedCurveIterator begin = it->first;
+        ImageFlowData::SCellGluedCurveIterator begin = it->first;
 
         auto linkIt = begin.connectorsBegin();
         do{
@@ -247,11 +273,13 @@ void FlowGraphBuilder::createGluedArcs(SegCut::GluedCurveIteratorPair gluedRange
             if(begin.connectorType()==makeConvex){
                 createArcFromLinel(linel,
                                    weightMap,
-                                   ArcType::MakeConvexArc,
+                                   FlowGraph::ArcType::MakeConvexArc,
                                    false);
             }else{
                 ListDigraph::Arc a;
-                ArcType at = begin.connectorType()==ConnectorType::internToExtern?IntExtGluedArc:ExtIntGluedArc;
+                FlowGraph::ArcType at = begin.connectorType()==ConnectorType::internToExtern?
+                                        FlowGraph::IntExtGluedArc:
+                                        FlowGraph::ExtIntGluedArc;
                 createArcFromLinel(a,
                                    linel,
                                    weightMap,
@@ -259,8 +287,8 @@ void FlowGraphBuilder::createGluedArcs(SegCut::GluedCurveIteratorPair gluedRange
                                    Development::invertGluedArcs);
 
 
-                arcCirculator[a] = CirculatorPair(begin.curveSegment1End(),
-                                                  begin.curveSegment2Begin());
+                fg.arcCirculatorMap[a] = CirculatorPair(begin.curveSegment1End(),
+                                                     begin.curveSegment2Begin());
             }
 
 
@@ -275,13 +303,13 @@ void FlowGraphBuilder::createGluedArcs(SegCut::GluedCurveIteratorPair gluedRange
 }
 
 void FlowGraphBuilder::createEscapeArcs(Curve& fromCurve,
-                                       Curve& toCurve,
-                                       std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes)
+                                        Curve& toCurve,
+                                        UnsignedSCellSet& visitedNodes)
 {
     KSpace& KImage = imageFlowData.getKSpace();
 
     UnsignedSCellComparison myComp;
-    std::set<KSpace::SCell,UnsignedSCellComparison> forbiddenPoints(myComp);
+    UnsignedSCellSet forbiddenPoints(myComp);
 
     for(auto it=fromCurve.begin();it!=fromCurve.end();++it){
         Dimension orthDir = KImage.sOrthDir(*it);
@@ -321,8 +349,8 @@ void FlowGraphBuilder::createEscapeArcs(Curve& fromCurve,
 
 
 void FlowGraphBuilder::explore(KSpace::SCell candidate,
-                               std::set<KSpace::SCell,UnsignedSCellComparison>& borderPoints,
-                               std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes)
+                               UnsignedSCellSet& borderPoints,
+                               UnsignedSCellSet& visitedNodes)
 {
 
     if(visitedNodes.find(candidate)!=visitedNodes.end()) return;
@@ -336,16 +364,8 @@ void FlowGraphBuilder::explore(KSpace::SCell candidate,
         if( borderPoints.find(*n)!=borderPoints.end() ){
             KSpace::SCell bPoint = *borderPoints.find(*n);
             if(KImage.sSign(bPoint)){
-                ListDigraph::Arc a1,a2;
-                createArcFromPixels(candidate,*n,a1);
-                createArcFromPixels(*n,candidate,a2);
-
-                arcWeight[a1]=10;
-                arcType[a1] = ArcType::EscapeArc;
-
-                arcWeight[a2]=10;
-                arcType[a2] = ArcType::EscapeArc;
-
+                createArcFromPixels(candidate,*n,FlowGraph::ArcType::EscapeArc,10);
+                createArcFromPixels(*n,candidate,FlowGraph::ArcType::EscapeArc,10);
             }
 
             continue;
@@ -353,23 +373,17 @@ void FlowGraphBuilder::explore(KSpace::SCell candidate,
 
         explore(*n,borderPoints,visitedNodes);
 
-        ListDigraph::Arc a1,a2;
-        createArcFromPixels(candidate,*n,a1);
-        createArcFromPixels(*n,candidate,a2);
-
-        arcWeight[a1]=10;
-        arcType[a1] = ArcType::EscapeArc;
-
-        arcWeight[a2]=10;
-        arcType[a2] = ArcType::EscapeArc;
+        createArcFromPixels(candidate,*n,FlowGraph::ArcType::EscapeArc,10);
+        createArcFromPixels(*n,candidate,FlowGraph::ArcType::EscapeArc,10);
     }
 
 }
 
 
 template<typename TType>
-int FlowGraphBuilder::createFromIteratorsQueue(std::queue<TType> intervals,std::map<Z2i::SCell, double>& weightMap,
-                                               std::set<KSpace::SCell,UnsignedSCellComparison>& visitedNodes)
+int FlowGraphBuilder::createFromIteratorsQueue(std::queue<TType> intervals,
+                                               LinelWeightMap& weightMap,
+                                               UnsignedSCellSet& visitedNodes)
 {
 
     KSpace& KImage = imageFlowData.getKSpace();
@@ -390,11 +404,14 @@ int FlowGraphBuilder::createFromIteratorsQueue(std::queue<TType> intervals,std::
 
             visitedNodes.insert(directIncidentPixel);
 
-            ListDigraph::Arc a;
-            connectPixelToNode(indirectIncidentPixel,targetNode,a);
+            ListDigraph::Node u;
+            createNodeFromPixel(indirectIncidentPixel,u);
 
-            arcWeight[a] = 10; //This line didn't exist before refactoring
-            arcType[a] = ArcType::TargetArc;
+            addArc(u,
+                   fg.targetNode,
+                   FlowGraph::ArcType::TargetArc,
+                   10);
+
 
             if(itC==end) break;
             ++itC;
@@ -409,26 +426,49 @@ void FlowGraphBuilder::setTerminalsCoordinates()
     double x=0;
     double y=0;
     double i=0;
-    for(ListDigraph::NodeIt n(fg);n!=INVALID;++n)
+    for(ListDigraph::NodeIt n(fg.digraph);n!=INVALID;++n)
     {
-        if(n==sourceNode || n==targetNode) continue;
+        if(n==fg.sourceNode || n==fg.targetNode) continue;
 
-        x+=coords[n][0];
-        y+=coords[n][1];
+        x+=fg.coords[n][0];
+        y+=fg.coords[n][1];
         i+=1;
     }
     x/=i;
     y/=i;
 
-    coords[sourceNode] = LemonPoint(x,y);
-    coords[targetNode] = LemonPoint(x+40,y+40);
+    fg.coords[fg.sourceNode] = LemonPoint(x,y);
+    fg.coords[fg.targetNode] = LemonPoint(x+40,y+40);
 }
 
-void FlowGraphBuilder::addRefundArc(ListDigraph::Node& u,
-                                    ListDigraph::Node& v,
-                                    double weight)
+void FlowGraphBuilder::addArc(ListDigraph::Arc& arc,
+                              ListDigraph::Node& u,
+                              ListDigraph::Node& v,
+                              FlowGraph::ArcType at,
+                              double weight)
 {
-    ListDigraph::Arc a1 = fg.addArc(u,v);
-    arcWeight[a1] = weight;
-    arcType[a1] = ArcType::RefundArc;
+    arc = fg.digraph.addArc(u,v);
+    fg.arcWeightMap[arc] = weight;
+    fg.arcTypeMap[arc] = at;
+}
+
+void FlowGraphBuilder::addArc(ListDigraph::Node& u,
+                              ListDigraph::Node& v,
+                              FlowGraph::ArcType at,
+                              double weight)
+{
+    ListDigraph::Arc a1 = fg.digraph.addArc(u,v);
+    fg.arcWeightMap[a1] = weight;
+    fg.arcTypeMap[a1] = at;
+}
+
+void FlowGraphBuilder::addArc(FlowGraph& fg,
+                              ListDigraph::Node& u,
+                              ListDigraph::Node& v,
+                              FlowGraph::ArcType at,
+                              double weight)
+{
+    ListDigraph::Arc a1 = fg.digraph.addArc(u,v);
+    fg.arcWeightMap[a1] = weight;
+    fg.arcTypeMap[a1] = at;
 }

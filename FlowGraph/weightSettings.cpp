@@ -61,7 +61,7 @@ void setGridCurveWeight(Curve curvePriorGS,
         int i =0;
         for(auto it=curvePriorGS.begin();it!=curvePriorGS.end();++it){
             weightMap[*it] *=tangentWeightVector[i];
-            weightMap[*it] += 0.001*tangentWeightVector[i];
+//            weightMap[*it] += 0.001*tangentWeightVector[i];
             ++i;
         }
     }
@@ -131,7 +131,7 @@ void setGluedCurveWeight(WeightSettingsTypes::GluedCurveSetRange::ConstIterator 
             auto itC = it->first.connectorsBegin();
             do {
                 weightMap[*itC]*= tangentWeightVector[i];
-                weightMap[*itC]+= 0.001*tangentWeightVector[i];
+//                weightMap[*itC]+= 0.001*tangentWeightVector[i];
                 ++i;
                 if(itC==it->first.connectorsEnd()) break;
                 ++itC;
@@ -139,4 +139,25 @@ void setGluedCurveWeight(WeightSettingsTypes::GluedCurveSetRange::ConstIterator 
         }
     }
 
+}
+
+void setArcsWeight(ImageFlowData& imageFlowData,std::map<Z2i::SCell,double>& weightMap)
+{
+
+    for(auto it=imageFlowData.curveDataBegin();it!=imageFlowData.curveDataEnd();++it)
+    {
+        setGridCurveWeight(it->curve,
+                           imageFlowData.getKSpace(),
+                           weightMap
+        );
+    }
+
+    for(auto it=imageFlowData.curvePairBegin();it!=imageFlowData.curvePairEnd();++it)
+    {
+        setGluedCurveWeight( it->gcsRangeBegin(),
+                             it->gcsRangeEnd(),
+                             imageFlowData.getKSpace(),
+                             imageFlowData.getGluedCurveLength(),
+                             weightMap);
+    }
 }

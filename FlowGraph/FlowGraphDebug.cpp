@@ -5,11 +5,11 @@
 void FlowGraphDebug::drawCutGraph(std::string outputFolder,
                                   std::string suffix)
 {
-    FlowGraphBuilder::FlowComputer flowComputer = fgb.preparePreFlow();
+    FlowGraph::FlowComputer flowComputer = fg.prepareFlow();
     flowComputer.run();
 
-    ListDigraph::ArcMap<bool> arcsInTheCut(fgb.graph(),false);
-    fgq.sourceComponent(arcsInTheCut);
+    ListDigraph::ArcMap<bool> arcsInTheCut(fg.graph(),false);
+    FlowGraphQuery::sourceComponent(fg,arcsInTheCut);
 
     suffix = "CutGraph-" + suffix;
     highlightArcs(arcsInTheCut,outputFolder,suffix);
@@ -18,18 +18,26 @@ void FlowGraphDebug::drawCutGraph(std::string outputFolder,
 void FlowGraphDebug::drawRefundGraph(std::string outputFolder,
                                      std::string suffix)
 {
-    FilterComposer<ListDigraph::ArcMap<bool>,ListDigraph::ArcIt> filterComposer(fgb.graph());
+    ListDigraph::ArcMap<bool> noArcs(fg.graph(),false);
+    FilterComposer<ListDigraph::ArcMap<bool>,ListDigraph::ArcIt> filterComposer(fg.graph(),noArcs);
 
-    ListDigraph::ArcMap<bool> refundArcsFilter(fgb.graph(),false);
-    fgq.filterArcs(refundArcsFilter,FlowGraphBuilder::ArcType::RefundArc,true);
+    ListDigraph::ArcMap<bool> refundArcsFilter(fg.graph(),false);
+    FlowGraphQuery::filterArcs(fg,
+                               refundArcsFilter,
+                               FlowGraph::ArcType::RefundArc,true);
 
-    ListDigraph::ArcMap<bool> externalArcsFilter(fgb.graph(),false);
-    fgq.filterArcs(externalArcsFilter,FlowGraphBuilder::ArcType::ExternalCurveArc,true);
+    ListDigraph::ArcMap<bool> externalArcsFilter(fg.graph(),
+                                                 false);
+
+    FlowGraphQuery::filterArcs(fg,
+                               externalArcsFilter,
+                               FlowGraph::ArcType::ExternalCurveArc,
+                               true);
 
     filterComposer+refundArcsFilter+externalArcsFilter;
 
     suffix = suffix + "-RefundArcs";
-    highlightArcs(filterComposer(),outputFolder,suffix);
+    highlightArcs(filterComposer.initialMap,outputFolder,suffix);
 }
 
 
@@ -38,12 +46,12 @@ void FlowGraphDebug::highlightArcs(ListDigraph::ArcMap<bool>& arcFilter,
                                    std::string suffix)
 {
 
-    ListDigraph::NodeMap<bool> allNodes(fgb.graph(),true);
-    ListDigraph::ArcMap<bool> allArcs(fgb.graph(),true);
+    ListDigraph::NodeMap<bool> allNodes(fg.graph(),true);
+    ListDigraph::ArcMap<bool> allArcs(fg.graph(),true);
 
-    ListDigraph::ArcMap<int> arcColors(fgb.graph(),0);
+    ListDigraph::ArcMap<int> arcColors(fg.graph(),0);
 
-    for(ListDigraph::ArcIt a(fgb.graph());a!=INVALID;++a)
+    for(ListDigraph::ArcIt a(fg.graph());a!=INVALID;++a)
     {
         if(arcFilter[a])
         {
@@ -63,8 +71,8 @@ void FlowGraphDebug::highlightArcs(ListDigraph::ArcMap<int>& arcColors,
                                    std::string suffix)
 {
 
-    ListDigraph::NodeMap<bool> allNodes(fgb.graph(),true);
-    ListDigraph::ArcMap<bool> allArcs(fgb.graph(),true);
+    ListDigraph::NodeMap<bool> allNodes(fg.graph(),true);
+    ListDigraph::ArcMap<bool> allArcs(fg.graph(),true);
 
     highlightArcs(allNodes,
                   allArcs,
@@ -89,12 +97,12 @@ void FlowGraphDebug::highlightArcs(ListDigraph::NodeMap<bool>& nodeFilter,
     p2.remove_filename();
     boost::filesystem::create_directories(p2);
 
-    FlowGraphBuilder::SubGraph sg(fgb.graph(),
-                                  nodeFilter,
-                                  arcFilter);
+    FlowGraphQuery::SubGraph sg(fg.graph(),
+                                nodeFilter,
+                                arcFilter);
 
     graphToEps(sg,imageOutputPath.c_str())
-            .coords(fgb.coordsMap())
+            .coords(fg.coordsMap())
             .nodeScale(.0005)
             .arcWidthScale(0.0005)
             .arcColors((composeMap(palette,arcColors)))
@@ -106,11 +114,11 @@ void FlowGraphDebug::highlightArcs(ListDigraph::NodeMap<bool>& nodeFilter,
 double FlowGraphDebug::energyValue(ListDigraph::ArcMap<bool>& arcFilter)
 {
     double s = 0;
-    for(ListDigraph::ArcIt a(fgb.graph());a!=INVALID;++a)
+    for(ListDigraph::ArcIt a(fg.graph());a!=INVALID;++a)
     {
         if(arcFilter[a])
         {
-            s+=fgb.arcWeight[a];
+            s+=fg.weight(a);
         }
 
     }

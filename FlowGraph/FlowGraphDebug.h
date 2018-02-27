@@ -8,17 +8,13 @@
 #include <lemon/adaptors.h>
 
 #include "FlowGraphBuilder.h"
-#include "Flow.h"
+#include "../RefundFlow.h"
 
 using namespace lemon;
 
 class FlowGraphDebug{
 public:
-    FlowGraphDebug(Flow& flow):fgb(flow.fgb),
-                               fgq(fgb){};
-
-    FlowGraphDebug(FlowGraphBuilder& fgb):fgb(fgb),
-                                          fgq(fgb){};
+    FlowGraphDebug(FlowGraph& fg):fg(fg){};
 
     void drawCutGraph(std::string outputFolder,
                       std::string suffix);
@@ -43,8 +39,7 @@ public:
     double energyValue(ListDigraph::ArcMap<bool>& arcFilter);
 
 private:
-    FlowGraphBuilder& fgb;
-    FlowGraphQuery fgq;
+    FlowGraph& fg;
 };
 
 

@@ -18,12 +18,12 @@ using namespace DGtal;
 using namespace DGtal::Z2i;
 
 #include "utils.h"
-#include "weightSettings.h"
+#include "FlowGraph/weightSettings.h"
 
-#include "FlowGraphBuilder.h"
-#include "ImageFlowData.h"
-#include "ImageFlowDataDebug.h"
-#include "FlowGraphDebug.h"
+#include "FlowGraph/FlowGraphBuilder.h"
+#include "FlowGraph/ImageFlowData.h"
+#include "FlowGraph/ImageFlowDataDebug.h"
+#include "FlowGraph/FlowGraphDebug.h"
 
 using namespace UtilsTypes;
 
@@ -41,35 +41,19 @@ void computeFlow(SegCut::Image2D& image,
     imageFlowData.init(ImageFlowData::FlowMode::DilationOnly,
                        gluedCurveLength);
 
+    setArcsWeight(imageFlowData,weightMap);
 
-    for(auto it=imageFlowData.curveDataBegin();it!=imageFlowData.curveDataEnd();++it)
-    {
-        setGridCurveWeight(it->curve,
-                           imageFlowData.getKSpace(),
-                           weightMap
-        );
-    }
-
-    for(auto it=imageFlowData.curvePairBegin();it!=imageFlowData.curvePairEnd();++it)
-    {
-        setGluedCurveWeight( it->gcsRangeBegin(),
-                             it->gcsRangeEnd(),
-                             imageFlowData.getKSpace(),
-                             gluedCurveLength,
-                             weightMap);
-    }
-
-    FlowGraphBuilder fgb(imageFlowData);
-    fgb(weightMap);
+    FlowGraph fg;
+    FlowGraphBuilder fgb(fg,imageFlowData,weightMap);
 
 
-    FlowGraphBuilder::FlowComputer flow = fgb.preparePreFlow();
+    FlowGraph::FlowComputer flow = fg.prepareFlow();
     flow.run();
 
-    ListDigraph::NodeMap<bool> node_filter(fgb.graph(),false);
-    ListDigraph::ArcMap<bool> arc_filter(fgb.graph(),true);
+    ListDigraph::NodeMap<bool> node_filter(fg.graph(),false);
+    ListDigraph::ArcMap<bool> arc_filter(fg.graph(),true);
 
-    for(ListDigraph::NodeIt n(fgb.graph());n!=INVALID;++n){
+    for(ListDigraph::NodeIt n(fg.graph());n!=INVALID;++n){
         if( flow.minCut(n) ){
             node_filter[n] = true;
         }else{
@@ -77,29 +61,29 @@ void computeFlow(SegCut::Image2D& image,
         }
     }
 
-    node_filter[fgb.source()]=false;
+    node_filter[fg.source()]=false;
 
 
 
-    FlowGraphBuilder::SubGraph subgraph(fgb.graph(),
-                                        node_filter,
-                                        arc_filter);
+    FlowGraphQuery::SubGraph subgraph(fg.graph(),
+                                      node_filter,
+                                      arc_filter);
 
 
     KSpace& KImage = imageFlowData.getKSpace();
 
-    for(FlowGraphBuilder::SubGraph::NodeIt n(subgraph);n!=INVALID;++n)
+    for(FlowGraphQuery::SubGraph::NodeIt n(subgraph);n!=INVALID;++n)
     {
-        Z2i::SCell pixel = fgb.pixelsMap()[n];
+        Z2i::SCell pixel = fg.pixel(n);
         Z2i::Point p = KImage.sCoords(pixel);
 
         coordPixelsSourceSide.push_back(p);
     }
 
-    for(ListDigraph::NodeIt n(fgb.graph());n!=INVALID;++n)
+    for(ListDigraph::NodeIt n(fg.graph());n!=INVALID;++n)
     {
-        if(fgb.source()==n || fgb.target()==n) continue;
-        Z2i::SCell pixel = fgb.pixelsMap()[n];
+        if(fg.source()==n || fg.target()==n) continue;
+        Z2i::SCell pixel = fg.pixel(n);
 
         pixelsInTheGraph.push_back(pixel);
     }
