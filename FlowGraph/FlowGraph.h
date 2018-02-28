@@ -9,6 +9,8 @@
 
 #include "DGtal/helpers/StdDefs.h"
 
+#include "ImageFlowData.h"
+
 class FlowGraph
 {
 public:
@@ -76,6 +78,7 @@ public:
     int getGluedCurveLength(){ return gluedCurveLength; }
     int getConsecutiveGluedPairDistance(){ return consecutiveGluedPairDistance; }
     int getDiffDistance(){ return diffDistance; }
+    ImageFlowData::FlowMode getFlowMode(){ return flowGraphMode; }
 
     ListDigraph::Node& source(){return sourceNode;}
     ListDigraph::Node& target(){return targetNode;}
@@ -91,6 +94,7 @@ private:
     int gluedCurveLength;
     int consecutiveGluedPairDistance;
     int diffDistance;
+    ImageFlowData::FlowMode flowGraphMode;
 
     ListDigraph digraph;
 

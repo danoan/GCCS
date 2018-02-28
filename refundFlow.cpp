@@ -92,25 +92,28 @@ int main(){
     Development::makeConvexArcs = false;
     Development::invertGluedArcs = false;
 
-    unsigned int gluedCurveLength = 5;
+    unsigned int gluedCurveLength = 8;
 
     SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_triangle.pgm");
     SegCut::Image2D imageOut = image;
 
     std::string outputFolder = "../output/refundFlow/triangle/triangle-5";
-
+    double currentEnergyValue;
     for(int i=0;i<200;++i)
     {
         ImageFlowData imageFlowData(image);
+        imageFlowData.init(ImageFlowData::FlowMode::DilationOnly,gluedCurveLength);
+
         RefundFlow refundFlow(imageFlowData);
 
-        refundFlow.run();
+        currentEnergyValue = refundFlow.run();
 
         drawCurvatureMaps(image,
                           gluedCurveLength,
                           outputFolder,
                           std::to_string(i));
 
+        imageOut = refundFlow.outputImage();
 
         saveImage(imageOut,
                   outputFolder,
@@ -118,7 +121,11 @@ int main(){
 
         image=imageOut;
 
-        std::cout << "OK " << i << std::endl;
+        std::cout << "OK " << i
+                  << "    Energy Value: " << currentEnergyValue
+                  << std::endl;
+
+        //if(i==2) exit(1);
     }
 
     return 0;

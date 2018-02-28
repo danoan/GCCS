@@ -150,7 +150,7 @@ int main() {
 
     unsigned int gluedCurveLength = 5;
 
-    std::string imgPath = "../images/flow-evolution/single_square.pgm";
+    std::string imgPath = "../images/flow-evolution/8.pgm";
     SegCut::Image2D image = GenericReader<SegCut::Image2D>::import(imgPath);
 
     std::string outputFolder = "../output/testModules/FlowGraphQuery";

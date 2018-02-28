@@ -33,7 +33,7 @@ public:
     RefundFlow(ImageFlowData& imageFlowData);
 
 
-    void run();
+    double run();
     Image2D& outputImage(){ return imageOut; }
 
 
@@ -51,7 +51,6 @@ private:
                          double weight);
 
     void computeCutEnergyDifference(FlowGraph& f1,
-                                    Image2D& image,
                                     ListDigraph::ArcMap<bool>& arcFilter,
                                     ListDigraph::ArcMap<double>& arcDiff);
 
@@ -61,9 +60,10 @@ private:
                       FlowGraphQuery::ArcPair conflictedPair[]);
 
     int runIteration(FlowGraph& fg,
-                     Image2D& partialImage);
+                     Image2D& partialImage,
+                     FlowGraphQuery::ArcPairSet& usedKeys,
+                     int iteration);
 
-    double cutValue(FlowGraph& fg);
 
     void updateImage(FlowGraph& fg,
                      Image2D& out);
@@ -79,6 +79,8 @@ private:
     static void matchFlows(ListDigraph::ArcMap<int>& mapping,
                            FlowGraph& f1,
                            FlowGraph& f2);
+
+    double energyValue(Image2D& image);
 
 
 private:

@@ -89,8 +89,8 @@ void computeFlow(SegCut::Image2D& image,
     }
 
 
-    FlowGraphDebug flowGraphDebug(fgb);
-    flowGraphDebug.drawCutGraph(outputFolder,suffix );
+    FlowGraphDebug flowGraphDebug(fg);
+    flowGraphDebug.drawCutGraph(outputFolder,suffix);
 
 }
 
@@ -184,13 +184,13 @@ int main(){
     Development::crossElement = false;
 
     Development::makeConvexArcs = false;
-    Development::invertGluedArcs = true;
+    Development::invertGluedArcs = false;
 
     unsigned int gluedCurveLength = 5;
 
     SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_square.pgm");
 
-    std::string outputFolder = "../output/flow/square/square-5-Invert";
+    std::string outputFolder = "../output/flow/square/square-5";
 
     std::vector<Z2i::Point> coordPixelsSourceSide;
     std::vector<Z2i::SCell> pixelsInTheGraph;

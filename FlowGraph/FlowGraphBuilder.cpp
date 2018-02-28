@@ -9,6 +9,7 @@ FlowGraphBuilder::FlowGraphBuilder(FlowGraph& fg,
     fg.gluedCurveLength = imageFlowData.getGluedCurveLength();
     fg.consecutiveGluedPairDistance = imageFlowData.getConsecutiveGluedPairDistance();
     fg.diffDistance = imageFlowData.getDiffDistance();
+    fg.flowGraphMode = imageFlowData.getFlowMode();
 
 
     for(auto it=imageFlowData.curveDataBegin();it!=imageFlowData.curveDataEnd();++it)

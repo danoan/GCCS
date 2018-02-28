@@ -177,6 +177,9 @@ public:
                                     FlowGraph& newFg);
 
 
+    static double cutValue(FlowGraph& fg);
+
+
 private:
     template<typename IteratorType>
     static void insertSCellFromArc(FlowGraph& fg,

@@ -81,25 +81,6 @@ void FlowGraphQuery::coreArcs(FlowGraph& fg,
     (filterComposer+allArcs)-sourceArcs-targetArcs;
 }
 
-void FlowGraphQuery::cutPlusGlued(FlowGraph& fg,
-                                  ListDigraph::ArcMap<bool>& arcFilter)
-{
-    ListDigraph::ArcMap<bool> cutFilter(fg.graph());
-    ListDigraph::ArcMap<bool> intExtFilter(fg.graph());
-    ListDigraph::ArcMap<bool> extIntFilter(fg.graph());
-
-    ListDigraph::ArcMap<bool> targetArcs(fg.graph());
-    filterArcs(fg,
-               sourceArcs,
-               FlowGraph::ArcType::TargetArc,
-               true);
-
-    FilterComposer<ListDigraph::ArcMap<bool>,ListDigraph::ArcIt> filterComposer(fg.graph(),
-                                                                                coreArcs);
-
-    ListDigraph::ArcMap<bool> allArcs(fg.graph(),true);
-    (filterComposer+allArcs)-sourceArcs-targetArcs;
-}
 
 void FlowGraphQuery::gluedArcPairSet(FlowGraph& fg,
                                         std::set<ArcPair>& gluedArcPairSet)
@@ -124,8 +105,7 @@ void FlowGraphQuery::gluedArcPairSet(FlowGraph& fg,
             .run();
 
 
-    //TODO::STopped here
-    ListDigraph::ArcMap<bool> cutPlusGlued(fg.graph(),false);
+    ListDigraph::ArcMap<bool> noSourceTargetArcs(fg.graph(),false);
     coreArcs(fg,
              noSourceTargetArcs);
 
@@ -141,13 +121,16 @@ void FlowGraphQuery::gluedArcPairSet(FlowGraph& fg,
     std::stack<ListDigraph::Node> traverseStack;
     ListDigraph::NodeMap<bool> visitedNodes(fg.graph(), false);
     ListDigraph::Node currentNode;
+    bool pairNotFound;
     for(SubGraph::ArcIt a(intExtGluedSubgraph);a!=lemon::INVALID;++a)
     {
         arcQueue.push(a);
         ListDigraph::Node firstNode = intExtGluedSubgraph.source(a);
+        visitedNodes[intExtGluedSubgraph.target(a)]=true;
 
         traverseStack.push(firstNode);
-        while(!traverseStack.empty()){
+        pairNotFound=true;
+        while(pairNotFound){
             currentNode = traverseStack.top(); traverseStack.pop();
             if(visitedNodes[currentNode]) continue;
 
@@ -162,6 +145,7 @@ void FlowGraphQuery::gluedArcPairSet(FlowGraph& fg,
                     cutFilter[oai])
                 {
                     arcQueue.push(oai);
+                    pairNotFound=false;
                 }
             }
 
@@ -359,4 +343,12 @@ void FlowGraphQuery::arcFilterConversion(ListDigraph::ArcMap<bool>& arcMap,
             newArcMap[a] = true;
         }
     }
+}
+
+double FlowGraphQuery::cutValue(FlowGraph& fg)
+{
+    FlowGraph::FlowComputer flowComputer = fg.prepareFlow();
+    flowComputer.run();
+
+    return flowComputer.flowValue();
 }
