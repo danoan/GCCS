@@ -21,7 +21,8 @@ public:
 
     void drawRefundGraph(std::string outputFolder,
                          std::string suffix);
-
+    
+    
     void highlightArcs(ListDigraph::ArcMap<bool>& arcFilter,
                        std::string imageOutputFolder,
                        std::string suffix);

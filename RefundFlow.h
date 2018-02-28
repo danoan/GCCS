@@ -33,7 +33,7 @@ public:
     RefundFlow(ImageFlowData& imageFlowData);
 
 
-    double run();
+    double run(int mainIterations);
     Image2D& outputImage(){ return imageOut; }
 
 
@@ -81,6 +81,18 @@ private:
                            FlowGraph& f2);
 
     double energyValue(Image2D& image);
+
+    void constructSCellsVectorFromFilter(std::vector<SCell>& scells,
+                                         FlowGraph& fg,
+                                         ListDigraph::ArcMap<bool>& arcFilter);
+
+    void checkCodeConsistence(FlowGraph& fg,
+                              Image2D& resultingImage);
+
+    void debugData(FlowGraph& fg,
+                   Image2D& partialImage,
+                   FlowGraphBuilder::LinelWeightMap& weightMap,
+                   int iteration);
 
 
 private:

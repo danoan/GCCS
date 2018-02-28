@@ -182,4 +182,10 @@ void draw(std::vector<Value>& V,
 }
 
 
+void draw(std::map<Z2i::SCell,double>& weightMap,
+          std::vector<Z2i::SCell>& highlightedArcs,
+          UtilsTypes::Board2D& board,
+          double cmin,
+          double cmax);
+
 #endif //SEGBYCUT_CURVATUREWEIGHTMETHODS_H

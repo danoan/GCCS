@@ -411,5 +411,27 @@ void randomizeCurve(std::vector<Z2i::SCell>::const_iterator cBegin,
 }
 
 
+void draw(std::map<Z2i::SCell,double>& weightMap,
+          std::vector<Z2i::SCell>& highlightedArcs,
+          UtilsTypes::Board2D& board,
+          double cmin,
+          double cmax)
+{
+    if(cmin==cmax) cmax = cmin + 0.0000001;
 
+    UtilsTypes::GradientColorMap<double,
+            UtilsTypes::ColorGradientPreset::CMAP_JET> cmap_jet(cmin,cmax);
+
+    board << UtilsTypes::SetMode(highlightedArcs[0].className(), "Paving" );
+    std::string specificStyle = highlightedArcs[0].className() + "/Paving";
+
+
+    for(auto it = highlightedArcs.begin();it!=highlightedArcs.end();++it)
+    {
+        board << UtilsTypes::CustomStyle( specificStyle,
+                                          new UtilsTypes::CustomColors(UtilsTypes::Color::Black,
+                                                                       cmap_jet( weightMap[*it] )));
+        board << *it;
+    }
+}
 

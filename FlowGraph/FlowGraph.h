@@ -69,6 +69,8 @@ public:
     SCell pixel(const ListDigraph::Node& node){return pixelMap[node];}
 
     ListDigraph::Arc arc(const SCell& scell){ return scellArcMap[scell]; }
+    SCell scell(const ListDigraph::Arc& arc){ return arcSCellMap[arc]; }
+    
     ArcType arcType(const ListDigraph::Arc& a){ return arcTypeMap[a]; }
 
     CirculatorPair circulatorPair(const ListDigraph::Arc& a){ return arcCirculatorMap[a]; }

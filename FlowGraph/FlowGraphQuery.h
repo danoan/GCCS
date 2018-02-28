@@ -14,6 +14,7 @@
 #include "DGtal/base/ConstIteratorAdapter.h"
 
 #include "FlowGraph.h"
+#include "FlowGraphBuilder.h"
 
 
 class SCellToArc
@@ -165,6 +166,9 @@ public:
     static void detourArcMap(FlowGraph& fg,
                              DetourArcMap& detourArcMap);
 
+    static void globalDetourArcSet(FlowGraph& fg,
+                                   std::set<ListDigraph::Arc>& globalDetourArcSet);
+
     static double computeEnergyValue(FlowGraph& fg,
                                      ListDigraph::ArcMap<bool>& arcFilter);
 
@@ -188,13 +192,6 @@ private:
                                    IteratorType begin,
                                    int items);
 
-    template<typename IteratorType,typename LimitIteratorType>
-    static void insertSCellFromArc(FlowGraph& fg,
-                                   std::set<ListDigraph::Arc>& v,
-                                   SCellToArc& staFunctor,
-                                   IteratorType begin,
-                                   LimitIteratorType limitIterator,
-                                   int items);
 
     template<typename MyCirculator>
     static MyCirculator moveIterator(const MyCirculator c, int w);
@@ -229,44 +226,20 @@ void FlowGraphQuery::insertSCellFromArc(FlowGraph& fg,
     DGtal::ConstIteratorAdapter<IteratorType,SCellToArc,ListDigraph::Arc> itAdapter(begin,
                                                                                     staFunctor);
 
-    unsigned long int initialSize = v.size();
-    v.insert(itAdapter,FlowGraphQuery::moveIterator(itAdapter,items) );
-    if(initialSize+items!=v.size())
+    int i=0;
+    for(auto it=itAdapter;i<items;++i,++it)
     {
-//        std::cout << "Collision of " << initialSize+items-v.size() << " items" << std::endl;
-    }
-}
-
-template<typename IteratorType,typename LimitIteratorType>
-void FlowGraphQuery::insertSCellFromArc(FlowGraph& fg,
-                                        std::set<ListDigraph::Arc>& v,
-                                        SCellToArc& staFunctor,
-                                        IteratorType begin,
-                                        LimitIteratorType limitIterator,
-                                        int items)
-{
-    DGtal::ConstIteratorAdapter<IteratorType,SCellToArc,ListDigraph::Arc> itAdapter(begin,
-                                                                                    staFunctor);
-
-    unsigned long int initialSize = v.size();
-    ListDigraph::Arc a = staFunctor(*limitIterator);
-    int n=0;
-    while(n<items)
-    {
-        if(*itAdapter==a) break;
-
-        std::cout << fg.pixel( fg.source(*itAdapter) ) << " -> " 
-                  <<  fg.pixel( fg.target(*itAdapter) ) << "::ID " 
-                  << fg.id(*itAdapter) << std::endl;
-
-        v.insert(*itAdapter);
-        ++itAdapter;
-        n++;
+        if(v.find(*it)==v.end())
+        {
+            v.insert(*it);
+        }
+        else
+        {
+//            std::cout << "Collision" << std::endl;
+//            std::cout << i << ":" << "(" << fg.id(*it) << ")-" << fg.arcType(*it) << "::" << fg.scell(*it).preCell().coordinates << std::endl;
+        }
     }
 
-    if(initialSize+items!=v.size()){
-        std::cout << "(*)Collision of " << initialSize+items-v.size() << " items" << std::endl;
-    }
 }
 
 template<typename MyCirculator>

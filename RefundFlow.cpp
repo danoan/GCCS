@@ -214,6 +214,67 @@ void RefundFlow::addRefundArcs(FlowGraph& fg,
     FlowGraphBuilder::addArc(fg,u2,v2,FlowGraph::ArcType::RefundArc,weight);
 }
 
+void RefundFlow::checkCodeConsistence(FlowGraph& fg,Image2D& resultingImage)
+{
+    std::set<ListDigraph::Arc> globalDetourArcSet;
+    FlowGraphQuery::globalDetourArcSet(fg,globalDetourArcSet);
+
+    ListDigraph::ArcMap<bool> intExtCut(fg.graph(),false);
+    FlowGraphQuery::selectArcsInCut(fg,intExtCut,FlowGraph::ArcType::IntExtGluedArc);
+
+    ListDigraph::ArcMap<bool> extIntCut(fg.graph(),false);
+    FlowGraphQuery::selectArcsInCut(fg,extIntCut,FlowGraph::ArcType::ExtIntGluedArc);
+
+    ListDigraph::ArcMap<bool> globalDetourArcFilter(fg.graph(),false);
+    for(auto it=globalDetourArcSet.begin();it!=globalDetourArcSet.end();++it)
+    {
+        globalDetourArcFilter[*it] = true;
+    }
+
+    ImageFlowData imf(resultingImage);
+    imf.init(imageFlowData.getFlowMode(),imageFlowData.getGluedCurveLength());
+
+    FlowGraphBuilder::LinelWeightMap tempWeightMap;
+    setArcsWeight(imf,tempWeightMap);
+
+    FlowGraph tempFG;
+    FlowGraphBuilder fgb(tempFG,imf,tempWeightMap);
+
+    ListDigraph::ArcMap<bool> matchFilter(fg.graph(),false);
+    ListDigraph::ArcMap<int> matches(fg.graph(),-1);
+    matchFlows(matches,fg,tempFG);
+
+    for(ListDigraph::ArcIt a(fg.graph());a!=INVALID;++a)
+    {
+        if(matches[a]!=-1)
+        {
+            matchFilter[a] = true;
+        }
+    }
+
+    FilterComposer<ListDigraph::ArcMap<bool>, ListDigraph::ArcIt> validDetourArcs(fg.graph(), globalDetourArcFilter);
+    validDetourArcs*matchFilter;
+    validDetourArcs+intExtCut+extIntCut;
+
+
+    double cutDiff = FlowGraphQuery::computeEnergyValue(fg,validDetourArcs.initialMap);
+
+
+    ListDigraph::ArcMap<bool> tempArcFilter(tempFG.graph(),false);
+    FlowGraphQuery::arcFilterConversion(validDetourArcs.initialMap,fg,tempArcFilter,tempFG);
+
+    double resultDiff = FlowGraphQuery::computeEnergyValue(tempFG,tempArcFilter);
+
+    double cutValue = FlowGraphQuery::cutValue(fg);
+    double resultingImageEnergyValue = energyValue(resultingImage);
+
+    std::string testResult = abs( (cutValue + resultDiff-cutDiff)-resultingImageEnergyValue ) < 0.0001?"TRUE":"FALSE";
+
+    std::cout << "DIFF CHECK::" << cutDiff << "::" << resultDiff <<  "::" << resultDiff-cutDiff <<std::endl;
+    std::cout << testResult << "::" << cutValue+resultDiff-cutDiff << std::endl;
+
+}
+
 int RefundFlow::runIteration(FlowGraph& fg,
                              Image2D& partialImage,
                              FlowGraphQuery::ArcPairSet& usedKeys,
@@ -233,37 +294,27 @@ int RefundFlow::runIteration(FlowGraph& fg,
                                arcDiff);
 
 
-    FlowGraphDebug fgd(fg);
-    fgd.drawCutGraph("cmake-build-debug",std::to_string(iteration) + "cutGraph");
-
-
-    ListDigraph::ArcMap<bool> gluedPairs(fg.graph(),false);
-
-
     FlowGraphQuery::ArcPair conflictedPairs[2];
     double s;
     int n;
-    int beforeKeysNumber = usedKeys.size();
+    double totalDiff=0;
     for(FlowGraphQuery::DetourArcMapIterator dami = detourArcMap.begin();dami!=detourArcMap.end();++dami)
     {
         FlowGraphQuery::ArcPair key = dami->first;
         if(usedKeys.find(key)!=usedKeys.end()) continue;
 
 
-        gluedPairs[key.first] = true;
-        gluedPairs[key.second] = true;
-
-        int conflicts = findConflicts(fg,
-                                      usedKeys,
-                                      key,
-                                      conflictedPairs);
-        for(int i=0;i<conflicts;++i)
-        {
-            addConflictArcs(fg,
-                            conflictedPairs[i].first,
-                            conflictedPairs[i].second,
-                            10);
-        }
+//        int conflicts = findConflicts(fg,
+//                                      usedKeys,
+//                                      key,
+//                                      conflictedPairs);
+//        for(int i=0;i<conflicts;++i)
+//        {
+//            addConflictArcs(fg,
+//                            conflictedPairs[i].first,
+//                            conflictedPairs[i].second,
+//                            10);
+//        }
 
         usedKeys.insert(key);
 
@@ -276,6 +327,7 @@ int RefundFlow::runIteration(FlowGraph& fg,
             s+= arcDiff[*vit];
             ++n;
         }
+        totalDiff+=s;
         s/=2;
 
         std::cout << "ArcDiff:" << s << " in " << n << " arcs" << std::endl;
@@ -293,16 +345,6 @@ int RefundFlow::runIteration(FlowGraph& fg,
                           s);
         }
     }
-
-
-    updateImage(fg,partialImage);
-
-    ListDigraph::ArcMap<bool> refundArcs(fg.graph(),false);
-    FlowGraphQuery::filterArcs(fg,refundArcs,FlowGraph::ArcType::RefundArc,true);
-
-    fgd.highlightArcs(refundArcs,"cmake-build-debug",std::to_string(iteration)+"refundArcs");
-
-    if(beforeKeysNumber==usedKeys.size()) return Stop;
 
     return Continue;
 }
@@ -323,7 +365,82 @@ double RefundFlow::energyValue(Image2D& image)
     return FlowGraphQuery::computeEnergyValue(fg,internalArcs);
 }
 
-double RefundFlow::run()
+void RefundFlow::constructSCellsVectorFromFilter(std::vector<SCell>& scells,
+                                                 FlowGraph& fg,
+                                                 ListDigraph::ArcMap<bool>& arcFilter)
+{
+    for(ListDigraph::ArcIt a(fg.graph());a!=INVALID;++a)
+    {
+        if(arcFilter[a])
+        {
+            if(fg.arcType(a)==FlowGraph::IntExtGluedArc ||
+               fg.arcType(a)==FlowGraph::ExtIntGluedArc ||
+               fg.arcType(a)==FlowGraph::InternalCurveArc ||
+               fg.arcType(a)==FlowGraph::ExternalCurveArc )
+            {
+                scells.push_back(fg.scell(a));
+            }
+        }
+    }
+}
+
+void RefundFlow::debugData(FlowGraph& fg,
+                           Image2D& partialImage,
+                           FlowGraphBuilder::LinelWeightMap& weightMap,
+                           int iteration)
+{
+    double currentCutValue = FlowGraphQuery::cutValue(fg);
+    double currentEnergyValue = energyValue(partialImage);
+    std::cout << "OK-Sub-" << iteration
+              << "    Cut Value:" << currentCutValue
+              << "    Energy Value:" << currentEnergyValue << std::endl;
+
+
+    ImageFlowData imf(partialImage);
+    imf.init(imageFlowData.getFlowMode(),imageFlowData.getGluedCurveLength());
+
+    FlowGraphBuilder::LinelWeightMap tempWeightMap;
+    setArcsWeight(imf,tempWeightMap);
+
+    FlowGraph tempFG;
+    FlowGraphBuilder fgb(tempFG,imf,tempWeightMap);
+
+
+    ListDigraph::ArcMap<bool> imageArcs(tempFG.graph(),false);
+    FlowGraphQuery::filterArcs(tempFG,imageArcs,FlowGraph::ArcType::InternalCurveArc,true);
+
+    std::vector<SCell> imageSCells;
+    constructSCellsVectorFromFilter(imageSCells,tempFG,imageArcs);
+
+    Board2D board;
+    double cmin=100,cmax=-100;
+
+    std::function<double(SCell)> fnTempToDouble = [tempWeightMap](SCell s){ return tempWeightMap.at(s); };
+    max_and_min(imageSCells,cmin,cmax,fnTempToDouble);
+    cmin = cmin==cmax?cmax-0.000001:cmin;
+
+
+    std::string suffix = std::to_string(iteration) + "-" + std::to_string(iteration);
+    draw(tempWeightMap,imageSCells,board,cmin,cmax);
+    board.saveEPS( ("../output/refundFlow/square/square-5/" + std::string("energy-weights-") + suffix).c_str() );
+
+
+
+    ListDigraph::ArcMap<bool> cutResultArcs(fg.graph(),false);
+    FlowGraphQuery::arcFilterConversion(imageArcs,tempFG,cutResultArcs,fg);
+
+    std::vector<SCell> cutResultSCells;
+    constructSCellsVectorFromFilter(cutResultSCells,fg,cutResultArcs);
+
+    std::function<double(SCell)> fnToDouble = [weightMap](SCell s){ return weightMap.at(s); };
+    max_and_min(cutResultSCells,cmin,cmax,fnToDouble);
+    cmin = cmin==cmax?cmax-0.000001:cmin;
+
+    draw(weightMap,cutResultSCells,board,cmin,cmax);
+    board.saveEPS( ("../output/refundFlow/square/square-5/" + std::string("cutResult-weights-") + suffix).c_str() );
+}
+
+double RefundFlow::run(int mainIteration)
 {
     FlowGraph fg;
     LinelWeightMap weightMap;
@@ -331,22 +448,31 @@ double RefundFlow::run()
     FlowGraphBuilder fgb(fg,imageFlowData,weightMap);
 
 
-    double currentCutValue = FlowGraphQuery::cutValue(fg);
-    double currentEnergyValue;
     int iteration = 1;
+
 
     FlowGraphQuery::ArcPairSet usedKeys;
     Image2D partialImage = imageFlowData.getOriginalImage();
+    Image2D previousImage=partialImage;
     while(runIteration(fg,partialImage,usedKeys,iteration)==Continue)
     {
-        currentCutValue = FlowGraphQuery::cutValue(fg);
-        currentEnergyValue = energyValue(partialImage);
-        std::cout << "OK-Sub-" << iteration
-                  << "    Cut Value:" << currentCutValue
-                  << "    Energy Value:" << currentEnergyValue << std::endl;
+        FlowGraphDebug fgd(fg);
+        std::string suffix = std::to_string(mainIteration) + "-" + std::to_string(iteration);
+        fgd.drawCutGraph("../output/refundFlow/square/square-5","cut-energy-" + suffix);
+
+        previousImage = partialImage;
+        updateImage(fg,partialImage);
+
+//        checkCodeConsistence(fg,partialImage);
+        debugData(fg,partialImage,weightMap,iteration);
+
+        if(previousImage==partialImage) break;
+
+
+        usedKeys.clear();
         ++iteration;
     }
 
     imageOut = partialImage;
-    return currentEnergyValue;
+    return energyValue(imageOut);
 }

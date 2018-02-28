@@ -179,7 +179,7 @@ void FlowGraphQuery::detourArcMap(FlowGraph& fg,
     
     ArcPairSet gaps;
     gluedArcPairSet(fg,gaps);
-    
+
     for(ArcPairIterator ait = gaps.begin();ait!=gaps.end();++ait)
     {
         ListDigraph::Arc intToExt = ait->first;
@@ -219,6 +219,61 @@ void FlowGraphQuery::detourArcMap(FlowGraph& fg,
         if(fg.arcType(fg.arc(*beginLeftInternal))!=FlowGraph::ArcType::InternalCurveArc) throw std::runtime_error("Internal Arc");
 
     }
+}
+
+void FlowGraphQuery::globalDetourArcSet(FlowGraph& fg,
+                                        std::set<ListDigraph::Arc>& globalDetourArcSet)
+{
+    SCellToArc staFunctor(fg);
+    int length = fg.getDiffDistance();
+
+    ArcPairSet gaps;
+    gluedArcPairSet(fg,gaps);
+
+    int previousSize = 0;
+    do {
+        length*=2;
+        previousSize = globalDetourArcSet.size();
+        for (ArcPairIterator ait = gaps.begin(); ait != gaps.end(); ++ait) {
+            ListDigraph::Arc intToExt = ait->first;
+            ListDigraph::Arc extToInt = ait->second;
+
+            FlowGraph::CirculatorPair cIn = fg.circulatorPair(intToExt);
+            FlowGraph::CirculatorPair cEx = fg.circulatorPair(extToInt);
+
+
+            FlowGraph::SCellCirculator beginRightExternal = cIn.second;
+            insertSCellFromArc(fg, globalDetourArcSet, staFunctor, beginRightExternal, length);
+
+            FlowGraph::SCellCirculator endLeftExternal(cEx.first);
+            ++endLeftExternal;
+            FlowGraph::SCellCirculator beginLeftExternal = moveIterator(endLeftExternal, -length);
+
+            insertSCellFromArc(fg, globalDetourArcSet, staFunctor, beginLeftExternal, length);
+
+
+            FlowGraph::SCellCirculator beginLeftInternal(cEx.second);
+            insertSCellFromArc(fg, globalDetourArcSet, staFunctor, beginLeftInternal, length);
+
+
+            FlowGraph::SCellCirculator endRightInternal(cIn.first);
+            ++endRightInternal;
+            FlowGraph::SCellCirculator beginRightInternal = moveIterator(endRightInternal, -length);
+
+            insertSCellFromArc(fg, globalDetourArcSet, staFunctor, beginRightInternal, length);
+
+
+            if (fg.arcType(fg.arc(*beginRightExternal)) != FlowGraph::ArcType::ExternalCurveArc)
+                throw std::runtime_error("External Arc Expected");
+            if (fg.arcType(fg.arc(*beginLeftExternal)) != FlowGraph::ArcType::ExternalCurveArc)
+                throw std::runtime_error("External Arc Expected");
+            if (fg.arcType(fg.arc(*beginRightInternal)) != FlowGraph::ArcType::InternalCurveArc)
+                throw std::runtime_error("Internal Arc Expected");
+            if (fg.arcType(fg.arc(*beginLeftInternal)) != FlowGraph::ArcType::InternalCurveArc)
+                throw std::runtime_error("Internal Arc");
+
+        }
+    }while(previousSize!=globalDetourArcSet.size());
 }
 
 void FlowGraphQuery::detourArcFilter(FlowGraph& fg,
@@ -325,18 +380,7 @@ void FlowGraphQuery::arcFilterConversion(ListDigraph::ArcMap<bool>& arcMap,
 
     }
 
-    ListDigraph::NodeMap<bool> allNodes(newFg.graph(),true);
-    ListDigraph::ArcMap<bool> internalArcs(newFg.graph(),false);
-
-    FlowGraphQuery::filterArcs(newFg,internalArcs,
-                               FlowGraph::ArcType::InternalCurveArc,
-                               true);
-
-    SubGraph subgraph(newFg.graph(),
-                      allNodes,
-                      internalArcs);
-
-    for(SubGraph::ArcIt a(subgraph);a!=lemon::INVALID;++a)
+    for(ListDigraph::ArcIt a(newFg.graph());a!=lemon::INVALID;++a)
     {
         if(keys.find(arcKey(newFg,a))!=keys.end())
         {

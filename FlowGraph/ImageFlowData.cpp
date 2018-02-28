@@ -61,8 +61,8 @@ void ImageFlowData::init(FlowMode fm, int gcLength)
     itIsInitialized = true;
     flowMode = fm;
     gluedCurveLength = gcLength;
-    consecutiveGluedPairDistance = 4;
-    diffDistance = 8;
+    consecutiveGluedPairDistance = 2;
+    diffDistance = 6;
 
     stgcF.init(gcLength);
 
