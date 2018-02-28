@@ -94,10 +94,10 @@ int main(){
 
     unsigned int gluedCurveLength = 5;
 
-    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/6.pgm");
+    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_triangle.pgm");
     SegCut::Image2D imageOut = image;
 
-    std::string outputFolder = "../output/refundFlow/square/square-5";
+    std::string outputFolder = "../output/refundFlow/triangle/triangle-5";
     double currentEnergyValue;
     for(int i=0;i<200;++i)
     {

@@ -1,0 +1,145 @@
+#include <lemon/list_graph.h>
+#include <lemon/graph_to_eps.h>
+
+#include <lemon/preflow.h>
+#include <lemon/adaptors.h>
+
+using namespace lemon;
+
+
+#include "boost/filesystem.hpp"
+
+#include <DGtal/io/boards/Board2D.h>
+#include "DGtal/io/readers/GenericReader.h"
+#include "DGtal/io/writers/GenericWriter.h"
+
+using namespace DGtal;
+using namespace DGtal::Z2i;
+
+#include "../utils.h"
+#include "../FlowGraph/weightSettings.h"
+
+#include "../FlowGraph/FlowGraphBuilder.h"
+#include "../FlowGraph/FlowGraphQuery.h"
+#include "../FlowGraph/FlowGraphDebug.h"
+
+using namespace UtilsTypes;
+
+double computeEnergyValue(Image2D& image,
+                          ImageFlowData& model,
+                          std::string name)
+{
+    ImageFlowData imf(image);
+    imf.init(model.getFlowMode(),model.getGluedCurveLength());
+
+    std::map<Z2i::SCell,double> weightMap;
+    setArcsWeight(imf,weightMap);
+
+
+    FlowGraph f;
+    FlowGraphBuilder fgb(f,imf,weightMap);
+
+
+    ListDigraph::ArcMap<bool> internalArcs(f.graph(),false);
+    FlowGraphQuery::filterArcs(f,
+                               internalArcs,
+                               FlowGraph::ArcType::InternalCurveArc,
+                               true);
+
+
+    double s = 0;
+    for(ListDigraph::ArcIt a(f.graph());a!=INVALID;++a)
+    {
+        if(internalArcs[a]){
+            s+= f.weight(a);
+        }
+    }
+
+
+    return s;
+
+}
+
+void constructSCellsVectorFromFilter(std::vector<Z2i::SCell>& scells,
+                                     FlowGraph& fg,
+                                     ListDigraph::ArcMap<bool>& arcFilter)
+{
+    for(ListDigraph::ArcIt a(fg.graph());a!=INVALID;++a)
+    {
+        if(arcFilter[a])
+        {
+            if(fg.arcType(a)==FlowGraph::IntExtGluedArc ||
+               fg.arcType(a)==FlowGraph::ExtIntGluedArc ||
+               fg.arcType(a)==FlowGraph::InternalCurveArc ||
+               fg.arcType(a)==FlowGraph::ExternalCurveArc )
+            {
+                scells.push_back(fg.scell(a));
+            }
+        }
+    }
+}
+
+
+void internalLinels(Image2D& image,
+                    std::vector<Z2i::SCell>& internalLinels,
+                    std::map<Z2i::SCell,double>& weightMap)
+{
+    ImageFlowData imf(image);
+    imf.init(ImageFlowData::DilationOnly,5);
+
+    setArcsWeight(imf,weightMap);
+
+
+    FlowGraph f;
+    FlowGraphBuilder fgb(f,imf,weightMap);
+
+
+    ListDigraph::ArcMap<bool> internalArcs(f.graph(),false);
+    FlowGraphQuery::filterArcs(f,
+                               internalArcs,
+                               FlowGraph::ArcType::InternalCurveArc,
+                               true);
+
+    constructSCellsVectorFromFilter(internalLinels,f,internalArcs);
+}
+
+int main()
+{
+    SegCut::Image2D comp1 = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/comp1.pgm");
+    SegCut::Image2D comp2 = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/comp2.pgm");
+
+    int gluedCurveLength = 5;
+
+    ImageFlowData imf(comp1);
+    imf.init(ImageFlowData::DilationOnly,gluedCurveLength);
+
+    std::cout << computeEnergyValue(comp1,imf,"1") << std::endl;
+    std::cout << computeEnergyValue(comp2,imf,"2") << std::endl;
+
+
+    std::vector<Z2i::SCell> internalLinelsComp1;
+    std::map<Z2i::SCell,double> weightMapComp1;
+    internalLinels(comp1,internalLinelsComp1,weightMapComp1);
+
+    std::vector<Z2i::SCell> internalLinelsComp2;
+    std::map<Z2i::SCell,double> weightMapComp2;
+    internalLinels(comp2,internalLinelsComp2,weightMapComp2);
+
+    std::function<double(Z2i::SCell)> fnTempToDoubleComp1 = [weightMapComp1](Z2i::SCell s){ return weightMapComp1.at(s); };
+    std::function<double(Z2i::SCell)> fnTempToDoubleComp2 = [weightMapComp2](Z2i::SCell s){ return weightMapComp2.at(s); };
+    double cmin=100;double cmax=-100;
+    max_and_min(internalLinelsComp1,cmin,cmax,fnTempToDoubleComp1);
+    max_and_min(internalLinelsComp1,cmin,cmax,fnTempToDoubleComp2);
+
+
+    Board2D board;
+    draw(weightMapComp1,internalLinelsComp1,board,cmin,cmax);
+    board.saveEPS( "comp1.eps" );
+
+    board.clear();
+
+    draw(weightMapComp2,internalLinelsComp2,board,cmin,cmax);
+    board.saveEPS( "comp2.eps" );
+
+    return 0;
+}

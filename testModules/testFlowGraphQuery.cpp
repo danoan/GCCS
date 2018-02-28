@@ -10,7 +10,6 @@ using namespace lemon;
 #include "boost/filesystem.hpp"
 
 #include <DGtal/io/boards/Board2D.h>
-#include <boost/filesystem/path.hpp>
 #include "DGtal/io/readers/GenericReader.h"
 #include "DGtal/io/writers/GenericWriter.h"
 
@@ -34,13 +33,16 @@ namespace Development{
     bool invertGluedArcs;
 };
 
+
 double computeEnergyValue(Image2D& image,
-                          ImageFlowData& model)
+                          ImageFlowData& model,
+                          std::string name)
 {
     ImageFlowData imf(image);
     imf.init(model.getFlowMode(),model.getGluedCurveLength());
 
     std::map<Z2i::SCell,double> weightMap;
+    setArcsWeight(imf,weightMap);
 
 
     FlowGraph f;
@@ -61,6 +63,7 @@ double computeEnergyValue(Image2D& image,
             s+= f.weight(a);
         }
     }
+
 
     return s;
 

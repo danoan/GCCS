@@ -454,6 +454,11 @@ double RefundFlow::run(int mainIteration)
     FlowGraphQuery::ArcPairSet usedKeys;
     Image2D partialImage = imageFlowData.getOriginalImage();
     Image2D previousImage=partialImage;
+
+    double currentEnergyValue;
+    double initialEnergyValue = energyValue(partialImage);
+    Image2D bestImage = partialImage;
+    bool useBestImage = false;
     while(runIteration(fg,partialImage,usedKeys,iteration)==Continue)
     {
         FlowGraphDebug fgd(fg);
@@ -463,9 +468,17 @@ double RefundFlow::run(int mainIteration)
         previousImage = partialImage;
         updateImage(fg,partialImage);
 
+        currentEnergyValue = energyValue(partialImage);
+
 //        checkCodeConsistence(fg,partialImage);
         debugData(fg,partialImage,weightMap,iteration);
 
+        if(currentEnergyValue<initialEnergyValue)
+        {
+            initialEnergyValue = currentEnergyValue;
+            bestImage = partialImage;
+            useBestImage = true;
+        }
         if(previousImage==partialImage) break;
 
 
@@ -473,6 +486,8 @@ double RefundFlow::run(int mainIteration)
         ++iteration;
     }
 
-    imageOut = partialImage;
+    if(useBestImage) imageOut = bestImage;
+    else imageOut = partialImage;
+
     return energyValue(imageOut);
 }
