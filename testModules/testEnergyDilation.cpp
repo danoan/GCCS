@@ -125,12 +125,12 @@ void drawCurvatureMaps(Image2D& comp1,
 
     Board2D board;
     draw(weightMapComp1,internalLinelsComp1,board,cmin,cmax);
-    board.saveEPS( std::string( (outputFolder + "/comp1.eps") ).c_str() );
+    board.saveEPS( std::string( (outputFolder + "/originalMap.eps") ).c_str() );
 
     board.clear();
 
     draw(weightMapComp2,internalLinelsComp2,board,cmin,cmax);
-    board.saveEPS( std::string( (outputFolder + "/comp2.eps") ).c_str() );
+    board.saveEPS( std::string( (outputFolder + "/dilatedMap.eps") ).c_str() );
 }
 
 void drawStabbingCircles(Image2D& image,
@@ -152,8 +152,8 @@ namespace Development{
     bool solveShift = false;
     bool crossElement = false;
 
-    bool lambdaEstimator = false;
-    bool pessimistEstimator = true;
+    bool lambdaEstimator = true;
+    bool pessimistEstimator = false;
 
     bool makeConvexArcs = false;
     bool invertGluedArcs = false;
@@ -161,24 +161,28 @@ namespace Development{
 
 int main()
 {
-    SegCut::Image2D comp1 = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/comp1.pgm");
-    SegCut::Image2D comp2 = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/comp2.pgm");
+    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/2.pgm");
 
     int gluedCurveLength = 5;
-    std::string outputFolder = "../output/testModules/testCompImages";
+    std::string outputFolder = "../output/testModules/testEnergyDilation";
 
     boost::filesystem::path p2(outputFolder.c_str());
     boost::filesystem::create_directories(p2);
 
-    ImageFlowData imf(comp1);
-    imf.init(ImageFlowData::DilationOnly,gluedCurveLength);
+    ImageFlowData imfOriginal(image);
+    imfOriginal.init(ImageFlowData::DilationOnly,gluedCurveLength);
 
-    std::cout << computeEnergyValue(comp1,imf,"1") << std::endl;
-    std::cout << computeEnergyValue(comp2,imf,"2") << std::endl;
+    Image2D& dilatedImage = imfOriginal.getDilatedImage();
 
-    drawCurvatureMaps(comp1,comp2,outputFolder);
-    drawStabbingCircles(comp1,outputFolder,"stabbingComp1");
-    drawStabbingCircles(comp2,outputFolder,"stabbingComp2");
+    ImageFlowData imfDilated(dilatedImage);
+    imfDilated.init(ImageFlowData::DilationOnly,gluedCurveLength);
+
+    std::cout << computeEnergyValue(image,imfOriginal,"Original") << std::endl;
+    std::cout << computeEnergyValue(dilatedImage,imfDilated,"Dilated") << std::endl;
+
+    drawCurvatureMaps(image,dilatedImage,outputFolder);
+    drawStabbingCircles(image,outputFolder,"original");
+    drawStabbingCircles(dilatedImage,outputFolder,"dilated");
 
 
     return 0;

@@ -216,6 +216,8 @@ void particularCurve(std::string outputFolder)
 namespace Development{
     bool solveShift;
     bool crossElement;
+    
+    bool lambdaEstimator;
 
     bool makeConvexArcs;
     bool invertGluedArcs;
@@ -225,19 +227,21 @@ int main(){
     Development::solveShift = false;
     Development::crossElement = false;
 
+    Development::lambdaEstimator = true;
+
     Development::makeConvexArcs = false;
     Development::invertGluedArcs = false;
 
     unsigned int gluedCurveLength = 7;
 
-    std::string imgPath = "../images/flow-evolution/out20.pgm";
+    std::string imgPath = "../images/flow-evolution/2.pgm";
     SegCut::Image2D image = GenericReader<SegCut::Image2D>::import(imgPath);
 
-    std::string outputFolder = "../output/issue/out20";
+    std::string outputFolder = "../output/issue/out2";
 
 
     KSpace KImage;
-    setKImage("../images/flow-evolution/out20.pgm",KImage);
+    setKImage("../images/flow-evolution/2.pgm",KImage);
 
     Board2D board;
     Artist EA(KImage,board);

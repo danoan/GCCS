@@ -9,12 +9,22 @@ void tangentWeight(WeightSettingsTypes::Curve::ConstIterator begin,
     auto it = begin;
     int i =0;
     do{
-        WeightSettingsTypes::KSpace::Point pTarget = KImage.sCoords( KImage.sDirectIncident(*it,*KImage.sDirs(*it)) );
-        WeightSettingsTypes::KSpace::Point pSource = KImage.sCoords( KImage.sIndirectIncident(*it,*KImage.sDirs(*it)) );
 
-        WeightSettingsTypes::KSpace::Point scellVector = pTarget-pSource;
+        //Dot product estimator (projection)
 
-        tangentWeightVector.push_back( fabs( estimationsTangent[i].dot(scellVector) ) );
+//        WeightSettingsTypes::KSpace::Point pTarget = KImage.sCoords( KImage.sDirectIncident(*it,*KImage.sDirs(*it)) );
+//        WeightSettingsTypes::KSpace::Point pSource = KImage.sCoords( KImage.sIndirectIncident(*it,*KImage.sDirs(*it)) );
+//
+//        WeightSettingsTypes::KSpace::Point scellVector = pTarget-pSource;
+//
+//        tangentWeightVector.push_back( fabs( estimationsTangent[i].dot(scellVector) ) );
+
+
+
+        //1.0/(cos+sin) Length estimation
+        tangentWeightVector.push_back( 1.0/( fabs(estimationsTangent[i][0]) + fabs(estimationsTangent[i][1]) ) );
+
+
         ++it;
         ++i;
     }while(it!=end);
@@ -49,19 +59,23 @@ void setGridCurveWeight(Curve curvePriorGS,
                   tangentWeightVector);
 
 
+    int totalLinels=0;
     {
         int i =0;
         for(auto it=curvePriorGS.begin();it!=curvePriorGS.end();++it){
             weightMap[*it] = curvatureEstimations[i];
             ++i;
+            ++totalLinels;
         }
     }
 
     {
         int i =0;
         for(auto it=curvePriorGS.begin();it!=curvePriorGS.end();++it){
-            weightMap[*it] *=tangentWeightVector[i];
-//            weightMap[*it] += 0.001*tangentWeightVector[i];
+            weightMap[*it] *= tangentWeightVector[i];
+//            weightMap[*it] *= 100;//+100 only to avoid small numbers
+//            weightMap[*it] /= totalLinels;
+            //weightMap[*it] += 0.001*tangentWeightVector[i];
             ++i;
         }
     }
@@ -78,7 +92,6 @@ void setGluedCurveWeight(WeightSettingsTypes::GluedCurveSetRange::ConstIterator 
     curvatureEstimatorsConnections(gcsRangeBegin,gcsRangeEnd,KImage,gluedCurveLength,estimationsCurvature);
 
     updateToSquared(estimationsCurvature.begin(),estimationsCurvature.end());
-
     {
         int i = 0;
         for (WeightSettingsTypes::GluedCurveIteratorPair it = gcsRangeBegin; it != gcsRangeEnd; ++it) {
@@ -96,7 +109,6 @@ void setGluedCurveWeight(WeightSettingsTypes::GluedCurveSetRange::ConstIterator 
 
     std::vector<WeightSettingsTypes::TangentVector> estimationsTangent;
     tangentEstimatorsConnections(gcsRangeBegin,gcsRangeEnd,KImage,gluedCurveLength,estimationsTangent);
-
 
     std::vector<double> tangentWeightVector;
     {
@@ -125,13 +137,16 @@ void setGluedCurveWeight(WeightSettingsTypes::GluedCurveSetRange::ConstIterator 
 
     }
 
+    int totalLinels = estimationsCurvature.size();
     {
         int i = 0;
         for (WeightSettingsTypes::GluedCurveIteratorPair it = gcsRangeBegin; it != gcsRangeEnd; ++it) {
             auto itC = it->first.connectorsBegin();
             do {
                 weightMap[*itC]*= tangentWeightVector[i];
-//                weightMap[*itC]+= 0.001*tangentWeightVector[i];
+//                weightMap[*itC]*= 100; //+100 only to avoid small numbers
+//                weightMap[*itC]/= totalLinels;
+                //weightMap[*itC]+= 0.001*tangentWeightVector[i];
                 ++i;
                 if(itC==it->first.connectorsEnd()) break;
                 ++itC;

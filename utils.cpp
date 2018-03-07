@@ -59,21 +59,21 @@ void curvatureEstimatorsGridCurve(UtilsTypes::Curve::ConstIterator begin,
     std::vector<double> negativeEstimations;
 
     if(closedCurve) {
-        Patch::estimationsDGtalMCMSECurvature(rangePositiveCurve.c(),
-                                              rangePositiveCurve.c(),
-                                              positiveEstimations);
+        Patch::curvatureEstimation(rangePositiveCurve.c(),
+                                   rangePositiveCurve.c(),
+                                   positiveEstimations);
 
-        Patch::estimationsDGtalMCMSECurvature(rangeNegativeCurve.c(),
-                                              rangeNegativeCurve.c(),
-                                              negativeEstimations);
+        Patch::curvatureEstimation(rangeNegativeCurve.c(),
+                                   rangeNegativeCurve.c(),
+                                   negativeEstimations);
     }else{
-        Patch::estimationsDGtalMCMSECurvature(rangePositiveCurve.begin(),
-                                              rangePositiveCurve.end(),
-                                              positiveEstimations);
+        Patch::curvatureEstimation(rangePositiveCurve.begin(),
+                                   rangePositiveCurve.end(),
+                                   positiveEstimations);
 
-        Patch::estimationsDGtalMCMSECurvature(rangeNegativeCurve.begin(),
-                                              rangeNegativeCurve.end(),
-                                              negativeEstimations);
+        Patch::curvatureEstimation(rangeNegativeCurve.begin(),
+                                   rangeNegativeCurve.end(),
+                                   negativeEstimations);
     }
 
     if(Development::solveShift){
@@ -130,13 +130,13 @@ void curvatureEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
     std::vector<double> positiveEstimations;
     std::vector<double> negativeEstimations;
 
-    Patch::estimationsDGtalMCMSECurvature(rangePositiveCurve.begin(),
-                                          rangePositiveCurve.end(),
-                                          positiveEstimations);
+    Patch::curvatureEstimation(rangePositiveCurve.begin(),
+                               rangePositiveCurve.end(),
+                               positiveEstimations);
 
-    Patch::estimationsDGtalMCMSECurvature(rangeNegativeCurve.begin(),
-                                          rangeNegativeCurve.end(),
-                                          negativeEstimations);
+    Patch::curvatureEstimation(rangeNegativeCurve.begin(),
+                               rangeNegativeCurve.end(),
+                               negativeEstimations);
 
     if(Development::solveShift){
         //Solve Shift
@@ -216,21 +216,21 @@ void tangentEstimatorsGridCurve(UtilsTypes::Curve::ConstIterator begin,
     std::vector<UtilsTypes::TangentVector> negativeEstimations;
     if(closedCurve) {
 
-        Patch::estimationsDGtalMCMSETangent(rangePositiveCurve.c(),
-                                            rangePositiveCurve.c(),
-                                            positiveEstimations);
+        Patch::tangentEstimation(rangePositiveCurve.c(),
+                                 rangePositiveCurve.c(),
+                                 positiveEstimations);
 
-        Patch::estimationsDGtalMCMSETangent(rangeNegativeCurve.c(),
-                                            rangeNegativeCurve.c(),
-                                            negativeEstimations);
+        Patch::tangentEstimation(rangeNegativeCurve.c(),
+                                 rangeNegativeCurve.c(),
+                                 negativeEstimations);
     }else{
-        Patch::estimationsDGtalMCMSETangent(rangePositiveCurve.begin(),
-                                            rangePositiveCurve.end(),
-                                            positiveEstimations);
+        Patch::tangentEstimation(rangePositiveCurve.begin(),
+                                 rangePositiveCurve.end(),
+                                 positiveEstimations);
 
-        Patch::estimationsDGtalMCMSETangent(rangeNegativeCurve.begin(),
-                                            rangeNegativeCurve.end(),
-                                            negativeEstimations);
+        Patch::tangentEstimation(rangeNegativeCurve.begin(),
+                                 rangeNegativeCurve.end(),
+                                 negativeEstimations);
     }
 
     if(Development::solveShift){
@@ -282,14 +282,14 @@ void tangentEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
                                     myFunctor);
 
     std::vector<UtilsTypes::TangentVector> positiveEstimations;
-    Patch::estimationsDGtalMCMSETangent(rangePositiveCurve.begin(),
-                                        rangePositiveCurve.end(),
-                                        positiveEstimations);
+    Patch::tangentEstimation(rangePositiveCurve.begin(),
+                             rangePositiveCurve.end(),
+                             positiveEstimations);
 
     std::vector<UtilsTypes::TangentVector> negativeEstimations;
-    Patch::estimationsDGtalMCMSETangent(rangeNegativeCurve.begin(),
-                                        rangeNegativeCurve.end(),
-                                        negativeEstimations);
+    Patch::tangentEstimation(rangeNegativeCurve.begin(),
+                             rangeNegativeCurve.end(),
+                             negativeEstimations);
 
     if(Development::solveShift){
         //Solve Shift

@@ -179,22 +179,26 @@ void testSequence()
     else
         outputRootPath += "/average";
     
-    runTests("../images/graph-weight-test/last_image.pgm",
-             outputRootPath + "/last_image");
+//    runTests("../images/graph-weight-test/last_image.pgm",
+//             outputRootPath + "/last_image");
+//
+//    runTests("../images/graph-weight-test/single_square.pgm",
+//                 outputRootPath + "/square");
+//
+//    runTests("../images/graph-weight-test/single_triangle.pgm",
+//             outputRootPath + "/triangle");
+//
+//    runTests("../images/graph-weight-test/smallest_disk.pgm",
+//             outputRootPath + "/disk");
 
-    runTests("../images/graph-weight-test/single_square.pgm",
-                 outputRootPath + "/square");
-
-    runTests("../images/graph-weight-test/single_triangle.pgm",
-             outputRootPath + "/triangle");
-
-    runTests("../images/graph-weight-test/smallest_disk.pgm",
-             outputRootPath + "/disk");
+    runTests("../images/flow-evolution/2.pgm",
+             outputRootPath + "/out2");
 }
 
 namespace Development{
     bool solveShift;
     bool crossElement;
+    bool lambdaEstimator;
 
     bool makeConvexArcs;
     bool invertGluedArcs;
@@ -208,8 +212,10 @@ int main()
     Development::makeConvexArcs = false;
     Development::invertGluedArcs = false;
 
-    Development::solveShift = true;
-    testSequence();
+    Development::lambdaEstimator = true;
+
+//    Development::solveShift = true;
+//    testSequence();
 
     Development::solveShift = false;
     testSequence();
