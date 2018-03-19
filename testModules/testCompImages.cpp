@@ -153,7 +153,7 @@ namespace Development{
     bool crossElement = false;
 
     bool lambdaEstimator = false;
-    bool pessimistEstimator = true;
+    bool pessimistEstimator = false;
 
     bool makeConvexArcs = false;
     bool invertGluedArcs = false;

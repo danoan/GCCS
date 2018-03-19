@@ -130,7 +130,7 @@ void FlowGraphQuery::gluedArcPairSet(FlowGraph& fg,
 
         traverseStack.push(firstNode);
         pairNotFound=true;
-        while(pairNotFound){
+        while(pairNotFound && !traverseStack.empty()){
             currentNode = traverseStack.top(); traverseStack.pop();
             if(visitedNodes[currentNode]) continue;
 
@@ -213,6 +213,7 @@ void FlowGraphQuery::detourArcMap(FlowGraph& fg,
         insertSCellFromArc(fg,workingSet,staFunctor,beginRightInternal,length);
 
 
+        //TODO:: Those tests were thought for DilationOnly Mode
         if(fg.arcType(fg.arc(*beginRightExternal))!=FlowGraph::ArcType::ExternalCurveArc) throw std::runtime_error("External Arc Expected");
         if(fg.arcType(fg.arc(*beginLeftExternal))!=FlowGraph::ArcType::ExternalCurveArc) throw std::runtime_error("External Arc Expected");
         if(fg.arcType(fg.arc(*beginRightInternal))!=FlowGraph::ArcType::InternalCurveArc) throw std::runtime_error("Internal Arc Expected");

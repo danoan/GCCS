@@ -48,7 +48,7 @@ void RefundFlow::updateImage(FlowGraph& fg,
            pixelsInTheGraph,
            pixelsFilter);
 
-    updatedImage = imageFlowData.getOriginalImage();
+    updatedImage = imageFlowData.getMostInnerImage();
     for(std::vector<SCell>::const_iterator it=pixelsInTheGraph.begin();it!=pixelsInTheGraph.end();++it)
     {
         Z2i::Point p = KImage.sCoords(*it);
@@ -116,6 +116,8 @@ void RefundFlow::computeCutEnergyDifference(FlowGraph& f1,
 {
     Image2D image = imageFlowData.getOriginalImage();
     updateImage(f1,image);
+
+    GenericWriter<Image2D>::exportFile("test.pgm",image);
 
     ImageFlowData tempImageFlowData(image);
     tempImageFlowData.init(f1.getFlowMode(),
@@ -458,7 +460,7 @@ double RefundFlow::run(int mainIteration)
     double currentEnergyValue;
     double initialEnergyValue = energyValue(partialImage);
     Image2D bestImage = partialImage;
-    bool useBestImage = false;
+    bool useBestImage = true;
     while(runIteration(fg,partialImage,usedKeys,iteration)==Continue)
     {
         FlowGraphDebug fgd(fg);
@@ -471,7 +473,7 @@ double RefundFlow::run(int mainIteration)
         currentEnergyValue = energyValue(partialImage);
 
 //        checkCodeConsistence(fg,partialImage);
-        debugData(fg,partialImage,weightMap,iteration);
+//        debugData(fg,partialImage,weightMap,iteration);
 
         if(currentEnergyValue<initialEnergyValue)
         {

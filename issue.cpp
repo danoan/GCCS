@@ -57,39 +57,18 @@ void testConnectdeness(std::string imgFilePath)
 
 }
 
-void computeFlow(SegCut::Image2D& image,
-                 unsigned int gluedCurveLength,
+void computeFlow(ImageFlowData& imageFlowData,
                  std::map<Z2i::SCell,double>& weightMap,
                  std::string outputFolder,
                  std::string suffix)
 {
-    ImageFlowData imageFlowData(image);
+    setArcsWeight(imageFlowData,weightMap);
 
-    imageFlowData.init(ImageFlowData::FlowMode::DilationOnly,
-                       gluedCurveLength);
+    FlowGraph fg;
+    FlowGraphBuilder fgb(fg,imageFlowData,weightMap);
 
 
-    for(auto it=imageFlowData.curveDataBegin();it!=imageFlowData.curveDataEnd();++it)
-    {
-        setGridCurveWeight(it->curve,
-                           imageFlowData.getKSpace(),
-                           weightMap
-        );
-    }
-
-    for(auto it=imageFlowData.curvePairBegin();it!=imageFlowData.curvePairEnd();++it)
-    {
-        setGluedCurveWeight( it->gcsRangeBegin(),
-                             it->gcsRangeEnd(),
-                             imageFlowData.getKSpace(),
-                             gluedCurveLength,
-                             weightMap);
-    }
-
-    FlowGraphBuilder fgb(imageFlowData);
-    fgb(weightMap);
-
-    FlowGraphDebug flowGraphDebug(fgb);
+    FlowGraphDebug flowGraphDebug(fg);
     flowGraphDebug.drawCutGraph(outputFolder,suffix);
 }
 
@@ -214,34 +193,27 @@ void particularCurve(std::string outputFolder)
 }
 
 namespace Development{
-    bool solveShift;
-    bool crossElement;
+    bool solveShift=false;
+    bool crossElement=false;
     
-    bool lambdaEstimator;
+    bool lambdaEstimator=true;
+    bool pessimistEstimator=false;
 
-    bool makeConvexArcs;
-    bool invertGluedArcs;
+    bool makeConvexArcs=false;
+    bool invertGluedArcs=false;
 };
 
 int main(){
-    Development::solveShift = false;
-    Development::crossElement = false;
-
-    Development::lambdaEstimator = true;
-
-    Development::makeConvexArcs = false;
-    Development::invertGluedArcs = false;
-
     unsigned int gluedCurveLength = 7;
 
-    std::string imgPath = "../images/flow-evolution/2.pgm";
+    std::string imgPath = "../images/comedic-mi-parcours/disk-bruit-small.pgm";
     SegCut::Image2D image = GenericReader<SegCut::Image2D>::import(imgPath);
 
-    std::string outputFolder = "../output/issue/out2";
+    std::string outputFolder = "../output/comedic-mi-parcours/disk-bruit-small";
 
 
     KSpace KImage;
-    setKImage("../images/flow-evolution/2.pgm",KImage);
+    setKImage(imgPath,KImage);
 
     Board2D board;
     Artist EA(KImage,board);
@@ -258,9 +230,11 @@ int main(){
     EA.drawAllGluedCurves(imgPath,outputFolder+"/gluedCurves");
 
 
+    ImageFlowData imageFlowData(image);
+    imageFlowData.init(ImageFlowData::FlowMode::DilationOnly,gluedCurveLength);
+
     std::map<Z2i::SCell,double> weightMap;
-    computeFlow(image,
-                gluedCurveLength,
+    computeFlow(imageFlowData,
                 weightMap,
                 outputFolder,
                 "");

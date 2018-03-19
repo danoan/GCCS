@@ -1,4 +1,5 @@
 #include "imageProc.h"
+#include "DGtal/io/writers/GenericWriter.h"
 
 void ImageProc::fromMatToImage2D(const cv::Mat &cvImg, Image2D &dgtalImg, int shift){
     int ubY = cvImg.rows-1;
@@ -49,7 +50,7 @@ void ImageProc::dilateWithMorphology(Image2D &newImage, const cv::Mat &src, cons
                                                  cv::Size( 2*dilation_size + 1, 2*dilation_size+1 ),
                                                  cv::Point( dilation_size, dilation_size ) );
 
-    dilate( src, dilation_dst, element );
+    cv::dilate( src, dilation_dst, element );
 
     fromMatToImage2D(dilation_dst,newImage);
 }
@@ -82,9 +83,37 @@ void ImageProc::erode(Image2D &newImage, const Image2D &inputImage, const int &e
                                                  cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
                                                  cv::Point( erosion_size, erosion_size ) );
 
-    erode( cvSrc, dilation_dst, element );
+    cv::erode( cvSrc, dilation_dst, element );
 
     fromMatToImage2D(dilation_dst,newImage);
+}
+
+void ImageProc::closing(Image2D& newImage, const Image2D& inputImage, const int& element_size )
+{
+    int r = inputImage.domain().upperBound()[1] + 1;
+    int c = inputImage.domain().upperBound()[0] + 1;
+
+    cv::Mat cvSrc(r,c,CV_8UC1);
+    fromImage2DToMat(inputImage,cvSrc);
+
+    cv::Mat dilation_dst;
+    cv::Mat closing_dst;
+    int closing_type;
+
+    if(Development::crossElement){
+        closing_type = cv::MORPH_CROSS;
+    }else{
+        closing_type = cv::MORPH_RECT;
+    }
+
+    cv::Mat element = cv::getStructuringElement( closing_type,
+                                                 cv::Size( 2*closing_type + 1, 2*closing_type+1 ),
+                                                 cv::Point( closing_type, closing_type ) );
+
+    cv::dilate( cvSrc, dilation_dst, element );
+    cv::erode( dilation_dst,closing_dst, element );
+
+    fromMatToImage2D(closing_dst,newImage);
 }
 
 

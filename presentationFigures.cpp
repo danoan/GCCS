@@ -13,6 +13,7 @@ using namespace DGtal::Z2i;
 #include "FlowGraph/FlowGraphBuilder.h"
 #include "FlowGraph/ImageFlowDataDebug.h"
 #include "FlowGraph/FlowGraphDebug.h"
+#include "Artist.h"
 
 using namespace UtilsTypes;
 
@@ -37,6 +38,8 @@ int main()
     ImageFlowData imageFlowData(imageOriginal);
     imageFlowData.init(ImageFlowData::DilationOnly,gluedCurveLenght);
 
+    std::string outputFolder = "../output/comedic-mi-parcours";
+
 
     Board2D board;
     board << imageFlowData.getMostInnerCurve();
@@ -49,7 +52,9 @@ int main()
             board << *itR->first.connectorsBegin();
         }
     }
-    board.save("../output/comedic-mi-parcours/base-grid.eps");
+    board.save( (outputFolder+"/base-grid.eps").c_str() );
+
+
 
 
 
@@ -68,7 +73,7 @@ int main()
     FilterComposer<ListDigraph::ArcMap<bool>,ListDigraph::ArcIt> fc(fg.graph(),notTerminalArcs);
     fc-sourceArcs-targetArcs;
 
-    fgd.highlightArcs(fc(),"../output/comedic-mi-parcours","flow-graph");
+    fgd.highlightArcs(fc(),outputFolder,"flow-graph");
 
 
     ListDigraph::ArcMap<bool> cutFilter(fg.graph(),false);
@@ -83,7 +88,7 @@ int main()
     }
 
     ListDigraph::NodeMap<bool> allNodes(fg.graph(),true);
-    fgd.highlightArcs(allNodes,fc(),arcColors,"../output/comedic-mi-parcours","highlight-cut-Arcs");
+    fgd.highlightArcs(allNodes,fc(),arcColors,outputFolder,"highlight-cut-Arcs");
 
 
     ImageFlowData imf2(imageIteration);
@@ -92,6 +97,31 @@ int main()
     board.clear();
     board << imf2.getMostInnerCurve();
     board.save("../output/comedic-mi-parcours/iteration.eps");
+
+
+    {
+        ImageFlowData imf(imageOriginal);
+        imf.init(ImageFlowData::DilationOnly,5);
+
+        Artist EA(imf.getKSpace(), board);
+        /*Maximal Stabbing Circles*/
+        EA.board.clear(DGtal::Color::White);
+        EA.drawMaximalStabbingCircles(imf.getMostInnerCurve());
+        std::string outputFilePath = outputFolder + "/Original-MaximalStabbingCircles.eps";
+        EA.board.save(outputFilePath.c_str());
+    }
+
+    {
+        ImageFlowData imf(imageIteration);
+        imf.init(ImageFlowData::DilationOnly,5);
+
+        Artist EA(imf.getKSpace(), board);
+        /*Maximal Stabbing Circles*/
+        EA.board.clear(DGtal::Color::White);
+        EA.drawMaximalStabbingCircles(imf.getMostInnerCurve());
+        std::string outputFilePath = outputFolder + "/Iteration-MaximalStabbingCircles.eps";
+        EA.board.save(outputFilePath.c_str());
+    }
 
     return 0;
 }

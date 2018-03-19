@@ -52,6 +52,8 @@ namespace ImageProc {
 
     void erode(Image2D &newImage, const Image2D &inputImage, const int &dilation_size);
 
+    void closing(Image2D& newImage, const Image2D& inputImage, const int& element_size );
+
     void fromImage2DToMat(const Image2D &dgtalImg, cv::Mat &cvImg);
 
     void fromMatToImage2D(const cv::Mat &cvImg, Image2D &dgtalImg, int shift = 0);

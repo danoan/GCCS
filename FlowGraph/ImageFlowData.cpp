@@ -67,17 +67,9 @@ void ImageFlowData::init(FlowMode fm, int gcLength)
     stgcF.init(gcLength);
 
 
-    /* Since I am using references to vector elements, I must make sure
-     * the vector holds enough places for all the elements I am going to
-     * need, otherwise, the vector class will reallocate the elements
-     * during a push_back, and the reference I saved will be lost.
-     * */
-    curvesVector.reserve(4);
-    curvesPairVector.reserve(4);
     {
         CurveData &cd = addNewCurve(CurveType::OriginalCurve);
         ImageProc::computeBoundaryCurve(originalImage, cd.curve, 100);
-        registerCirculator(cd);
     }
 
     if(fm==FlowMode::DilationOnly || fm==FlowMode::DilationErosion)
@@ -86,7 +78,6 @@ void ImageFlowData::init(FlowMode fm, int gcLength)
         ImageProc::dilate(dilatedImage, originalImage, 1);
 
         ImageProc::computeBoundaryCurve(dilatedImage, cd.curve, 100);
-        registerCirculator(cd);
     }
 
     if(fm==FlowMode::ErosionOnly || fm==FlowMode::DilationErosion)
@@ -95,7 +86,11 @@ void ImageFlowData::init(FlowMode fm, int gcLength)
         ImageProc::erode(erodedImage, originalImage, 1);
 
         ImageProc::computeBoundaryCurve(erodedImage, cd.curve, 100);
-        registerCirculator(cd);
+    }
+
+    for(int i=0;i<curvesVector.size();++i)
+    {
+        registerCirculator(curvesVector.at(i));
     }
 
     if(fm==DilationOnly){

@@ -127,6 +127,16 @@ public:
 
     Image2D& getOriginalImage(){ return originalImage; }
     Image2D& getDilatedImage(){ return dilatedImage; }
+    Image2D& getErodedImage(){ return erodedImage; }
+
+    Image2D& getMostInnerImage(){
+        switch(flowMode) {
+            case DilationOnly:
+                return originalImage;
+            default:
+                return erodedImage;
+        }
+    }
 
 private:
     friend class ImageFlowDataDebug;
