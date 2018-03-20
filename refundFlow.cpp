@@ -11,6 +11,8 @@ using namespace lemon;
 
 #include <DGtal/io/boards/Board2D.h>
 #include <boost/filesystem/path.hpp>
+#include <opencv/highgui.h>
+#include <opencv/cv.hpp>
 #include "DGtal/io/readers/GenericReader.h"
 #include "DGtal/io/writers/GenericWriter.h"
 
@@ -28,9 +30,9 @@ using namespace DGtal::Z2i;
 
 using namespace UtilsTypes;
 
-void saveImage(Image2D& out,
-               std::string outputFolder,
-               std::string suffix)
+std::string saveImage(Image2D& out,
+                      std::string outputFolder,
+                      std::string suffix)
 {
 
     std::string imageOutputPath = outputFolder + "/" + suffix + ".pgm";
@@ -40,7 +42,7 @@ void saveImage(Image2D& out,
     boost::filesystem::create_directories(p2);
 
     GenericWriter<Image2D>::exportFile(imageOutputPath.c_str(),out);
-
+    return imageOutputPath;
 }
 
 void drawCurvatureMaps(Image2D& image,
@@ -88,20 +90,48 @@ namespace Development{
     bool invertGluedArcs = false;
 };
 
+void displayImage(std::string windowName,
+                  std::string imagePath)
+{
+    cv::imshow( windowName,
+                cv::imread(imagePath,CV_8U)
+    );
+    cv::waitKey(0);
+}
+
 int main()
 {
 
     unsigned int gluedCurveLength = 5;
+    std::string originalImagePath = "../images/flow-evolution/straight-line-bruit-small.pgm";
+    std::string outputFolder = "../output/refundFlow/linel/line-DE-MC-5";
 
-    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_triangle.pgm");
+
+    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import(originalImagePath);
     SegCut::Image2D imageOut = image;
 
-    std::string outputFolder = "../output/refundFlow/triangle/triangle-MostCentered-5";
+    std::string windowName = "flowEvolution";
+    cvNamedWindow(windowName.c_str(),CV_WINDOW_AUTOSIZE);
+
+
+    displayImage(windowName,originalImagePath);
+    ImageProc::closing(image,image,1);
+    displayImage(windowName,saveImage(image,
+                                      outputFolder,
+                                      "closing")
+    );
+
+
+
+
+
     double currentEnergyValue;
     for(int i=0;i<200;++i)
     {
         ImageFlowData imageFlowData(image);
-        imageFlowData.init(ImageFlowData::FlowMode::DilationOnly,gluedCurveLength);
+
+        imageFlowData.init(ImageFlowData::FlowMode::DilationErosion,gluedCurveLength);
+
 
         RefundFlow refundFlow(imageFlowData);
 
@@ -114,9 +144,12 @@ int main()
 
         imageOut = refundFlow.outputImage();
 
-        saveImage(imageOut,
-                  outputFolder,
-                  std::to_string(i));
+        std::cout << "Press key to continue" << std::endl;
+        displayImage(windowName,saveImage(imageOut,
+                                          outputFolder,
+                                          std::to_string(i))
+        );
+
 
         image=imageOut;
 

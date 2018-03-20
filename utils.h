@@ -188,4 +188,8 @@ void draw(std::map<Z2i::SCell,double>& weightMap,
           double cmin,
           double cmax);
 
+void eliminateLoops(Curve& curveOut,
+                    KSpace& KImage,
+                    Curve& curveIn);
+
 #endif //SEGBYCUT_CURVATUREWEIGHTMETHODS_H

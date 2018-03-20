@@ -259,21 +259,23 @@ void RefundFlow::checkCodeConsistence(FlowGraph& fg,Image2D& resultingImage)
     validDetourArcs+intExtCut+extIntCut;
 
 
-    double cutDiff = FlowGraphQuery::computeEnergyValue(fg,validDetourArcs.initialMap);
+    double cutDetourArcsSum = FlowGraphQuery::computeEnergyValue(fg,validDetourArcs.initialMap);
 
 
     ListDigraph::ArcMap<bool> tempArcFilter(tempFG.graph(),false);
     FlowGraphQuery::arcFilterConversion(validDetourArcs.initialMap,fg,tempArcFilter,tempFG);
 
-    double resultDiff = FlowGraphQuery::computeEnergyValue(tempFG,tempArcFilter);
+    double solutionDetourArcsSum = FlowGraphQuery::computeEnergyValue(tempFG,tempArcFilter);
+
+    double refundArcsSum = solutionDetourArcsSum - cutDetourArcsSum;
 
     double cutValue = FlowGraphQuery::cutValue(fg);
     double resultingImageEnergyValue = energyValue(resultingImage);
 
-    std::string testResult = abs( (cutValue + resultDiff-cutDiff)-resultingImageEnergyValue ) < 0.0001?"TRUE":"FALSE";
+    std::string testResult = abs( (cutValue + refundArcsSum)-resultingImageEnergyValue ) < 0.0001?"TRUE":"FALSE";
 
-    std::cout << "DIFF CHECK::" << cutDiff << "::" << resultDiff <<  "::" << resultDiff-cutDiff <<std::endl;
-    std::cout << testResult << "::" << cutValue+resultDiff-cutDiff << std::endl;
+    std::cout << "DIFF CHECK::" << cutDetourArcsSum << "::" << solutionDetourArcsSum <<  "::" << refundArcsSum <<std::endl;
+    std::cout << testResult << "::" << cutValue+refundArcsSum << std::endl;
 
 }
 
@@ -472,7 +474,7 @@ double RefundFlow::run(int mainIteration)
 
         currentEnergyValue = energyValue(partialImage);
 
-//        checkCodeConsistence(fg,partialImage);
+        checkCodeConsistence(fg,partialImage);
 //        debugData(fg,partialImage,weightMap,iteration);
 
         if(currentEnergyValue<initialEnergyValue)

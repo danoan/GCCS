@@ -9,6 +9,8 @@
 #include "DGtal/topology/helpers/Surfaces.h"
 #include "DGtal/images/SimpleThresholdForegroundPredicate.h"
 
+#include "utils.h"
+
 namespace Development{
     extern bool crossElement;
 }
@@ -54,9 +56,15 @@ namespace ImageProc {
 
     void closing(Image2D& newImage, const Image2D& inputImage, const int& element_size );
 
+    void opening(Image2D& newImage, const Image2D& inputImage, const int& element_size );
+
     void fromImage2DToMat(const Image2D &dgtalImg, cv::Mat &cvImg);
 
     void fromMatToImage2D(const cv::Mat &cvImg, Image2D &dgtalImg, int shift = 0);
+
+    void invertColors(Image2D& outputImage, Image2D& inputImage);
+
+    void createBorder(Image2D& outputImage, Image2D& inputImage, int borderWidth);
 }
 
 

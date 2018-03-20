@@ -14,7 +14,7 @@ INCLUDE_DIRECTORIES(Patch)
 LINK_DIRECTORIES(${DGTAL_LIBRARY_DIRS})
 
 
-set(SOURCE_FILES imageProc.cpp Artist.cpp utils.cpp)
+set(SOURCE_FILES imageProc.cpp Artist.cpp utils.cpp io.cpp)
 set(FLOW_FILES FlowGraph/FlowGraphBuilder.cpp FlowGraph/FlowGraphDebug.cpp FlowGraph/FlowGraphQuery.cpp
         FlowGraph/ImageFlowData.cpp FlowGraph/ImageFlowDataDebug.cpp FlowGraph/weightSettings.cpp)
 
@@ -29,6 +29,9 @@ add_executable(presentationFigures presentationFigures.cpp ${SOURCE_FILES} ${FLO
 add_executable(simpleFlow simpleFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(refundFlow refundFlow.cpp RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
+add_executable(binaryDataset binaryDataset.cpp RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
+
+
 
 
 
@@ -42,3 +45,5 @@ target_link_libraries(presentationFigures ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lem
 
 target_link_libraries(simpleFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(refundFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
+
+target_link_libraries(binaryDataset ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)

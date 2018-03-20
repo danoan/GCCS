@@ -45,6 +45,12 @@ void testConnectdeness(std::string imgFilePath)
         ++gluedCurveNumber;
     }
 
+    Board2D board;
+    board << intCurve;
+    board << extCurve;
+    board.save("original-dilation.eps");
+
+
 }
 
 /*Evaluates curvature for each generated GluedCurve*/
@@ -191,14 +197,15 @@ void testSequence()
 //    runTests("../images/graph-weight-test/smallest_disk.pgm",
 //             outputRootPath + "/disk");
 
-    runTests("../images/flow-evolution/2.pgm",
-             outputRootPath + "/out2");
+    runTests("../images/flow-evolution/test.pgm",
+             outputRootPath + "/test");
 }
 
 namespace Development{
     bool solveShift;
     bool crossElement;
     bool lambdaEstimator;
+    bool pessimistEstimator=false;
 
     bool makeConvexArcs;
     bool invertGluedArcs;
@@ -212,7 +219,7 @@ int main()
     Development::makeConvexArcs = false;
     Development::invertGluedArcs = false;
 
-    Development::lambdaEstimator = true;
+    Development::lambdaEstimator = false;
 
 //    Development::solveShift = true;
 //    testSequence();

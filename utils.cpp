@@ -435,3 +435,32 @@ void draw(std::map<Z2i::SCell,double>& weightMap,
     }
 }
 
+void eliminateLoops(Curve& curveOut,
+                    KSpace& KImage,
+                    Curve& curveIn)
+{
+    std::vector<KSpace::SCell> vectorOfSCell;
+
+    std::map<KSpace::SCell,KSpace::SCell> appearanceTable;
+    KSpace::SCell toReconnectSCell;
+
+    for(auto it=curveIn.begin();it!=curveIn.end();++it)
+    {
+        KSpace::SCell pointel = KImage.sDirectIncident(*it, *KImage.sDirs(*it));
+        if (appearanceTable.find(pointel) == appearanceTable.end()) {
+            appearanceTable[pointel] = *it;
+            vectorOfSCell.push_back(*it);
+        } else {
+            toReconnectSCell = appearanceTable[pointel];
+
+            KSpace::SCell backOfVector = vectorOfSCell.back();
+            while (backOfVector != toReconnectSCell) {
+                vectorOfSCell.pop_back();
+                backOfVector = vectorOfSCell.back();
+            }
+        }
+    }
+
+    curveOut.initFromSCellsVector(vectorOfSCell);
+}
+

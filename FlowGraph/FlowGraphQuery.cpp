@@ -117,14 +117,14 @@ void FlowGraphQuery::gluedArcPairSet(FlowGraph& fg,
                     cutFilter);
 
 
-    std::queue<ListDigraph::Arc> arcQueue;
+    std::deque<ListDigraph::Arc> arcDeque;
     std::stack<ListDigraph::Node> traverseStack;
     ListDigraph::NodeMap<bool> visitedNodes(fg.graph(), false);
     ListDigraph::Node currentNode;
     bool pairNotFound;
     for(SubGraph::ArcIt a(intExtGluedSubgraph);a!=lemon::INVALID;++a)
     {
-        arcQueue.push(a);
+        arcDeque.push_back(a);
         ListDigraph::Node firstNode = intExtGluedSubgraph.source(a);
         visitedNodes[intExtGluedSubgraph.target(a)]=true;
 
@@ -144,7 +144,7 @@ void FlowGraphQuery::gluedArcPairSet(FlowGraph& fg,
                 if( fg.arcType(oai)==FlowGraph::ArcType::ExtIntGluedArc &&
                     cutFilter[oai])
                 {
-                    arcQueue.push(oai);
+                    arcDeque.push_back(oai);
                     pairNotFound=false;
                 }
             }
@@ -155,14 +155,19 @@ void FlowGraphQuery::gluedArcPairSet(FlowGraph& fg,
 
 
     {
-        if(arcQueue.size()%2==1) throw "arcQueue has an odd number os elements";
-
-        while(!arcQueue.empty())
+        if(arcDeque.size()%2==1)
         {
-            ListDigraph::Arc intToExt = arcQueue.front();
-            arcQueue.pop();
-            ListDigraph::Arc extToInt = arcQueue.front();
-            arcQueue.pop();
+            arcDeque.pop_front();
+//            throw std::runtime_error("arcDeque has an odd number os elements");
+            std::cout << "arcDeque has an odd number os elements" << std::endl;
+        }
+
+        while(!arcDeque.empty())
+        {
+            ListDigraph::Arc intToExt = arcDeque.front();
+            arcDeque.pop_front();
+            ListDigraph::Arc extToInt = arcDeque.front();
+            arcDeque.pop_front();
 
             gluedArcPairSet.insert(ArcPair(intToExt, extToInt));
         }
@@ -214,11 +219,12 @@ void FlowGraphQuery::detourArcMap(FlowGraph& fg,
 
 
         //TODO:: Those tests were thought for DilationOnly Mode
+        /*
         if(fg.arcType(fg.arc(*beginRightExternal))!=FlowGraph::ArcType::ExternalCurveArc) throw std::runtime_error("External Arc Expected");
         if(fg.arcType(fg.arc(*beginLeftExternal))!=FlowGraph::ArcType::ExternalCurveArc) throw std::runtime_error("External Arc Expected");
         if(fg.arcType(fg.arc(*beginRightInternal))!=FlowGraph::ArcType::InternalCurveArc) throw std::runtime_error("Internal Arc Expected");
         if(fg.arcType(fg.arc(*beginLeftInternal))!=FlowGraph::ArcType::InternalCurveArc) throw std::runtime_error("Internal Arc");
-
+        */
     }
 }
 
@@ -264,14 +270,15 @@ void FlowGraphQuery::globalDetourArcSet(FlowGraph& fg,
             insertSCellFromArc(fg, globalDetourArcSet, staFunctor, beginRightInternal, length);
 
 
-            if (fg.arcType(fg.arc(*beginRightExternal)) != FlowGraph::ArcType::ExternalCurveArc)
-                throw std::runtime_error("External Arc Expected");
-            if (fg.arcType(fg.arc(*beginLeftExternal)) != FlowGraph::ArcType::ExternalCurveArc)
-                throw std::runtime_error("External Arc Expected");
-            if (fg.arcType(fg.arc(*beginRightInternal)) != FlowGraph::ArcType::InternalCurveArc)
-                throw std::runtime_error("Internal Arc Expected");
-            if (fg.arcType(fg.arc(*beginLeftInternal)) != FlowGraph::ArcType::InternalCurveArc)
-                throw std::runtime_error("Internal Arc");
+            //TODO::Those assertions were thought for the DilationOnly FlowMode
+//            if (fg.arcType(fg.arc(*beginRightExternal)) != FlowGraph::ArcType::ExternalCurveArc)
+//                throw std::runtime_error("External Arc Expected");
+//            if (fg.arcType(fg.arc(*beginLeftExternal)) != FlowGraph::ArcType::ExternalCurveArc)
+//                throw std::runtime_error("External Arc Expected");
+//            if (fg.arcType(fg.arc(*beginRightInternal)) != FlowGraph::ArcType::InternalCurveArc)
+//                throw std::runtime_error("Internal Arc Expected");
+//            if (fg.arcType(fg.arc(*beginLeftInternal)) != FlowGraph::ArcType::InternalCurveArc)
+//                throw std::runtime_error("Internal Arc");
 
         }
     }while(previousSize!=globalDetourArcSet.size());
