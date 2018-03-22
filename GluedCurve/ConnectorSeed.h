@@ -16,25 +16,14 @@ struct ConnectorSeed{
     typedef T3 KSpace;
 
 
-    std::vector<ConnectorElementType> connectors;
-
     typedef typename SCellCirculatorType::value_type SCell;
     typedef DGtal::Dimension Dimension;
 
 
-    bool isValid;
-
-    KSpace KImage;
-
-
-    ConnectorType cType;
-
     typedef typename std::vector<ConnectorElementType>::const_iterator SCellIteratorType;
 
 
-    SCellCirculatorType firstCirculator;
-    SCellCirculatorType secondCirculator;
-
+    ConnectorSeed(){}
 
     ConnectorSeed(ConnectorElementType cet,
                   SCellCirculatorType& fit,
@@ -58,6 +47,14 @@ struct ConnectorSeed{
         }
 
     }
+
+    std::vector<ConnectorElementType> connectors;
+    bool isValid;
+    KSpace KImage;
+    ConnectorType cType;
+
+    SCellCirculatorType firstCirculator;
+    SCellCirculatorType secondCirculator;
 };
 
 template< typename X >
