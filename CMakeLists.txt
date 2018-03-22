@@ -30,7 +30,7 @@ add_executable(presentationFigures presentationFigures.cpp ${SOURCE_FILES} ${FLO
 add_executable(simpleFlow simpleFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(refundFlow refundFlow.cpp RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
-add_executable(binaryDataset binaryDataset.cpp RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES} )
+add_executable(binaryDataset binaryDataset.cpp RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES} ExhaustiveSearch/CombinationsEvaluator.h)
 
 
 

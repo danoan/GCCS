@@ -444,7 +444,8 @@ void eliminateLoops(Curve& curveOut,
     std::map<KSpace::SCell,KSpace::SCell> appearanceTable;
     KSpace::SCell toReconnectSCell;
 
-    for(auto it=curveIn.begin();it!=curveIn.end();++it)
+    int i=0;
+    for(auto it=curveIn.begin();it!=curveIn.end();++it,++i)
     {
         KSpace::SCell pointel = KImage.sDirectIncident(*it, *KImage.sDirs(*it));
         if (appearanceTable.find(pointel) == appearanceTable.end()) {

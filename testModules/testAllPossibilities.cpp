@@ -8,91 +8,9 @@
 
 #include "../ExhaustiveSearch/SeparateInnerAndOuter.h"
 #include "../ExhaustiveSearch/ContainerCombinator.h"
-#include "../ExhaustiveSearch/LazyCombinations.h"
 #include "../ExhaustiveSearch/PropertyChecker/CheckableSeedPair.h"
-#include "../ExhaustiveSearch/PropertyChecker/MarkedMapChecker/GluedIntersectionChecker.h"
-#include "../ExhaustiveSearch/PropertyChecker/MarkedMapChecker/MinimumDistanceChecker.h"
 #include "../FlowGraph/weightSettings.h"
-
-void addIntervalSCells(std::vector<KSpace::SCell>& vectorOfSCells,
-                       SeparateInnerAndOuter::SCellCirculator begin,
-                       SeparateInnerAndOuter::SCellCirculator end)
-{
-    SeparateInnerAndOuter::SCellCirculator it = begin;
-    while (it != end)
-    {
-        vectorOfSCells.push_back(*it);
-        ++it;
-    }
-    vectorOfSCells.push_back(*it);
-}
-
-void addSeedPairSCells(std::vector<KSpace::SCell>& vectorOfSCells,
-                       CheckableSeedPair& currentPair,
-                       CheckableSeedPair& nextPair)
-{
-    SeparateInnerAndOuter::ConnectorSeed inToExtSeed = currentPair.data().first;
-    SeparateInnerAndOuter::ConnectorSeed extToIntSeed = currentPair.data().second;
-
-    if( currentPair.data().first.cType != ConnectorType::internToExtern)
-    {
-        std::cout << "ERROR" << std::endl;
-    }
-
-    if( currentPair.data().second.cType != ConnectorType::externToIntern)
-    {
-        std::cout << "ERROR" << std::endl;
-    }
-
-
-    vectorOfSCells.push_back(inToExtSeed.connectors[0]);
-    addIntervalSCells(vectorOfSCells,inToExtSeed.secondCirculator,extToIntSeed.firstCirculator);
-
-
-    SeparateInnerAndOuter::ConnectorSeed nextIntToExtSeed = nextPair.data().first;
-    vectorOfSCells.push_back(extToIntSeed.connectors[0]);
-    addIntervalSCells(vectorOfSCells,extToIntSeed.secondCirculator,nextIntToExtSeed.firstCirculator);
-}
-
-void createCurve(SeparateInnerAndOuter::Curve& curve,
-                 CheckableSeedPair* seedPairs,
-                 int totalPairs)
-{
-    typedef KSpace::SCell SCell;
-    std::vector<SCell> scells;
-
-    CheckableSeedPair currentPair;
-    CheckableSeedPair nextPair;
-    for(int i=0;i<totalPairs;++i)
-    {
-        if(i==(totalPairs-1))
-        {
-            currentPair = seedPairs[totalPairs-1];
-            nextPair = seedPairs[0];
-        }else
-        {
-            currentPair = seedPairs[i];
-            nextPair = seedPairs[i+1];
-        }
-
-        addSeedPairSCells(scells,currentPair,nextPair);
-    }
-
-    curve.initFromSCellsVector(scells);
-}
-
-double energyValue(SeparateInnerAndOuter::Curve& curve, std::map<KSpace::SCell,double>& weightMap)
-{
-    auto it = curve.begin();
-    double v=0;
-    do
-    {
-        v+=weightMap[*it];
-        ++it;
-    }while(it!=curve.end());
-
-    return v;
-}
+#include "../ExhaustiveSearch/CombinationsEvaluator.h"
 
 
 void checkAllPossibilities(KSpace& KImage,
@@ -129,61 +47,24 @@ void checkAllPossibilities(KSpace& KImage,
 
     for(auto it= pairSeedList.begin();it!=pairSeedList.end();++it)
     {
-        if(it->first.connectors[0].preCell().coordinates!=it->second.connectors[0].preCell().coordinates)
-        {
-            pairList.push_back(*it);
-        }
+        DGtal::PointVector<2,int> coordInt = it->first.connectors[0].preCell().coordinates;
+        DGtal::PointVector<2,int> coordExt = it->second.connectors[0].preCell().coordinates;
+        DGtal::PointVector<2,int> diff = coordExt - coordInt;
+        int connectorsDistance = (abs(diff[0])+abs(diff[1]) )/2;
+
+        //Internal Connector must be different from External Connector
+        if(coordInt==coordExt) continue;
+
+        //Internal and External Connector must cover between 10 and at most 20 external linels
+        if( connectorsDistance >= 20 || connectorsDistance <= 6) continue;
+
+        pairList.push_back(*it);
+
     }
-
-
-    GluedIntersectionChecker intersectionChecker;
-    MinimumDistanceChecker minDistChecker;
-    for(auto it=pairList.begin();it!=pairList.end();++it)
-    {
-        intersectionChecker.unmark(*it);
-        minDistChecker.unmark(*it);
-    }
-
 
     int maxSimultaneousPairs = fromInnerSeeds.size()/4;
-    double minEnergyValue = 100;
-    double currentEnergyValue;
-    SeparateInnerAndOuter::Curve minCurve;
-    for(int i=1;i<3;++i)
-    {
-        LazyCombinations<CheckableSeedList,2> myCombinations(pairList);
-        myCombinations.addConsistencyChecker(&intersectionChecker);
-        myCombinations.addConsistencyChecker(&minDistChecker);
-
-
-        CheckableSeedPair seedCombination[2];
-        int n=0;
-        while(myCombinations.next(seedCombination))
-        {
-            SeparateInnerAndOuter::Curve curve;
-            std::map<KSpace::SCell,double> weightMap;
-
-            createCurve(curve,seedCombination,i);
-            setGridCurveWeight(curve,KImage,weightMap);
-
-            currentEnergyValue = energyValue(curve,weightMap);
-            if(currentEnergyValue<minEnergyValue)
-            {
-                std::cout << "Updated min energy value: " << minEnergyValue << " -> " << currentEnergyValue << std::endl;
-                minEnergyValue = currentEnergyValue;
-                minCurve = curve;
-            }
-
-            ++n;
-        }
-        std::cout << i << "-Combination: " << n << std::endl;
-    }
-
-    std::cout << "Min Energy Value: " << minEnergyValue << std::endl;
-    Board2D board;
-    board << minCurve;
-    board.saveEPS("minenergycurve.eps");
-
+    CombinationsEvaluator<4> CE;
+    CE(pairList,KImage,maxSimultaneousPairs);
 
 }
 

@@ -75,7 +75,7 @@ void setGridCurveWeight(Curve curvePriorGS,
             weightMap[*it] *= tangentWeightVector[i];
 //            weightMap[*it] *= 100;//+100 only to avoid small numbers
 //            weightMap[*it] /= totalLinels;
-            weightMap[*it] += 0.1*tangentWeightVector[i];
+            weightMap[*it] += 0.001*tangentWeightVector[i];
             ++i;
         }
     }
