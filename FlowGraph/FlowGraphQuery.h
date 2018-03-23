@@ -141,8 +141,8 @@ public:
     static void coreArcs(FlowGraph& fg,
                          ListDigraph::ArcMap<bool>& coreArcs);
 
-    static void pixelsFilter(FlowGraph& fg,
-                             ListDigraph::NodeMap<bool>& pixelsFilter);
+    static void sourceComponentNodes(FlowGraph &fg,
+                                     ListDigraph::NodeMap<bool> &pixelsFilter);
 
 
     static void detourArcFilter(FlowGraph& fg,
@@ -182,6 +182,10 @@ public:
 
 
     static double cutValue(FlowGraph& fg);
+
+
+    template<typename FetchFunction, typename FilterType, typename OutputIterator>
+    static void fetchFromNodes(FlowGraph& fg, FetchFunction fn, FilterType& filter, OutputIterator oit);
 
 
 private:
@@ -252,6 +256,18 @@ MyCirculator FlowGraphQuery::moveIterator(const MyCirculator c, int w){
 
     return cc;
 }
+
+template<typename FetchFunction, typename FilterType, typename OutputIterator>
+void FlowGraphQuery::fetchFromNodes(FlowGraph& fg, FetchFunction fn, FilterType& filter, OutputIterator oit)
+{
+    for(ListDigraph::NodeIt n(fg.graph());n!=INVALID;++n)
+    {
+        if(filter[n])
+            oit = fn(n);
+
+    }
+
+};
 
 
 #endif

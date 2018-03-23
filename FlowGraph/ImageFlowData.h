@@ -120,6 +120,7 @@ public:
 
     Curve& getMostInnerCurve();
     Curve& getMostOuterCurve();
+    Curve& getBaseCurve();
 
     int getGluedCurveLength(){ return gluedCurveLength; }
     int getConsecutiveGluedPairDistance(){ return consecutiveGluedPairDistance; }

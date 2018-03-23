@@ -134,6 +134,11 @@ void ImageFlowData::initRange(CurveData& intCurveData, CurveData& extCurveData)
     curvesPairVector.push_back(cp);
 }
 
+Curve& ImageFlowData::getBaseCurve()
+{
+    return getCurveData( CurveType::OriginalCurve ).curve;
+}
+
 Curve& ImageFlowData::getMostInnerCurve()
 {
     switch(flowMode){

@@ -122,9 +122,6 @@ int main()
     );
 
 
-
-
-
     double currentEnergyValue;
     for(int i=0;i<200;++i)
     {

@@ -38,8 +38,8 @@ void RefundFlow::updateImage(FlowGraph& fg,
 {
 
     ListDigraph::NodeMap<bool> pixelsFilter(fg.graph(),false);
-    FlowGraphQuery::pixelsFilter(fg,
-                                 pixelsFilter);
+    FlowGraphQuery::sourceComponentNodes(fg,
+                                         pixelsFilter);
 
 
     KSpace& KImage = imageFlowData.getKSpace();

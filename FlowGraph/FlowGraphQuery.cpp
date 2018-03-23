@@ -320,8 +320,8 @@ int FlowGraphQuery::arcDistance(FlowGraph& fg,
     return n;
 }
 
-void FlowGraphQuery::pixelsFilter(FlowGraph& fg,
-                                  ListDigraph::NodeMap<bool>& pixelsFilter)
+void FlowGraphQuery::sourceComponentNodes(FlowGraph &fg,
+                                          ListDigraph::NodeMap<bool> &sourceComponentNodes)
 {
     ListDigraph::NodeMap<bool> nodeFilter(fg.graph(),false);
     ListDigraph::ArcMap<bool> arcFilter(fg.graph(),false);
@@ -339,10 +339,10 @@ void FlowGraphQuery::pixelsFilter(FlowGraph& fg,
 
     for(SubGraph::ArcIt a(subgraph);a!=lemon::INVALID;++a)
     {
-        pixelsFilter[ subgraph.source(a) ] = true;
+        sourceComponentNodes[ subgraph.source(a) ] = true;
     }
-    pixelsFilter[fg.source()] = false;
-    pixelsFilter[fg.target()] = false;
+    sourceComponentNodes[fg.source()] = false;
+    sourceComponentNodes[fg.target()] = false;
 }
 
 

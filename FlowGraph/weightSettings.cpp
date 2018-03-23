@@ -75,7 +75,7 @@ void setGridCurveWeight(Curve curvePriorGS,
             weightMap[*it] *= tangentWeightVector[i];
 //            weightMap[*it] *= 100;//+100 only to avoid small numbers
 //            weightMap[*it] /= totalLinels;
-            weightMap[*it] += 0.001*tangentWeightVector[i];
+//            weightMap[*it] += 0.0001*tangentWeightVector[i];
             ++i;
         }
     }
@@ -146,7 +146,7 @@ void setGluedCurveWeight(WeightSettingsTypes::GluedCurveSetRange::ConstIterator 
                 weightMap[*itC]*= tangentWeightVector[i];
 //                weightMap[*itC]*= 100; //+100 only to avoid small numbers
 //                weightMap[*itC]/= totalLinels;
-                weightMap[*itC]+= 0.1*tangentWeightVector[i];
+//                weightMap[*itC]+= 0.0001*tangentWeightVector[i];
                 ++i;
                 if(itC==it->first.connectorsEnd()) break;
                 ++itC;
