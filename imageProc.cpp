@@ -145,16 +145,19 @@ void ImageProc::closing(Image2D& newImage, const Image2D& inputImage, const int&
 }
 
 
-void ImageProc::resize(Image2D &input,Image2D &out)
+void ImageProc::resize(Image2D &input,Image2D &out, double factor)
 {
-    int r = input.domain().upperBound()[1] + 1;
-    int c = input.domain().upperBound()[0] + 1;
+    int rIn = input.domain().upperBound()[1] + 1;
+    int cIn = input.domain().upperBound()[0] + 1;
 
-    cv::Mat cvInput(r,c,CV_8UC1);
-    cv::Mat cvOut(r,c,CV_8UC1);
+    int rOut = out.domain().upperBound()[1] + 1;
+    int cOut = out.domain().upperBound()[0] + 1;
+
+    cv::Mat cvInput(rIn,cIn,CV_8UC1);
+    cv::Mat cvOut(rOut,cOut,CV_8UC1);
     fromImage2DToMat(input,cvInput);
-    cv::resize(cvInput,cvOut,cv::Size(0,0),0.5,0.5,cv::INTER_LINEAR);
-    fromMatToImage2D(cvOut,out,(int) r/4.0);
+    cv::resize(cvInput,cvOut,cvOut.size(),factor,factor,cv::INTER_NEAREST);
+    fromMatToImage2D(cvOut,out);
 }
 
 void ImageProc::computeBoundaryCurve(const Image2D &image,

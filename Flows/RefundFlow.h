@@ -4,12 +4,12 @@
 #include "DGtal/helpers/StdDefs.h"
 #include "DGtal/images/ImageContainerBySTLVector.h"
 
-#include "FlowGraph/ImageFlowData.h"
-#include "FlowGraph/FlowGraphBuilder.h"
-#include "FlowGraph/FlowGraph.h"
-#include "FlowGraph/FlowGraphQuery.h"
+#include "../FlowGraph/ImageFlowData.h"
+#include "../FlowGraph/FlowGraphBuilder.h"
+#include "../FlowGraph/FlowGraph.h"
+#include "../FlowGraph/FlowGraphQuery.h"
 
-#include "FlowGraph/weightSettings.h"
+#include "../FlowGraph/weightSettings.h"
 
 
 class RefundFlow

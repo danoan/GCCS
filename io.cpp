@@ -32,4 +32,13 @@ namespace IO {
         GenericWriter<Image2D>::exportFile(imageOutputPath.c_str(),out);
         return imageOutputPath;
     }
+
+    void displayImage(std::string windowName,
+                      std::string imagePath)
+    {
+        cv::imshow( windowName,
+                    cv::imread(imagePath,CV_8U)
+        );
+        cv::waitKey(0);
+    }
 }

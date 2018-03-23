@@ -29,7 +29,7 @@ namespace ImageProc {
     typedef DGtal::functors::SimpleThresholdForegroundPredicate<Image2D> ThreshPredicate;
 
 
-    void resize(Image2D &input, Image2D &out);
+    void resize(Image2D &input, Image2D &out, double factor=0.5);
 
 
     void computeBoundaryCurve(const Image2D& image,

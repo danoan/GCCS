@@ -19,13 +19,13 @@ using namespace lemon;
 using namespace DGtal;
 using namespace DGtal::Z2i;
 
-#include "utils.h"
-#include "FlowGraph/weightSettings.h"
+#include "../utils.h"
+#include "../FlowGraph/weightSettings.h"
 
-#include "FlowGraph/ImageFlowData.h"
-#include "FlowGraph/FlowGraphBuilder.h"
-#include "FlowGraph/ImageFlowDataDebug.h"
-#include "FlowGraph/FlowGraphDebug.h"
+#include "../FlowGraph/ImageFlowData.h"
+#include "../FlowGraph/FlowGraphBuilder.h"
+#include "../FlowGraph/ImageFlowDataDebug.h"
+#include "../FlowGraph/FlowGraphDebug.h"
 
 
 using namespace UtilsTypes;

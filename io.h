@@ -3,6 +3,9 @@
 
 #include "boost/filesystem.hpp"
 
+#include <opencv/highgui.h>
+#include <opencv/cv.hpp>
+
 #include <DGtal/images/ImageContainerBySTLVector.h>
 #include "DGtal/helpers/StdDefs.h"
 #include "DGtal/io/readers/GenericReader.h"
@@ -28,6 +31,9 @@ namespace IO
     std::string saveImage(Image2D& out,
                           std::string outputFolder,
                           std::string suffix);
+
+    void displayImage(std::string windowName,
+                      std::string imagePath);
 }
 
 

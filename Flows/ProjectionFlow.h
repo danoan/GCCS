@@ -3,14 +3,14 @@
 
 #include <opencv/highgui.h>
 
-#include "FlowGraph/ImageFlowData.h"
-#include "FlowGraph/FlowGraphBuilder.h"
-#include "FlowGraph/weightSettings.h"
-#include "FlowGraph/FlowGraphQuery.h"
-#include "FlowGraph/ImageUpdater.h"
+#include "../FlowGraph/ImageFlowData.h"
+#include "../FlowGraph/FlowGraphBuilder.h"
+#include "../FlowGraph/weightSettings.h"
+#include "../FlowGraph/FlowGraphQuery.h"
+#include "../FlowGraph/ImageUpdater.h"
 
-#include "CurveProjector.h"
-#include "io.h"
+#include "../CurveProjector.h"
+#include "../io.h"
 
 class ProjectionFlow
 {
