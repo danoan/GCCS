@@ -474,7 +474,7 @@ double RefundFlow::run(int mainIteration)
 
         currentEnergyValue = energyValue(partialImage);
 
-        checkCodeConsistence(fg,partialImage);
+//        checkCodeConsistence(fg,partialImage);
 //        debugData(fg,partialImage,weightMap,iteration);
 
         if(currentEnergyValue<initialEnergyValue)

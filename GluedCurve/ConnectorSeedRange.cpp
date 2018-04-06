@@ -9,8 +9,10 @@ ConnectorSeedRange<CellularSpace,
         internalCurveCirculator(internalCurveCirculator),
         externalCurveCirculator(externalCurveCirculator)
 {
-    setPointelGroup(internalCurveCirculator,POINTEL_GROUP_INTERNAL_CURVE);
+    //The order is important when I consider superposed linels!!!!
     setPointelGroup(externalCurveCirculator,POINTEL_GROUP_EXTERNAL_CURVE);
+    setPointelGroup(internalCurveCirculator,POINTEL_GROUP_INTERNAL_CURVE);
+
 
     SCellCirculatorType ie = externalCurveCirculator;
     SCellCirculatorType ii = internalCurveCirculator;
@@ -18,71 +20,80 @@ ConnectorSeedRange<CellularSpace,
     //Connection edges creation
     if(DGtal::isNotEmpty(externalCurveCirculator,externalCurveCirculator)){
 
+        std::set<SCell> enclosingLinels;
+        identifyAlmostEnclosingLinels(enclosingLinels,
+                                      externalCurveCirculator);
+
         do
         {
             SCell externalLinel = *ie;
 
-            SCell sourceExtLinel = KImage.sIndirectIncident(externalLinel,*KImage.sDirs(externalLinel));    //Source
-            SCell targetExtLinel = KImage.sDirectIncident(externalLinel,*KImage.sDirs(externalLinel));    //Target
+            if(enclosingLinels.find(*ie)==enclosingLinels.end()) {
 
-            SCell mainSpel = KImage.sDirectIncident(*ie,KImage.sOrthDir(externalLinel));
-            SCells neighborhood = KImage.sNeighborhood(mainSpel);
+                SCell sourceExtLinel = KImage.sIndirectIncident(externalLinel,
+                                                                *KImage.sDirs(externalLinel));    //Source
+                SCell targetExtLinel = KImage.sDirectIncident(externalLinel, *KImage.sDirs(externalLinel));    //Target
+
+                SCell mainSpel = KImage.sDirectIncident(*ie, KImage.sOrthDir(externalLinel));
+                SCells neighborhood = KImage.sNeighborhood(mainSpel);
 
 
-            for(auto itp=neighborhood.begin();itp!=neighborhood.end();++itp) {
-                SCells incidentEdges = KImage.sLowerIncident(*itp);
+                for (auto itp = neighborhood.begin(); itp != neighborhood.end(); ++itp) {
+                    SCells incidentEdges = KImage.sLowerIncident(*itp);
 
-                for (auto ite = incidentEdges.begin(); ite != incidentEdges.end(); ite++) {
-                    SCell potentialConnectionLinel = *ite;
+                    for (auto ite = incidentEdges.begin(); ite != incidentEdges.end(); ite++) {
+                        SCell potentialConnectionLinel = *ite;
 
-                    if(gridLinels.find(potentialConnectionLinel)!=gridLinels.end()) continue;
-                    SCell otherDirection(potentialConnectionLinel);
-                    KImage.sSetSign(otherDirection,!KImage.sSign(otherDirection));
-                    if(gridLinels.find(otherDirection)!=gridLinels.end()) continue;
+                        if (gridLinels.find(potentialConnectionLinel) != gridLinels.end()) continue;
+                        SCell otherDirection(potentialConnectionLinel);
+                        KImage.sSetSign(otherDirection, !KImage.sSign(otherDirection));
+                        if (gridLinels.find(otherDirection) != gridLinels.end()) continue;
 
-                    SCell p1 = KImage.sIndirectIncident(potentialConnectionLinel,*KImage.sDirs(potentialConnectionLinel));    //Source
-                    SCell p2 = KImage.sDirectIncident(potentialConnectionLinel,*KImage.sDirs(potentialConnectionLinel));      //Target
+                        SCell p1 = KImage.sIndirectIncident(potentialConnectionLinel,
+                                                            *KImage.sDirs(potentialConnectionLinel));    //Source
+                        SCell p2 = KImage.sDirectIncident(potentialConnectionLinel,
+                                                          *KImage.sDirs(potentialConnectionLinel));      //Target
 
-                    if ((pointelGroup.find(p1.preCell().coordinates) == pointelGroup.end()) ||
-                        (pointelGroup.find(p2.preCell().coordinates) == pointelGroup.end())) {
-                        continue;   //There is a pointel which does not belong to any PointelGroup
-                    }
-
-                    if ((pointelGroup[p1.preCell().coordinates] == pointelGroup[p2.preCell().coordinates] ) )
-                    {
-                        continue;   //Same PointelGroup. It is not a connection linel
-                    }
-
-                    bool from_intern_to_extern = pointelGroup[p1.preCell().coordinates ]==POINTEL_GROUP_INTERNAL_CURVE;
-
-                    alignIterator(ii,potentialConnectionLinel);
-
-                    if( from_intern_to_extern ){  //Internal Curve is Source
-
-                        if( p2.preCell().coordinates != sourceExtLinel.preCell().coordinates ){
-                            continue;   //Conectivity Error
+                        if ((pointelGroup.find(p1.preCell().coordinates) == pointelGroup.end()) ||
+                            (pointelGroup.find(p2.preCell().coordinates) == pointelGroup.end())) {
+                            continue;   //There is a pointel which does not belong to any PointelGroup
                         }
 
-                        connectorSeedList.push_back( ConnectorSeedType(potentialConnectionLinel,
-                                                                       ii,
-                                                                       ie,
-                                                                       ConnectorType::internToExtern) );
-                    }else{
-
-                        if( p1.preCell().coordinates != targetExtLinel.preCell().coordinates ){
-                            continue;   //Conectivity Error
+                        if ((pointelGroup[p1.preCell().coordinates] == pointelGroup[p2.preCell().coordinates])) {
+                            continue;   //Same PointelGroup. It is not a connection linel
                         }
 
-                        connectorSeedList.push_back( ConnectorSeedType(potentialConnectionLinel,
-                                                                       ie,
-                                                                       ii,
-                                                                       ConnectorType::externToIntern)
-                        );
-                    }
+                        bool from_intern_to_extern =
+                                pointelGroup[p1.preCell().coordinates] == POINTEL_GROUP_INTERNAL_CURVE;
 
+                        alignIterator(ii, potentialConnectionLinel);
+
+                        if (from_intern_to_extern) {  //Internal Curve is Source
+
+                            if (p2.preCell().coordinates != sourceExtLinel.preCell().coordinates) {
+                                continue;   //Conectivity Error
+                            }
+
+                            connectorSeedList.push_back(ConnectorSeedType(potentialConnectionLinel,
+                                                                          ii,
+                                                                          ie,
+                                                                          ConnectorType::internToExtern));
+                        } else {
+
+                            if (p1.preCell().coordinates != targetExtLinel.preCell().coordinates) {
+                                continue;   //Conectivity Error
+                            }
+
+                            connectorSeedList.push_back(ConnectorSeedType(potentialConnectionLinel,
+                                                                          ie,
+                                                                          ii,
+                                                                          ConnectorType::externToIntern)
+                            );
+                        }
+
+                    }
                 }
             }
-
 
             ++ie;
         }while(ie!=externalCurveCirculator);
@@ -123,6 +134,65 @@ ConnectorSeedRange<CellularSpace,
     
 
 }
+
+template<typename CellularSpace, typename TIterator>
+bool ConnectorSeedRange<CellularSpace, TIterator>::enclosingPixelStack(std::queue<SCell> pixels, const std::queue<SCell>& linels)
+{
+    SCell currentPixel;
+    do
+    {
+        currentPixel = pixels.front();
+        pixels.pop();
+    }while(!pixels.empty() && currentPixel==pixels.front());
+
+    return pixels.empty();
+}
+
+template<typename CellularSpace, typename TIterator>
+void ConnectorSeedRange<CellularSpace, TIterator>::identifyAlmostEnclosingLinels(std::set<SCell>& setOfEnclosingLinels,
+                                                                                 SCellCirculatorType externalCurveCirculator)
+{
+    std::queue<SCell> linels;
+    std::queue<SCell> pixels;
+    int k=3;
+    SCellCirculatorType it = externalCurveCirculator;
+    do
+    {
+        linels.push(*it);
+        pixels.push( KImage.sDirectIncident(*it, KImage.sOrthDir(*it)) );
+        k--;
+        ++it;
+    }while(k>0 && it!=externalCurveCirculator);
+
+
+    while(it!=externalCurveCirculator)
+    {
+        if( enclosingPixelStack(pixels,linels) )
+        {
+            k=3;
+            SCell enclosingLinel;
+            while(k>0)
+            {
+                enclosingLinel = linels.front();
+                linels.pop();
+                linels.push(enclosingLinel);
+
+                setOfEnclosingLinels.insert(enclosingLinel);
+                --k;
+            }
+        }
+
+        linels.push(*it);
+        pixels.push(KImage.sDirectIncident(*it, KImage.sOrthDir(*it)));
+        linels.pop();
+        pixels.pop();
+
+        ++it;
+    }
+
+
+
+};
 
 template<typename CellularSpace, typename TIterator>
 void ConnectorSeedRange<CellularSpace, TIterator>::extensionConnectors(SCellCirculatorType itBegin,

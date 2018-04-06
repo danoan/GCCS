@@ -39,6 +39,6 @@ namespace IO {
         cv::imshow( windowName,
                     cv::imread(imagePath,CV_8U)
         );
-        cv::waitKey(0);
+        cv::waitKey(1);
     }
 }

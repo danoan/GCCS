@@ -123,6 +123,10 @@ void curvatureEstimatorsGluedCurve(UtilsTypes::SCellGluedCurveIterator begin,
                 end,
                 negativeCurve);
 
+    Board2D board;
+    board << negativeCurve;
+    board.saveEPS("tempCurve.eps");
+
     RangeAdapter rangeNegativeCurve(negativeCurve.begin(),
                                     negativeCurve.end(),
                                     myFunctor);

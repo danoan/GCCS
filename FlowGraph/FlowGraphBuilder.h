@@ -102,7 +102,8 @@ private:
     void createCurveArcs(Curve::ConstIterator curveBegin,
                          Curve::ConstIterator curveEnd,
                          ImageFlowData::CurveType ct,
-                         LinelWeightMap& weightMap);
+                         LinelWeightMap& weightMap,
+                         std::map<SCell,bool>& superposedLinels);
 
     void createGluedArcs(ImageFlowData::GluedCurveIteratorPair gluedRangeBegin,
                          ImageFlowData::GluedCurveIteratorPair gluedRangeEnd,
@@ -111,7 +112,8 @@ private:
 
     void createEscapeArcs(Curve& fromCurve,
                           Curve& toCurve,
-                          UnsignedSCellSet& visitedNodes);
+                          UnsignedSCellSet& visitedNodes,
+                          std::map<SCell,bool>& superposedLinels);
 
 
     void createSourceArcs(Curve& erodedCurve,

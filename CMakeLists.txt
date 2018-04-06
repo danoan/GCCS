@@ -23,6 +23,7 @@ add_executable(testFlowGraphQuery testModules/testFlowGraphQuery.cpp ${SOURCE_FI
 add_executable(testCompImages testModules/testCompImages.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(testEnergyDilation testModules/testEnergyDilation.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(testAllPossibilities testModules/testAllPossibilities.cpp ${SOURCE_FILES} ${FLOW_FILES})
+add_executable(testInvariantRotation testModules/testInvariantRotation.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
 add_executable(issue issue.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(presentationFigures presentationFigures.cpp ${SOURCE_FILES} ${FLOW_FILES})
@@ -31,9 +32,10 @@ add_executable(simpleFlow Flows/simpleFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(refundFlow Flows/refundFlow.cpp Flows/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(projectionFlow Flows/projectionFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(adaptativeScaleFlow Flows/adaptativeScaleFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
+add_executable(boundedFlow Flows/boundedFlow.cpp Flows/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
-add_executable(binaryDataset binaryDataset.cpp Flows/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES} FlowGraph/ImageUpdater.h)
 
+add_executable(binaryDataset binaryDataset.cpp Flows/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
 
 
@@ -43,6 +45,7 @@ target_link_libraries(testFlowGraphQuery ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemo
 target_link_libraries(testCompImages ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(testEnergyDilation ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(testAllPossibilities ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
+target_link_libraries(testInvariantRotation ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 
 target_link_libraries(issue ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(presentationFigures ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
@@ -51,5 +54,6 @@ target_link_libraries(simpleFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -l
 target_link_libraries(refundFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(projectionFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(adaptativeScaleFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
+target_link_libraries(boundedFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 
 target_link_libraries(binaryDataset ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)

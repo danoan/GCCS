@@ -161,11 +161,11 @@ namespace Development{
 
 int main()
 {
-    SegCut::Image2D comp1 = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/comp1.pgm");
-    SegCut::Image2D comp2 = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/comp2.pgm");
+    SegCut::Image2D comp1 = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/invariant_rot1.pgm");
+    SegCut::Image2D comp2 = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/invariant_rot2.pgm");
 
     int gluedCurveLength = 5;
-    std::string outputFolder = "../output/testModules/testCompImages";
+    std::string outputFolder = "../output/testModules/testInvariantRotation";
 
     boost::filesystem::path p2(outputFolder.c_str());
     boost::filesystem::create_directories(p2);
@@ -174,6 +174,7 @@ int main()
     imf1.init(ImageFlowData::DilationOnly,gluedCurveLength);
     double energyComp1 = computeEnergyValue(comp1,imf1,"1");
 
+
     ImageFlowData imf2(comp2);
     imf2.init(ImageFlowData::DilationOnly,gluedCurveLength);
     double energyComp2 = computeEnergyValue(comp2,imf2,"1");
@@ -181,9 +182,7 @@ int main()
     std::cout <<  energyComp1 << std::endl;
     std::cout << energyComp2 << std::endl;
 
-    drawCurvatureMaps(comp1,comp2,outputFolder);
-    drawStabbingCircles(comp1,outputFolder,"stabbingComp1");
-    drawStabbingCircles(comp2,outputFolder,"stabbingComp2");
+    std::cout << (energyComp1==energyComp2?"True":"False") << std::endl;
 
     drawCurvatureMaps(comp1,comp2,outputFolder);
     drawStabbingCircles(comp1,outputFolder,"stabbingComp1");

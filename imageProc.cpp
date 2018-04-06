@@ -63,7 +63,7 @@ void ImageProc::dilate(Image2D &newImage, const Image2D &inputImage, const int &
     dilateWithMorphology(newImage,inputImage,dilation_size);
 }
 
-void ImageProc::erode(Image2D &newImage, const Image2D &inputImage, const int &erosion_size){
+void ImageProc::erode(Image2D &newImage, const Image2D &inputImage, const int &erosion_size, int erosion_type){
     int r = inputImage.domain().upperBound()[1] + 1;
     int c = inputImage.domain().upperBound()[0] + 1;
 
@@ -71,14 +71,6 @@ void ImageProc::erode(Image2D &newImage, const Image2D &inputImage, const int &e
     fromImage2DToMat(inputImage,cvSrc);
 
     cv::Mat dilation_dst;
-    int erosion_type;
-
-    if(Development::crossElement){
-        erosion_type = cv::MORPH_CROSS;
-    }else{
-        erosion_type = cv::MORPH_RECT;
-    }
-
     cv::Mat element = cv::getStructuringElement( erosion_type,
                                                  cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
                                                  cv::Point( erosion_size, erosion_size ) );

@@ -56,7 +56,7 @@ ImageFlowData::CurveData& ImageFlowData::getCurveData(CurveType ct)
     return curvesVector.at(i);
 }
 
-void ImageFlowData::init(FlowMode fm, int gcLength)
+void ImageFlowData::setInitParameters(FlowMode fm, int gcLength)
 {
     itIsInitialized = true;
     flowMode = fm;
@@ -65,29 +65,10 @@ void ImageFlowData::init(FlowMode fm, int gcLength)
     diffDistance = 6;
 
     stgcF.init(gcLength);
+}
 
-
-    {
-        CurveData &cd = addNewCurve(CurveType::OriginalCurve);
-        ImageProc::computeBoundaryCurve(originalImage, cd.curve, 100);
-    }
-
-    if(fm==FlowMode::DilationOnly || fm==FlowMode::DilationErosion)
-    {
-        CurveData &cd = addNewCurve(CurveType::DilatedCurve);
-        ImageProc::dilate(dilatedImage, originalImage, 1);
-
-        ImageProc::computeBoundaryCurve(dilatedImage, cd.curve, 100);
-    }
-
-    if(fm==FlowMode::ErosionOnly || fm==FlowMode::DilationErosion)
-    {
-        CurveData &cd = addNewCurve(CurveType::ErodedCurve);
-        ImageProc::erode(erodedImage, originalImage, 1);
-
-        ImageProc::computeBoundaryCurve(erodedImage, cd.curve, 100);
-    }
-
+void ImageFlowData::setCurveData(FlowMode fm)
+{
     for(int i=0;i<curvesVector.size();++i)
     {
         registerCirculator(curvesVector.at(i));
@@ -111,6 +92,58 @@ void ImageFlowData::init(FlowMode fm, int gcLength)
         initRange(getCurveData(CurveType::OriginalCurve),
                   getCurveData(CurveType::DilatedCurve));
     }
+}
+
+void ImageFlowData::init(FlowMode fm, int gcLength, Curve outerCurve)
+{
+    setInitParameters(fm, gcLength);
+
+    CurveData &cd = addNewCurve(CurveType::OriginalCurve);
+    ImageProc::computeBoundaryCurve(originalImage, cd.curve, 100);
+
+    if(fm==FlowMode::DilationOnly || fm==FlowMode::DilationErosion)
+    {
+        CurveData &cd = addNewCurve(CurveType::DilatedCurve);
+        cd.curve = outerCurve;
+    }
+
+    if(fm==FlowMode::ErosionOnly || fm==FlowMode::DilationErosion)
+    {
+        CurveData &cd = addNewCurve(CurveType::ErodedCurve);
+        ImageProc::erode(erodedImage, originalImage, 1);
+
+        ImageProc::computeBoundaryCurve(erodedImage, cd.curve, 100);
+    }
+
+    setCurveData(fm);
+
+}
+
+void ImageFlowData::init(FlowMode fm, int gcLength)
+{
+    setInitParameters(fm, gcLength);
+
+    CurveData &cd = addNewCurve(CurveType::OriginalCurve);
+    ImageProc::computeBoundaryCurve(originalImage, cd.curve, 100);
+
+
+    if(fm==FlowMode::DilationOnly || fm==FlowMode::DilationErosion)
+    {
+        CurveData &cd = addNewCurve(CurveType::DilatedCurve);
+        ImageProc::dilate(dilatedImage, originalImage, 1);
+
+        ImageProc::computeBoundaryCurve(dilatedImage, cd.curve, 100);
+    }
+
+    if(fm==FlowMode::ErosionOnly || fm==FlowMode::DilationErosion)
+    {
+        CurveData &cd = addNewCurve(CurveType::ErodedCurve);
+        ImageProc::erode(erodedImage, originalImage, 1);
+
+        ImageProc::computeBoundaryCurve(erodedImage, cd.curve, 100);
+    }
+
+    setCurveData(fm);
 
 }
 

@@ -2,6 +2,49 @@
 #include <boost/filesystem/operations.hpp>
 #include "FlowGraphDebug.h"
 
+void FlowGraphDebug::colorizeArcs(ListDigraph::ArcMap<int>& arcColors,
+                                  ListDigraph::ArcMap<bool>& arcFilter,
+                                  int color)
+{
+    for(ListDigraph::ArcIt a(fg.graph());a!=INVALID;++a)
+    {
+        if(arcFilter[a])
+        {
+            arcColors[a] = color;
+        }
+    }
+}
+
+void FlowGraphDebug::drawFlowGraph(std::string outputFolder,
+                                    std::string suffix)
+{
+    ListDigraph::ArcMap<bool> internalArcs(fg.graph(),false);
+    FlowGraphQuery::filterArcs(fg,internalArcs,FlowGraph::InternalCurveArc,true);
+
+    ListDigraph::ArcMap<bool> externalArcs(fg.graph(),false);
+    FlowGraphQuery::filterArcs(fg,externalArcs,FlowGraph::ExternalCurveArc,true);
+
+    ListDigraph::ArcMap<bool> escapeArcs(fg.graph(),false);
+    FlowGraphQuery::filterArcs(fg,escapeArcs,FlowGraph::EscapeArc,true);
+
+    ListDigraph::NodeMap<bool> noTerminal(fg.graph(),true);
+    noTerminal[fg.source()]=false;
+    noTerminal[fg.target()]=false;
+
+    ListDigraph::ArcMap<bool> allArcs(fg.graph(),true);
+
+//    FilterComposer<ListDigraph::ArcMap<bool>,ListDigraph::ArcIt> FC(fg.graph(),internalArcs);
+//    FC+externalArcs+escapeArcs;
+
+    ListDigraph::ArcMap<int> arcColors(fg.graph(),0);
+    colorizeArcs(arcColors,internalArcs,1);
+    colorizeArcs(arcColors,externalArcs,2);
+    colorizeArcs(arcColors,escapeArcs,3);
+
+    suffix = "FlowGraph-" + suffix;
+    highlightArcs(noTerminal,allArcs,arcColors,outputFolder,suffix);
+}
+
 void FlowGraphDebug::drawCutGraph(std::string outputFolder,
                                   std::string suffix)
 {

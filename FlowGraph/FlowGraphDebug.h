@@ -16,6 +16,13 @@ class FlowGraphDebug{
 public:
     FlowGraphDebug(FlowGraph& fg):fg(fg){};
 
+    void drawFlowGraph(std::string outputFolder,
+                       std::string suffix);
+
+    void colorizeArcs(ListDigraph::ArcMap<int>& arcColors,
+                      ListDigraph::ArcMap<bool>& arcFilter,
+                      int color);
+
     void drawCutGraph(std::string outputFolder,
                       std::string suffix);
 

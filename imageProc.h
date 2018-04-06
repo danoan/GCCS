@@ -52,7 +52,7 @@ namespace ImageProc {
 
     void dilateWithMorphology(Image2D &newImage, const cv::Mat &src, const int &dilation_size);
 
-    void erode(Image2D &newImage, const Image2D &inputImage, const int &dilation_size);
+    void erode(Image2D &newImage, const Image2D &inputImage, const int &dilation_size, int erosion_type=cv::MORPH_RECT);
 
     void closing(Image2D& newImage, const Image2D& inputImage, const int& element_size );
 

@@ -106,7 +106,11 @@ public:
     ImageFlowData(const ImageFlowData& other);
     ImageFlowData& operator=(const ImageFlowData& other);
 
+    void setInitParameters(FlowMode fm, int gcLength);
+    void setCurveData(FlowMode fm);
+
     void init(FlowMode fm,int gluedCurveLength);
+    void init(FlowMode fm,int gluedCurveLength,Curve outerCurve);
 
     std::vector<CurveData>::const_iterator curveDataBegin(){ return curvesVector.begin(); }
     std::vector<CurveData>::const_iterator curveDataEnd(){ return curvesVector.end(); }

@@ -116,6 +116,19 @@ int main()
 
     displayImage(windowName,originalImagePath);
     ImageProc::closing(image,image,1);
+
+    int borderWidth = 5;
+
+    Domain newDomain( image.domain().lowerBound(),
+                      image.domain().upperBound() + DGtal::Z2i::Point(2*borderWidth,2*borderWidth)
+    );
+
+    SegCut::Image2D paddedImage(newDomain);
+    ImageProc::createBorder(paddedImage,image,borderWidth);
+    image = paddedImage;
+
+
+
     displayImage(windowName,saveImage(image,
                                       outputFolder,
                                       "closing")

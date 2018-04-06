@@ -73,17 +73,11 @@ public:
 
 private:
 
+    void identifyAlmostEnclosingLinels(std::set<SCell>& enclosingLinels,
+                                       SCellCirculatorType externalCurveCirculator);
 
-    KSpace KImage;
-    std::vector<ConnectorSeedType> connectorSeedList;
-
-    std::map<SCellPointelKey,int> pointelGroup;
-
-    SCellCirculatorType internalCurveCirculator,
-                        externalCurveCirculator;
-
-
-    std::set<SCell> gridLinels;
+    bool enclosingPixelStack(std::queue<SCell> pixels,
+                             const std::queue<SCell>& linels);
 
 
     void alignIterator(SCellCirculatorType& internalCirculator,
@@ -115,6 +109,19 @@ private:
                                         SCellCirculatorType& counterClCirc,
                                         int radius);
 
+
+private:
+
+    KSpace KImage;
+    std::vector<ConnectorSeedType> connectorSeedList;
+
+    std::map<SCellPointelKey,int> pointelGroup;
+
+    SCellCirculatorType internalCurveCirculator,
+            externalCurveCirculator;
+
+
+    std::set<SCell> gridLinels;
 };
 
 #include "ConnectorSeedRange.cpp"

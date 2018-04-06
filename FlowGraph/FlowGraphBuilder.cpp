@@ -1,5 +1,6 @@
 #include "FlowGraphBuilder.h"
 
+
 FlowGraphBuilder::FlowGraphBuilder(FlowGraph& fg,
                                    ImageFlowData& imageFlowData,
                                    LinelWeightMap& weightMap):imageFlowData(imageFlowData),
@@ -12,9 +13,10 @@ FlowGraphBuilder::FlowGraphBuilder(FlowGraph& fg,
     fg.flowGraphMode = imageFlowData.getFlowMode();
 
 
+    std::map<SCell,bool> superposedLinels;
     for(auto it=imageFlowData.curveDataBegin();it!=imageFlowData.curveDataEnd();++it)
     {
-        createCurveArcs(it->curve.begin(),it->curve.end(),it->curveType,weightMap);
+        createCurveArcs(it->curve.begin(),it->curve.end(),it->curveType,weightMap,superposedLinels);
     }
 
 
@@ -30,7 +32,9 @@ FlowGraphBuilder::FlowGraphBuilder(FlowGraph& fg,
 
         createEscapeArcs(it->intCurveData.curve,
                          it->extCurveData.curve,
-                         visitedNodes);
+                         visitedNodes,
+                         superposedLinels
+        );
     }
 
     createSourceArcs(imageFlowData.getMostInnerCurve(),
@@ -238,7 +242,8 @@ void FlowGraphBuilder::createArcFromLinel(Curve::SCell& linel,
 void FlowGraphBuilder::createCurveArcs(Curve::ConstIterator curveBegin,
                                      Curve::ConstIterator curveEnd,
                                      ImageFlowData::CurveType ct,
-                                     LinelWeightMap& weightMap)
+                                     LinelWeightMap& weightMap,
+                                     std::map<SCell,bool>& superposedLinels)
 {
     FlowGraph::ArcType at;
     if( ct==ImageFlowData::CurveType::OriginalCurve ){
@@ -248,6 +253,22 @@ void FlowGraphBuilder::createCurveArcs(Curve::ConstIterator curveBegin,
     }
 
     for(auto it=curveBegin;it!=curveEnd;++it){
+        if(superposedLinels.find(*it)!=superposedLinels.end())
+        {
+            if(superposedLinels[*it]==false)
+            {
+                superposedLinels[*it] = true;
+            }
+            else
+            {
+                continue;
+            }
+        }
+        else
+        {
+            superposedLinels[*it] = false;
+        }
+
         Curve::SCell linel = *it;
 
         createArcFromLinel(linel,
@@ -305,7 +326,8 @@ void FlowGraphBuilder::createGluedArcs(ImageFlowData::GluedCurveIteratorPair glu
 
 void FlowGraphBuilder::createEscapeArcs(Curve& fromCurve,
                                         Curve& toCurve,
-                                        UnsignedSCellSet& visitedNodes)
+                                        UnsignedSCellSet& visitedNodes,
+                                        std::map<SCell,bool>& superposedLinels)
 {
     KSpace& KImage = imageFlowData.getKSpace();
 
@@ -335,6 +357,11 @@ void FlowGraphBuilder::createEscapeArcs(Curve& fromCurve,
     for(Curve::ConstIterator it = fromCurve.begin();it!=fromCurve.end();++it){
         Dimension orthDir = KImage.sOrthDir(*it);
         KSpace::SCell candidate = KImage.sIndirectIncident(*it,orthDir); //OutterPixel
+
+        if(superposedLinels.find(*it)!=superposedLinels.end())
+        {
+            if(superposedLinels[*it]==true) continue;
+        }
 
         if( forbiddenPoints.find(candidate)!=forbiddenPoints.end() ) continue;
 
