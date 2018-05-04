@@ -25,8 +25,14 @@ protected:
     typedef MyConnectorSeedRange::ConnectorSeedType ConnectorSeed;
 
 public:
-    void operator()(std::vector<CheckableSeedPair> &pairList, KSpace &KImage, int maxSimultaneousPairs) {
+    void operator()(Curve& minCurve,
+                    std::vector<CheckableSeedPair> &pairList,
+                    KSpace &KImage,
+                    int maxSimultaneousPairs,
+                    std::string outputFolder="")
+    {
         typedef std::vector<CheckableSeedPair> CheckableSeedList;
+        bool saveEPS = outputFolder!="";
 
         GluedIntersectionChecker intersectionChecker;
         MinimumDistanceChecker minDistChecker(KImage);
@@ -39,16 +45,19 @@ public:
 
         double minEnergyValue = 100;
         double currentEnergyValue;
-        Curve minCurve;
 
         LazyCombinations <CheckableSeedList, maxPairs> myCombinations(pairList);
         myCombinations.addConsistencyChecker(&intersectionChecker);
         myCombinations.addConsistencyChecker(&minDistChecker);
 
         int n = 0;
+
         Board2D board;
-        std::string outputFolder = "../output/combinations/L" + std::to_string(maxPairs);
-        boost::filesystem::create_directories(outputFolder);
+        if(saveEPS)
+        {
+            outputFolder += std::to_string(maxPairs);
+            boost::filesystem::create_directories(outputFolder);
+        }
 
         while (myCombinations.next(seedCombination)) {
             Curve curve;
@@ -67,10 +76,12 @@ public:
 
                 minCurve = curve;
 
-
-                board.clear();
-                board << curve;
-                board.saveEPS((outputFolder + "/" + std::to_string(n) + ".eps").c_str());
+                if(saveEPS)
+                {
+                    board.clear();
+                    board << curve;
+                    board.saveEPS((outputFolder + "/" + std::to_string(n) + ".eps").c_str());
+                }
             }
 
             ++n;
@@ -80,6 +91,16 @@ public:
 
         CombinationsEvaluator<maxPairs - 1> next;
         next(pairList, KImage, maxSimultaneousPairs);
+    }
+
+
+    void operator()(std::vector<CheckableSeedPair> &pairList,
+                    KSpace &KImage,
+                    int maxSimultaneousPairs,
+                    std::string outputFolder="")
+    {
+        Curve minCurve;
+        this->operator()(minCurve,pairList,KImage,maxSimultaneousPairs,outputFolder);
     }
 
 private:

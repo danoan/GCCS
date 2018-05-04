@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 project(segByCut)
 
-set(CMAKE_PREFIX_PATH /home/dantu/Documents/local_libs)
-set(CMAKE_LIBRARY_PATH /home/dantu/Documents/local_libs/lib)
+set(CMAKE_PREFIX_PATH /home-local/dantu1/Documents/local_libs)
+set(CMAKE_LIBRARY_PATH /home-local/dantu1/Documents/local_libs/lib)
 
 find_package(DGtal REQUIRED)
 find_package(OpenCV REQUIRED)
@@ -22,8 +22,9 @@ add_executable(testEstimators testModules/testEstimators.cpp ${SOURCE_FILES})
 add_executable(testFlowGraphQuery testModules/testFlowGraphQuery.cpp ${SOURCE_FILES} ${FLOW_FILES} )
 add_executable(testCompImages testModules/testCompImages.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(testEnergyDilation testModules/testEnergyDilation.cpp ${SOURCE_FILES} ${FLOW_FILES})
-add_executable(testAllPossibilities testModules/testAllPossibilities.cpp ${SOURCE_FILES} ${FLOW_FILES})
+add_executable(testAllPossibilities testModules/testAllPossibilities.cpp ${SOURCE_FILES} ${FLOW_FILES} testModules/testSegCombinations.cpp)
 add_executable(testInvariantRotation testModules/testInvariantRotation.cpp ${SOURCE_FILES} ${FLOW_FILES})
+add_executable(testSegCombinations testModules/testSegCombinations.cpp ${SOURCE_FILES} ${FLOW_FILES} testModules/testSegCombinations.cpp)
 
 add_executable(issue issue.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(presentationFigures presentationFigures.cpp ${SOURCE_FILES} ${FLOW_FILES})
@@ -46,6 +47,7 @@ target_link_libraries(testCompImages ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -l
 target_link_libraries(testEnergyDilation ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(testAllPossibilities ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(testInvariantRotation ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
+target_link_libraries(testSegCombinations ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 
 target_link_libraries(issue ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(presentationFigures ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)

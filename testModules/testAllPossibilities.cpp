@@ -43,7 +43,7 @@ void checkAllPossibilities(KSpace& KImage,
 
 
     typedef std::vector< CheckableSeedPair > CheckableSeedList;
-    CheckableSeedList pairList;
+    CheckableSeedList filteredPairList;
 
     for(auto it= pairSeedList.begin();it!=pairSeedList.end();++it)
     {
@@ -58,13 +58,13 @@ void checkAllPossibilities(KSpace& KImage,
         //Internal and External Connector must cover between 10 and at most 20 external linels
         if( connectorsDistance >= 20 || connectorsDistance <= 6) continue;
 
-        pairList.push_back(*it);
+        filteredPairList.push_back(*it);
 
     }
 
     int maxSimultaneousPairs = fromInnerSeeds.size()/4;
-    CombinationsEvaluator<4> CE;
-    CE(pairList,KImage,maxSimultaneousPairs);
+    CombinationsEvaluator<1> CE;
+    CE(filteredPairList,KImage,maxSimultaneousPairs,"../output/combinations/L");
 
 }
 
