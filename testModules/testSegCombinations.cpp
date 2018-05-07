@@ -5,12 +5,13 @@
 
 #include <ConnectorSeedRange.h>
 #include "../FlowGraph/ImageFlowData.h"
+#include "../FlowGraph/weightSettings.h"
 
 #include "../ExhaustiveSearch/SeparateInnerAndOuter.h"
 #include "../ExhaustiveSearch/ContainerCombinator.h"
 #include "../ExhaustiveSearch/PropertyChecker/CheckableSeedPair.h"
-#include "../FlowGraph/weightSettings.h"
 #include "../ExhaustiveSearch/CombinationsEvaluator.h"
+#include "../Artist.h"
 
 typedef DGtal::ImageContainerBySTLVector<DGtal::Z2i::Domain, unsigned char> Image2D;
 
@@ -66,6 +67,8 @@ void findOneExpansionMinimumEnergy(Curve& minCurve,
 
     int maxSimultaneousPairs = fromInnerSeeds.size()/4;
     CombinationsEvaluator<1> CE;
+    CE.addChecker( new GluedIntersectionChecker() );
+    CE.addChecker( new MinimumDistanceChecker(KImage) );
     CE(minCurve,filteredPairList,KImage,maxSimultaneousPairs);
 
 }
@@ -145,8 +148,7 @@ namespace Development{
     bool invertGluedArcs = false;
 };
 
-
-int main()
+void computeOneExpansions()
 {
     std::string filepath = "../images/flow-evolution/single_square.pgm";
     std::string outputFolder = "../output/segComb/fromCurve/";
@@ -173,6 +175,40 @@ int main()
         DGtal::GenericWriter<Image2D>::exportFile(outputFolder + std::to_string(i+1) + ".pgm",image);
         ++i;
     }
+}
+
+void computeStabbingCircles()
+{
+    std::string inputFolder = "../output/segComb/fromCurve/";
+    std::string outputFolder = "../output/segComb/fromCurve/";
+
+    boost::filesystem::path p = inputFolder;
+    boost::filesystem::directory_iterator it(p);
+
+    Board2D board;
+    while(it!=boost::filesystem::directory_iterator())
+    {
+        if(strcmp( it->path().extension().c_str(),".eps" )!=0) {
+
+            Image2D image = DGtal::GenericReader<Image2D>::import(it->path().c_str());
+            ImageFlowData imf(image);
+            imf.init(ImageFlowData::FlowMode::DilationOnly, 5);
+
+
+            Artist EA(imf.getKSpace(), board);
+            EA.drawMaximalStabbingCircles(imf.getMostInnerCurve());
+            std::string currentFilepath = outputFolder + it->path().stem().c_str() + "-stabbing-circles.eps";
+            EA.board.saveEPS(currentFilepath.c_str());
+        }
+        ++it;
+    }
+}
+
+
+int main()
+{
+    computeOneExpansions();
+//    computeStabbingCircles();
 
     return 0;
 }

@@ -22,9 +22,11 @@ add_executable(testEstimators testModules/testEstimators.cpp ${SOURCE_FILES})
 add_executable(testFlowGraphQuery testModules/testFlowGraphQuery.cpp ${SOURCE_FILES} ${FLOW_FILES} )
 add_executable(testCompImages testModules/testCompImages.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(testEnergyDilation testModules/testEnergyDilation.cpp ${SOURCE_FILES} ${FLOW_FILES})
-add_executable(testAllPossibilities testModules/testAllPossibilities.cpp ${SOURCE_FILES} ${FLOW_FILES} testModules/testSegCombinations.cpp)
+add_executable(testAllPossibilities testModules/testAllPossibilities.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(testInvariantRotation testModules/testInvariantRotation.cpp ${SOURCE_FILES} ${FLOW_FILES})
-add_executable(testSegCombinations testModules/testSegCombinations.cpp ${SOURCE_FILES} ${FLOW_FILES} testModules/testSegCombinations.cpp)
+add_executable(testSegCombinations testModules/testSegCombinations.cpp ${SOURCE_FILES} ${FLOW_FILES})
+add_executable(testFindSmallestStabbingCircles testModules/testFindSmallestStabbingCircles.cpp ${SOURCE_FILES} ${FLOW_FILES})
+add_executable(testIntExtMerge testModules/testIntExtMerge.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
 add_executable(issue issue.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(presentationFigures presentationFigures.cpp ${SOURCE_FILES} ${FLOW_FILES})
@@ -32,7 +34,7 @@ add_executable(presentationFigures presentationFigures.cpp ${SOURCE_FILES} ${FLO
 add_executable(simpleFlow Flows/simpleFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(refundFlow Flows/refundFlow.cpp Flows/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(projectionFlow Flows/projectionFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
-add_executable(adaptativeScaleFlow Flows/adaptativeScaleFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
+add_executable(adaptativeScaleFlow Flows/adaptativeScaleFlow.cpp ${SOURCE_FILES} ${FLOW_FILES} ExhaustiveSearch/PropertyChecker/MarkedMapChecker/IntervalChecker.h)
 add_executable(boundedFlow Flows/boundedFlow.cpp Flows/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
 
@@ -48,6 +50,8 @@ target_link_libraries(testEnergyDilation ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemo
 target_link_libraries(testAllPossibilities ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(testInvariantRotation ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(testSegCombinations ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
+target_link_libraries(testFindSmallestStabbingCircles ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
+target_link_libraries(testIntExtMerge ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 
 target_link_libraries(issue ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(presentationFigures ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)

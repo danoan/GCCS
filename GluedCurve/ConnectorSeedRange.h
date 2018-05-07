@@ -63,8 +63,8 @@ public:
 
 
     ConnectorSeedRange(KSpace& KImage,
-                    const SCellCirculatorType& internCurveCirculator,
-                    const SCellCirculatorType& externCurveCirculator);
+                       const SCellCirculatorType& internCurveCirculator,
+                       const SCellCirculatorType& externCurveCirculator);
 
 
     inline ConnectorSeedIteratorType begin() const;

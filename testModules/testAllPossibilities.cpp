@@ -64,6 +64,8 @@ void checkAllPossibilities(KSpace& KImage,
 
     int maxSimultaneousPairs = fromInnerSeeds.size()/4;
     CombinationsEvaluator<1> CE;
+    CE.addChecker( new GluedIntersectionChecker() );
+    CE.addChecker( new MinimumDistanceChecker(KImage) );
     CE(filteredPairList,KImage,maxSimultaneousPairs,"../output/combinations/L");
 
 }

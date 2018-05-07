@@ -55,7 +55,7 @@ private:
 
 
 public:
-    MinimumDistanceChecker(KSpace& KImage):KImage(KImage){}
+    MinimumDistanceChecker(const KSpace& KImage):KImage(KImage){}
     bool operator()(const CheckableSeedPair& sp) const
     {
         if( !validConnector( sp.data().first.connectors.at(0) ) ) return false;
@@ -84,7 +84,7 @@ private:
             CheckableSeedPair::ComparisonClass>
             _markMap;
 
-    KSpace& KImage;
+    const KSpace& KImage;
 
 };
 

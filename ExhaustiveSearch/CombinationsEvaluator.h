@@ -24,8 +24,21 @@ protected:
     typedef ConnectorSeedRange<KSpace,SCellCirculator> MyConnectorSeedRange;
     typedef MyConnectorSeedRange::ConnectorSeedType ConnectorSeed;
 
+    typedef MarkedMapCheckerInterface<CheckableSeedPair> Checker;
+
 public:
+    CombinationsEvaluator(){}
+    ~CombinationsEvaluator(){ for(auto itc=checkers.begin();itc!=checkers.end();++itc) delete *itc; }
+    CombinationsEvaluator(const CombinationsEvaluator<maxPairs>&){ throw std::runtime_error("Operation not allowed!");}
+    CombinationsEvaluator& operator=(const CombinationsEvaluator<maxPairs>&){ throw std::runtime_error("Operation not allowed!");}
+
+    void addChecker(Checker* c)
+    {
+        checkers.push_back( c );
+    }
+
     void operator()(Curve& minCurve,
+                    CheckableSeedPair bestSeedCombination[maxPairs],
                     std::vector<CheckableSeedPair> &pairList,
                     KSpace &KImage,
                     int maxSimultaneousPairs,
@@ -34,21 +47,16 @@ public:
         typedef std::vector<CheckableSeedPair> CheckableSeedList;
         bool saveEPS = outputFolder!="";
 
-        GluedIntersectionChecker intersectionChecker;
-        MinimumDistanceChecker minDistChecker(KImage);
-        for (auto it = pairList.begin(); it != pairList.end(); ++it) {
-            intersectionChecker.unmark(*it);
-            minDistChecker.unmark(*it);
-        }
-
-        CheckableSeedPair seedCombination[10];
-
         double minEnergyValue = 100;
         double currentEnergyValue;
 
         LazyCombinations <CheckableSeedList, maxPairs> myCombinations(pairList);
-        myCombinations.addConsistencyChecker(&intersectionChecker);
-        myCombinations.addConsistencyChecker(&minDistChecker);
+        for(auto itc=checkers.begin();itc!=checkers.end();++itc) {
+            for (auto it = pairList.begin(); it != pairList.end(); ++it) {
+                (*itc)->unmark(*it);
+            }
+            myCombinations.addConsistencyChecker(*itc);
+        }
 
         int n = 0;
 
@@ -59,6 +67,8 @@ public:
             boost::filesystem::create_directories(outputFolder);
         }
 
+
+        CheckableSeedPair seedCombination[maxPairs];
         while (myCombinations.next(seedCombination)) {
             Curve curve;
             std::map<KSpace::SCell, double> weightMap;
@@ -75,6 +85,7 @@ public:
                 minEnergyValue = currentEnergyValue;
 
                 minCurve = curve;
+                bestSeedCombination[0] = seedCombination[0];
 
                 if(saveEPS)
                 {
@@ -100,7 +111,18 @@ public:
                     std::string outputFolder="")
     {
         Curve minCurve;
-        this->operator()(minCurve,pairList,KImage,maxSimultaneousPairs,outputFolder);
+        CheckableSeedPair seedCombination[10];
+        this->operator()(minCurve,seedCombination,pairList,KImage,maxSimultaneousPairs,outputFolder);
+    }
+
+    void operator()(Curve& minCurve,
+                    std::vector<CheckableSeedPair> &pairList,
+                    KSpace &KImage,
+                    int maxSimultaneousPairs,
+                    std::string outputFolder="")
+    {
+        CheckableSeedPair seedCombination[10];
+        this->operator()(minCurve,seedCombination,pairList,KImage,maxSimultaneousPairs,outputFolder);
     }
 
 private:
@@ -183,6 +205,9 @@ private:
 
         return v;
     }
+
+private:
+    std::vector< Checker* > checkers;
 };
 
 template<>
