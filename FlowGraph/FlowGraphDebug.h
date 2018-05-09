@@ -8,7 +8,7 @@
 #include <lemon/adaptors.h>
 
 #include "FlowGraphBuilder.h"
-#include "../Flows/RefundFlow.h"
+#include "../Flows/RefundFlow/RefundFlow.h"
 
 using namespace lemon;
 

@@ -8,7 +8,7 @@
 #include "../ExhaustiveSearch/PropertyChecker/MarkedMapChecker/IntervalChecker.h"
 #include "../ExhaustiveSearch/SeparateInnerAndOuter.h"
 #include "../ExhaustiveSearch/ContainerCombinator.h"
-#include "../Artist.h"
+#include "../utils/Artist.h"
 
 typedef DGtal::ImageContainerBySTLVector<DGtal::Z2i::Domain, unsigned char> Image2D;
 typedef DGtal::Z2i::Curve Curve;

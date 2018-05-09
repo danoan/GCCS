@@ -1,7 +1,7 @@
 
-#include "../typeDefs.h"
-#include "../utils.h"
-#include "../Artist.h"
+#include "../utils/typeDefs.h"
+#include "../utils/utils.h"
+#include "../utils/Artist.h"
 
 using namespace DGtal;
 using namespace DGtal::Z2i;

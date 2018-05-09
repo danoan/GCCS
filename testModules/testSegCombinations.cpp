@@ -11,7 +11,7 @@
 #include "../ExhaustiveSearch/ContainerCombinator.h"
 #include "../ExhaustiveSearch/PropertyChecker/CheckableSeedPair.h"
 #include "../ExhaustiveSearch/CombinationsEvaluator.h"
-#include "../Artist.h"
+#include "../utils/Artist.h"
 
 typedef DGtal::ImageContainerBySTLVector<DGtal::Z2i::Domain, unsigned char> Image2D;
 

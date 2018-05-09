@@ -6,7 +6,7 @@
 #include "DGtal/io/readers/GenericReader.h"
 #include "DGtal/io/writers/GenericWriter.h"
 
-#include "../utils.h"
+#include "../utils/utils.h"
 #include "ImageFlowData.h"
 
 namespace WeightSettingsTypes

@@ -16,7 +16,7 @@ using namespace lemon;
 using namespace DGtal;
 using namespace DGtal::Z2i;
 
-#include "../utils.h"
+#include "../utils/utils.h"
 #include "../FlowGraph/weightSettings.h"
 
 #include "../FlowGraph/FlowGraphBuilder.h"

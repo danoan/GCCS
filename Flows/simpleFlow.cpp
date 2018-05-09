@@ -14,19 +14,31 @@ using namespace lemon;
 #include "DGtal/io/readers/GenericReader.h"
 #include "DGtal/io/writers/GenericWriter.h"
 
-using namespace DGtal;
-using namespace DGtal::Z2i;
 
-#include "../utils.h"
+#include "../utils/utils.h"
 #include "../FlowGraph/weightSettings.h"
 
 #include "../FlowGraph/FlowGraphBuilder.h"
 #include "../FlowGraph/ImageFlowData.h"
 #include "../FlowGraph/ImageFlowDataDebug.h"
 #include "../FlowGraph/FlowGraphDebug.h"
+#include "../utils/io.h"
+#include "PreprocessImage.h"
 
-using namespace UtilsTypes;
 
+namespace Development{
+    bool solveShift = false;
+    bool crossElement = false;
+
+    bool lambdaEstimator = false;
+    bool pessimistEstimator = false;
+
+    bool makeConvexArcs = false;
+    bool invertGluedArcs = false;
+
+    bool iteractive = false;
+    std::string windowName = "simpleFlow";
+};
 
 void computeFlow(SegCut::Image2D& image,
                  unsigned int gluedCurveLength,
@@ -97,7 +109,7 @@ void computeFlow(SegCut::Image2D& image,
 
 void updateImage(std::vector<Z2i::Point>& coordPixelsSourceSide,
                  std::vector<Z2i::SCell>& pixelsInTheGraph,
-                 Image2D& out,
+                 SegCut::Image2D& out,
                  std::string outputFolder,
                  std::string suffix)
 {
@@ -137,66 +149,32 @@ void updateImage(std::vector<Z2i::Point>& coordPixelsSourceSide,
     p2.remove_filename();
     boost::filesystem::create_directories(p2);
 
-    GenericWriter<Image2D>::exportFile(imageOutputPath.c_str(),out);
+    GenericWriter<SegCut::Image2D>::exportFile(imageOutputPath.c_str(),out);
 
 }
 
-void drawCurvatureMaps(Image2D& image,
-                       std::map<Z2i::SCell,double>& weightMap,
-                       int gluedCurveLength,
-                       std::string outputFolder,
-                       std::string suffix)
+void segmentImage(std::string originalImagePath,
+                  std::string outputFolder,
+                  int gluedCurveLength,
+                  int maxIterations)
 {
-    ImageFlowData imageFlowData(image);
-    imageFlowData.init(ImageFlowData::FlowMode::DilationOnly,gluedCurveLength);
+    ImageData ID(originalImagePath);
+    SegCut::Image2D image = ID.preprocessedImage;
+    SegCut::Image2D imageOut = image;
 
-    ImageFlowDataDebug imageFlowDataDebug(imageFlowData);
+    std::string preprocessedFilepath = IO::saveImage(image,outputFolder,"preprocessing");
 
-    imageFlowDataDebug.drawNoConnectionsCurvatureMap(weightMap,
-                                                     outputFolder,
-                                                     suffix);
+    if(Development::iteractive) {
+        IO::displayImage(Development::windowName, originalImagePath);
+        IO::displayImage(Development::windowName, preprocessedFilepath);
+    }
 
-    imageFlowDataDebug.drawInteriorConnectionsCurvatureMap(weightMap,
-                                                           outputFolder,
-                                                           suffix);
-
-    imageFlowDataDebug.drawExteriorConnectionsCurvatureMap(weightMap,
-                                                           outputFolder,
-                                                           suffix);
-
-    imageFlowDataDebug.drawMakeConvexConnectionsCurvatureMap(weightMap,
-                                                             outputFolder,
-                                                             suffix);
-
-}
-
-
-namespace Development{
-    bool solveShift;
-    bool crossElement;
-
-    bool makeConvexArcs;
-    bool invertGluedArcs;
-};
-
-int main(){
-    Development::solveShift = false;
-    Development::crossElement = false;
-
-    Development::makeConvexArcs = false;
-    Development::invertGluedArcs = false;
-
-    unsigned int gluedCurveLength = 5;
-
-    SegCut::Image2D image = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/single_square.pgm");
-
-    std::string outputFolder = "../output/flow/square/square-5";
 
     std::vector<Z2i::Point> coordPixelsSourceSide;
     std::vector<Z2i::SCell> pixelsInTheGraph;
     std::map<Z2i::SCell,double> weightMap;
 
-    for(int i=0;i<200;++i)
+    for(int i=0;i<maxIterations;++i)
     {
         coordPixelsSourceSide.clear();
         pixelsInTheGraph.clear();
@@ -212,13 +190,6 @@ int main(){
                     std::to_string(i));
 
 
-        drawCurvatureMaps(image,
-                          weightMap,
-                          gluedCurveLength,
-                          outputFolder,
-                          std::to_string(i));
-
-
         updateImage(coordPixelsSourceSide,
                     pixelsInTheGraph,
                     image,
@@ -230,5 +201,37 @@ int main(){
         std::cout << "OK " << i << std::endl;
     }
 
-    return 0;
+}
+
+int main()
+{
+    cvNamedWindow(Development::windowName.c_str(), CV_WINDOW_AUTOSIZE);
+
+    int gluedCurveLength = 5;
+    std::string outputFolder = "../output/simpleFlow";
+    std::string datasetFolder = "../images/segSet";
+
+
+    typedef boost::filesystem::path path;
+    typedef boost::filesystem::directory_iterator directory_iterator;
+
+    path p( datasetFolder );
+    for(directory_iterator it(p);it!=directory_iterator{};++it)
+    {
+        if( boost::filesystem::is_regular_file(*it) )
+        {
+            std::string filename = it->path().stem().generic_string();
+            std::cout << "Segmentation of image:" << filename << std::endl;
+
+            try {
+                segmentImage(it->path().generic_string(), outputFolder + "/" + filename, gluedCurveLength, 5);
+            }catch (Exception ex)
+            {
+                std::cout << "Segmentation could not be finished." << std::endl;
+                std::cout << ex.what() << std::endl;
+            }
+        }
+    }
+
+
 }

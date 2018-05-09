@@ -7,7 +7,7 @@
 #include "ConnectorSeedRange.h"
 #include "ConnectorFunctor.h"
 
-#include "../imageProc.h"
+#include "../ImageProc/imageProc.h"
 
 class ImageFlowData{
 

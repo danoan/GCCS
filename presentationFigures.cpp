@@ -7,13 +7,13 @@
 using namespace DGtal;
 using namespace DGtal::Z2i;
 
-#include "utils.h"
+#include "utils/utils.h"
 #include "FlowGraph/weightSettings.h"
 
 #include "FlowGraph/FlowGraphBuilder.h"
 #include "FlowGraph/ImageFlowDataDebug.h"
 #include "FlowGraph/FlowGraphDebug.h"
-#include "Artist.h"
+#include "utils/Artist.h"
 
 using namespace UtilsTypes;
 

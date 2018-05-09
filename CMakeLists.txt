@@ -14,7 +14,7 @@ INCLUDE_DIRECTORIES(Patch)
 LINK_DIRECTORIES(${DGTAL_LIBRARY_DIRS})
 
 
-set(SOURCE_FILES imageProc.cpp Artist.cpp utils.cpp io.cpp)
+set(SOURCE_FILES ImageProc/imageProc.cpp utils/Artist.cpp utils/utils.cpp utils/io.cpp)
 set(FLOW_FILES FlowGraph/FlowGraphBuilder.cpp FlowGraph/FlowGraphDebug.cpp FlowGraph/FlowGraphQuery.cpp
         FlowGraph/ImageFlowData.cpp FlowGraph/ImageFlowDataDebug.cpp FlowGraph/weightSettings.cpp)
 
@@ -31,14 +31,14 @@ add_executable(testIntExtMerge testModules/testIntExtMerge.cpp ${SOURCE_FILES} $
 add_executable(issue issue.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(presentationFigures presentationFigures.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
-add_executable(simpleFlow Flows/simpleFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
-add_executable(refundFlow Flows/refundFlow.cpp Flows/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
-add_executable(projectionFlow Flows/projectionFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
-add_executable(adaptativeScaleFlow Flows/adaptativeScaleFlow.cpp ${SOURCE_FILES} ${FLOW_FILES} ExhaustiveSearch/PropertyChecker/MarkedMapChecker/IntervalChecker.h)
-add_executable(boundedFlow Flows/boundedFlow.cpp Flows/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
+add_executable(simpleFlow Flows/simpleFlow.cpp ${SOURCE_FILES} ${FLOW_FILES} Flows/PreprocessImage.h)
+add_executable(refundFlow Flows/RefundFlow/refundFlow.cpp Flows/RefundFlow/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
+add_executable(projectionFlow Flows/ProjectionFlow/projectionFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
+add_executable(adaptativeScaleFlow Flows/AdaptativeScaleFlow/adaptativeScaleFlow.cpp ${SOURCE_FILES} ${FLOW_FILES} ExhaustiveSearch/PropertyChecker/MarkedMapChecker/IntervalChecker.h ImageProc/ImageProc.h)
+add_executable(boundedFlow Flows/BoundedFlow/boundedFlow.cpp Flows/RefundFlow/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
 
-add_executable(binaryDataset binaryDataset.cpp Flows/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
+add_executable(binaryDataset binaryDataset.cpp Flows/RefundFlow/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
 
 

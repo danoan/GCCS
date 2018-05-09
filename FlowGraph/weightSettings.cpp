@@ -12,17 +12,17 @@ void tangentWeight(WeightSettingsTypes::Curve::ConstIterator begin,
 
         //Dot product estimator (projection)
 
-//        WeightSettingsTypes::KSpace::Point pTarget = KImage.sCoords( KImage.sDirectIncident(*it,*KImage.sDirs(*it)) );
-//        WeightSettingsTypes::KSpace::Point pSource = KImage.sCoords( KImage.sIndirectIncident(*it,*KImage.sDirs(*it)) );
-//
-//        WeightSettingsTypes::KSpace::Point scellVector = pTarget-pSource;
-//
-//        tangentWeightVector.push_back( fabs( estimationsTangent[i].dot(scellVector) ) );
+        WeightSettingsTypes::KSpace::Point pTarget = KImage.sCoords( KImage.sDirectIncident(*it,*KImage.sDirs(*it)) );
+        WeightSettingsTypes::KSpace::Point pSource = KImage.sCoords( KImage.sIndirectIncident(*it,*KImage.sDirs(*it)) );
+
+        WeightSettingsTypes::KSpace::Point scellVector = pTarget-pSource;
+
+        tangentWeightVector.push_back( fabs( estimationsTangent[i].dot(scellVector) ) );
 
 
 
-        //1.0/(cos+sin) Length estimation
-        tangentWeightVector.push_back( 1.0/( fabs(estimationsTangent[i][0]) + fabs(estimationsTangent[i][1]) ) );
+        // 1.0/(cos+sin) Length estimation
+        // tangentWeightVector.push_back( 1.0/( fabs(estimationsTangent[i][0]) + fabs(estimationsTangent[i][1]) ) );
 
 
         ++it;

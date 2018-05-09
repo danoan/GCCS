@@ -8,7 +8,7 @@
 #include "PropertyChecker/MarkedMapChecker/GluedIntersectionChecker.h"
 #include "PropertyChecker/MarkedMapChecker/MinimumDistanceChecker.h"
 #include "LazyCombinations.h"
-#include "../utils.h"
+#include "../utils/utils.h"
 #include "../FlowGraph/weightSettings.h"
 
 template<int maxPairs>
