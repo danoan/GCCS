@@ -41,9 +41,16 @@ int sizeCirc(CIT cbegin, CIT cend)
 
 struct RelevantCurve
 {
+    typedef DGtal::Z2i::Curve::ConstIterator SCellIterator;
+    typedef DGtal::Circulator<SCellIterator> SCellCirculator;
+    typedef ConnectorSeed<SCell,SCellCirculator,KSpace> SCellConnectorSeed;
+
+    typedef std::pair<SCellConnectorSeed,SCellConnectorSeed> ConnectorSeedPair;
+
     Curve curve;
     std::set<Curve::SCell> not_allowed;
-    std::vector<CheckableSeedPair> selectedPairs;
+
+    std::list<ConnectorSeedPair> selectedPairs;
 };
 
 void constructImageFromCurve(Image2D& image,
@@ -136,51 +143,6 @@ KSpace::SCell scellFromIncidentPoints(const KSpace& KImage,
 }
 
 
-typedef StabbingCircleComputer<AdapterCirculator> SegmentComputer;
-bool is_not_allowed(const KSpace& KImage, const SegmentComputer& scc1, const SegmentComputer& scc2, const RelevantCurve& rv)
-{
-    KSpace::SCell s1 = scellFromIncidentPoints(KImage,scc1.begin()->first,scc1.begin()->second);
-
-    AdapterCirculator beforeEndSecond = scc2.begin();
-    AdapterCirculator temp = beforeEndSecond;
-    ++temp;
-    while (temp != scc2.end()) {
-        ++beforeEndSecond;
-        ++temp;
-    }
-
-    KSpace::SCell s2 = scellFromIncidentPoints(KImage, beforeEndSecond->first, beforeEndSecond->second);
-
-    CurveCirculator cBegin(rv.curve.begin(),rv.curve.begin(),rv.curve.end());
-    CurveCirculator start,end;
-    auto it = cBegin;
-    do
-    {
-        if(*it==s1)
-        {
-            start = it;
-        }
-        if(*it==s2)
-        {
-            end = it;
-            ++end;
-        }
-        ++it;
-    }while(it!=cBegin);
-
-    auto itk = start;
-    ++itk;
-    --end;
-    do
-    {
-        if( rv.not_allowed.find( *itk )!=rv.not_allowed.end() ) return true;
-        ++itk;
-    }while(itk!=end);
-
-
-    return false;
-}
-
 class GoodSCellPair
 {
 public:
@@ -188,6 +150,8 @@ public:
     typedef StabbingCircleComputer<AdapterCirculator> SegmentComputer;
     typedef CurvatureFromDCAEstimator<SegmentComputer, false> SCFunctor;
     typedef DGtal::SaturatedSegmentation<SegmentComputer> Segmentation;
+
+    typedef DGtal::CurvatureFromDCAEstimator<SegmentComputer, false> SCEstimator;
 
     struct SolutionCandidate
     {
@@ -201,11 +165,25 @@ public:
         int value;
     };
 
+    struct PreCandidate
+    {
+        PreCandidate(SegmentComputer scc):scc(scc)
+        {
+            SCEstimator estimator;
+            estimator.init(0.01,scc.begin(),scc.end());
+            estimator.attach(scc);
+            curvatureValue = estimator.eval(scc.begin());
+        }
+
+        SegmentComputer scc;
+        double curvatureValue;
+    };
+
     struct SolutionCompare
     {
         bool operator()(const SolutionCandidate& s1, const SolutionCandidate& s2)
         {
-            return s1.value < s2.value;
+            return s1.value > s2.value;
         }
     };
 
@@ -213,58 +191,80 @@ public:
     GoodSCellPair(const KSpace& KImage, RelevantCurve& rv):KImage(KImage),
                                                      curve(rv.curve)
     {
+        Board2D board;
+        KSpace K2 = KImage;
+        Artist EA(K2,board);
+        EA.drawMaximalStabbingCircles(rv.curve);
+        EA.board.saveEPS("teste.eps");
+//        exit(1);
+
         Curve::IncidentPointsRange intRange = curve.getIncidentPointsRange();
 
         Segmentation seg( intRange.c(), intRange.c(), SegmentComputer() );
         Segmentation::SegmentComputerIterator it = seg.begin();
 
-        maxIterations = curve.size();
-        windowSize = 1+2;
-        for(auto it=seg.begin();it!=seg.end();++it)
-        {
-            q.push_back(*it);
-        }
 
+        maxIterations = sizeCirc(seg.begin(),seg.end());
+        windowSize = 1+3;
         int i=0;
-        for(auto it=seg.begin();i<windowSize-1;++i)
+        for(;i<windowSize;++i)
         {
-            q.push_back(*it);
+            q.push_back(PreCandidate(*it));
+            ++it;
         }
 
-        findPotentialSolutions();
+
+        findPotentialSolutions(it);
         solutionCandidates.sort(SolutionCompare());
+
+        while(solutionCandidates.size()>10)
+        {
+            solutionCandidates.pop_back();
+        }
     }
 
     bool next(SolutionCandidate& sc)
     {
+
         if(solutionCandidates.size()==0) return false;
         sc = solutionCandidates.front();
         solutionCandidates.pop_front();
+
+//        Board2D board;
+//        board << sc.scc1;
+//        board << sc.scc2;
+//        board.save("teste.eps");
+//        exit(1);
 
         return true;
     }
 
 private:
-    void findPotentialSolutions()
-    {
+    void findPotentialSolutions(Segmentation::SegmentComputerIterator it)
+    {   Board2D board;
+        board << DGtal::SetMode(SegmentComputer().className(), "Annulus");
         int currentIteration=0;
         int minimumDet=100;
         do {
-            SegmentComputer scc = q.front();
+            PreCandidate pc = q.front();
             q.pop_front();
 
-            int currentSize = sizeCirc(scc.begin(), scc.end());
+            int distance=0;
+            for (std::list<PreCandidate>::const_iterator itn = q.begin(); itn != q.end(); ++itn)
+            {
+                board.clear();
+                board << pc.scc;
+                board << itn->scc;
+                board.saveEPS( (std::to_string(distance) + ".eps").c_str());
 
-            for (std::list<SegmentComputer>::const_iterator itn = q.begin(); itn != q.end(); ++itn) {
-                int nsize = sizeCirc(itn->begin(), itn->end());
-                int diffAbs = std::abs(nsize - currentSize);
-
-                solutionCandidates.push_back(SolutionCandidate(scc,
-                                                               *itn,
-                                                               std::min(currentSize, nsize) + diffAbs) );
-
+                solutionCandidates.push_back(SolutionCandidate(pc.scc,
+                                                               itn->scc,
+                                                               2*(pc.curvatureValue + itn->curvatureValue) + distance ) );
+                distance++;
             }
 
+            q.push_back(PreCandidate(*it));
+            ++it;
             ++currentIteration;
         }while(currentIteration < maxIterations);
     }
@@ -275,7 +275,7 @@ private:
 
     int windowSize;
     int maxIterations;
-    std::list<SegmentComputer> q;
+    std::list<PreCandidate> q;
     std::list<SolutionCandidate> solutionCandidates;
 };
 
@@ -299,10 +299,19 @@ public:
         AdapterCirculator incidentPointsSeg1End = sc.scc1.end();
 
         AdapterCirculator incidentPointsSeg2Begin = sc.scc2.begin();
-        AdapterCirculator incidentPointsSeg2End = sc.scc2.begin();
+        AdapterCirculator incidentPointsSeg2End = sc.scc2.end();
 
-        std::cout << sizeCirc(incidentPointsSeg1Begin, incidentPointsSeg1End) << std::endl;
+        std::cout << sizeCirc(incidentPointsSeg1Begin, incidentPointsSeg1End) << "::" << sc.value << std::endl;
         std::cout << sizeCirc(incidentPointsSeg2Begin, incidentPointsSeg2End) << std::endl;
+
+
+        typedef StabbingCircleComputer<AdapterCirculator> SegmentComputer;
+
+        Board2D board;
+        board << DGtal::SetMode(SegmentComputer().className(), "Annulus");
+        board << sc.scc1;
+        board.saveEPS("tempStab.eps");
+
 
         SCell s1 = scellFromIncidentPoints(KImage,
                                            incidentPointsSeg1Begin->first,
@@ -351,6 +360,8 @@ private:
             ++itj;
         }while(itj!=end);
 
+        board.save("interval.eps");
+
         intervalChecker = new IntervalChecker(start,end,5);
     }
 
@@ -359,91 +370,212 @@ public:
 
 };
 
-
-IntervalChecker* selectMinimizationRegion(CurveCirculator& start,
-                                          CurveCirculator& end,
-                                          bool& successFlag,
-                                          const KSpace& KImage,
-                                          RelevantCurve& rv)
+class OneExpansionMinimumEnergy
 {
-    GoodSCellPair goodPair(KImage,rv);
-    GoodSCellPair::SolutionCandidate sc;
-    while( goodPair.next(sc) )
-    {
-        PrepareSolutionCandidate psc(KImage,rv.curve,5,sc);
-    }
-}
-
-void findOneExpansionMinimumEnergy(Curve& minCurve,
-                                   IntervalChecker* intervalChecker,
-                                   RelevantCurve& rv,
-                                   KSpace& KImage,
-                                   Curve& innerCurve,
-                                   Curve& outerCurve)
-{
-
+public:
     typedef SeparateInnerAndOuter::ConnectorSeed ConnectorSeed;
     typedef SeparateInnerAndOuter::ConnectorSeedIterator ConnectorSeedIterator;
 
-    SeparateInnerAndOuter::SeedVector fromInnerSeeds;
-    SeparateInnerAndOuter::SeedVector fromOuterSeeds;
-
-    {
-        SeparateInnerAndOuter _(KImage,innerCurve,outerCurve);
-        _(fromInnerSeeds,fromOuterSeeds);
-    }
-
-
     typedef std::vector< CheckableSeedPair::DataType > DataType;
-
-    DataType pairSeedList;
-    ContainerCombinator<ConnectorSeedIterator,ConnectorSeedIterator> combinator;
-
-    combinator.operator()(fromInnerSeeds.begin(),
-                          fromInnerSeeds.end(),
-                          fromOuterSeeds.begin(),
-                          fromOuterSeeds.end(),
-                          std::back_inserter(pairSeedList));
-
-
     typedef std::vector< CheckableSeedPair > CheckableSeedList;
-    CheckableSeedList filteredPairList;
+    typedef std::vector< CheckableSeedPair > SelectedPairs;
 
-    for(auto it= pairSeedList.begin();it!=pairSeedList.end();++it)
+    typedef DGtal::Z2i::Curve::ConstIterator SCellIterator;
+    typedef DGtal::Circulator<SCellIterator> SCellCirculator;
+
+    typedef std::pair<ConnectorSeed,ConnectorSeed> ConnectorSeedPair;
+    typedef std::set<Curve::SCell> NotAllowedSet;
+
+public:
+    OneExpansionMinimumEnergy(KSpace& KImage,
+                              Curve& innerCurve,
+                              Curve& outerCurve):KImage(KImage),
+                                                       innerCurve(innerCurve),
+                                                       outerCurve(outerCurve)
     {
-        DGtal::PointVector<2,int> coordInt = it->first.connectors[0].preCell().coordinates;
-        DGtal::PointVector<2,int> coordExt = it->second.connectors[0].preCell().coordinates;
-        DGtal::PointVector<2,int> diff = coordExt - coordInt;
-        int connectorsDistance = (abs(diff[0])+abs(diff[1]) )/2;
-
-        //Internal Connector must be different from External Connector
-        if(coordInt==coordExt) continue;
-
-        //Internal and External Connector must cover between 2 and at most 10 external linels
-        if( connectorsDistance >= 20 || connectorsDistance <= 3) continue;
-
-        filteredPairList.push_back(*it);
 
     }
 
-    int maxSimultaneousPairs = fromInnerSeeds.size()/4;
-    CombinationsEvaluator<1> CE;
-    CE.addChecker( new GluedIntersectionChecker() );
-    CE.addChecker( new MinimumDistanceChecker(KImage) );
-    CE.addChecker( intervalChecker );
+    Curve operator()(IntervalChecker* intervalChecker)
+    {
+        selectedPairs.clear();
 
-    CheckableSeedPair seedCombination[10];
-    CE(minCurve,seedCombination,filteredPairList,KImage,maxSimultaneousPairs);
+        SeparateInnerAndOuter::SeedVector fromInnerSeeds;
+        SeparateInnerAndOuter::SeedVector fromOuterSeeds;
 
-    rv.selectedPairs.push_back(seedCombination[0]);
+        {
+            SeparateInnerAndOuter _(KImage,innerCurve,outerCurve);
+            _(fromInnerSeeds,fromOuterSeeds);
+        }
+
+
+
+        DataType pairSeedList;
+        ContainerCombinator<ConnectorSeedIterator,ConnectorSeedIterator> combinator;
+
+        combinator.operator()(fromInnerSeeds.begin(),
+                              fromInnerSeeds.end(),
+                              fromOuterSeeds.begin(),
+                              fromOuterSeeds.end(),
+                              std::back_inserter(pairSeedList));
+
+
+
+        CheckableSeedList filteredPairList;
+
+        for(auto it= pairSeedList.begin();it!=pairSeedList.end();++it)
+        {
+            DGtal::PointVector<2,int> coordInt = it->first.connectors[0].preCell().coordinates;
+            DGtal::PointVector<2,int> coordExt = it->second.connectors[0].preCell().coordinates;
+            DGtal::PointVector<2,int> diff = coordExt - coordInt;
+            int connectorsDistance = (abs(diff[0])+abs(diff[1]) )/2;
+
+            //Internal Connector must be different from External Connector
+            if(coordInt==coordExt) continue;
+
+            //Internal and External Connector must cover between 2 and at most 10 external linels
+            if( connectorsDistance >= 20 || connectorsDistance <= 3) continue;
+
+            filteredPairList.push_back(*it);
+
+        }
+
+        int maxSimultaneousPairs = fromInnerSeeds.size()/4;
+        CombinationsEvaluator<1> CE;
+        CE.addChecker( new GluedIntersectionChecker() );
+        CE.addChecker( new MinimumDistanceChecker(KImage) );
+        CE.addChecker( intervalChecker );
+
+        Curve minCurve;
+        CheckableSeedPair seedCombination[10];
+        CE(minCurve,seedCombination,filteredPairList,KImage,maxSimultaneousPairs);
+
+        selectedPairs.push_back(seedCombination[0]);
+        return minCurve;
+    }
+
+    bool allowedSolution(NotAllowedSet& nas, std::list<ConnectorSeedPair>& updateList)
+    {
+        CheckableSeedPair& csp = selectedPairs.back();
+        SCellCirculator itStart = csp.data().first.firstCirculator;
+
+        ++itStart;
+        do
+        {
+            if(nas.find(*itStart)!=nas.end()) return false;
+            ++itStart;
+        }while(itStart!=csp.data().second.secondCirculator);
+
+        itStart = csp.data().first.firstCirculator;
+        ++itStart;
+        do
+        {
+            nas.insert(*itStart);
+            ++itStart;
+        }while(itStart!=csp.data().second.secondCirculator);
+
+        updateList.push_back(csp.data());
+        return true;
+    }
+
+private:
+    KSpace& KImage;
+    Curve& innerCurve;
+    Curve& outerCurve;
+
+    SelectedPairs selectedPairs;
+
+};
+
+
+bool nextBestCurve(GoodSCellPair& goodPair,
+                   ImageFlowData& imf,
+                   RelevantCurve& rv,
+                   Curve& minCurve)
+{
+    GoodSCellPair::SolutionCandidate sc;
+    OneExpansionMinimumEnergy oeme(imf.getKSpace(),imf.getMostInnerCurve(),imf.getMostOuterCurve());
+    while( goodPair.next(sc) )
+    {
+        PrepareSolutionCandidate psc(imf.getKSpace(),rv.curve,5,sc);
+        minCurve = oeme(psc.intervalChecker);
+
+        if( oeme.allowedSolution( rv.not_allowed, rv.selectedPairs  ) ) return true;
+
+    }
+
+    return false;
 }
+
+class CurveUpdater
+{
+public:
+    typedef DGtal::Z2i::Curve::ConstIterator SCellIterator;
+    typedef DGtal::Circulator<SCellIterator> SCellCirculator;
+
+    typedef RelevantCurve::ConnectorSeedPair ConnectorSeedPair;
+    typedef std::list< ConnectorSeedPair > SelectedPairs;
+
+    CurveUpdater(Curve& newCurve, SelectedPairs& selectedPairs,int gluedCurveLength)
+    {
+        selectedPairs.push_back(selectedPairs.front());
+
+        ConnectorSeedPair current;
+        while(selectedPairs.size()>1)
+        {
+            current = selectedPairs.front();
+            selectedPairs.pop_front();
+
+            createSCellsFromConnectionSeedPair(newCurve,current,selectedPairs.front(),gluedCurveLength);
+        }
+        selectedPairs.pop_front();
+
+    }
+
+private:
+    void addSCellsInBetween(Curve& newCurve, SCellCirculator itb, SCellCirculator ite)
+    {
+        do{
+            newCurve.push_back(*itb);
+            ++itb;
+        }while(itb!=ite);
+    }
+
+    void createSCellsFromConnectionSeedPair(Curve& newCurve,
+                                            RelevantCurve::ConnectorSeedPair& currentCSP,
+                                            RelevantCurve::ConnectorSeedPair& nextCSP,
+                                            int gluedCurveLength)
+    {
+        newCurve.push_back(currentCSP.first.connectors[0]);
+
+
+        SCellCirculator itExternB = currentCSP.first.secondCirculator;
+        SCellCirculator itExternE = currentCSP.second.firstCirculator;
+        ++itExternE;
+
+        addSCellsInBetween(newCurve,itExternB,itExternE);
+        newCurve.push_back(currentCSP.second.connectors[0]);
+
+
+        SCellCirculator itBridge = currentCSP.second.secondCirculator;
+        SCellCirculator itNextB = nextCSP.first.firstCirculator;
+        ++itNextB;
+
+        addSCellsInBetween(newCurve,itBridge,itNextB);
+
+
+    }
+
+};
+
+
 
 
 int main() {
     typedef DGtal::Z2i::Curve::ConstIterator SCellIterator;
     typedef DGtal::Circulator<SCellIterator> SCellCirculator;
 
-    std::string filepath = "../images/flow-evolution/39-join.pgm";
+    std::string filepath = "../images/flow-evolution/10-join.pgm";
     std::string outputFolder = "../output/intExtMerge/fromCurve/";
 
     boost::filesystem::create_directories(outputFolder);
@@ -464,82 +596,38 @@ int main() {
         rv.curve = innerCurve;
 
         bool successFlag;
+        GoodSCellPair goodPair(imf.getKSpace(),rv);
         do {
-            CurveCirculator start, end;
-
-            IntervalChecker *intervalChecker = selectMinimizationRegion(start,
-                                                                        end,
-                                                                        successFlag,
-                                                                        imf.getKSpace(),
-                                                                        rv);
-
-            if (successFlag) {
-                Curve minCurve;
-                findOneExpansionMinimumEnergy(minCurve,
-                                              intervalChecker,
-                                              rv,
-                                              imf.getKSpace(),
-                                              rv.curve,
-                                              imf.getMostOuterCurve());
+            Curve minCurve;
+            successFlag = nextBestCurve(goodPair,imf,rv,minCurve);
 
 
-                CheckableSeedPair& csp = rv.selectedPairs.back();
-                SCellCirculator itStart = csp.data().first.firstCirculator;
-
-
-                ++itStart;
-                do
-                {
-                    rv.not_allowed.insert(*itStart);
-                    ++itStart;
-                }while(itStart!=csp.data().second.secondCirculator);
-
-
-                Board2D board;
-                for(auto it=rv.not_allowed.begin();it!=rv.not_allowed.end();++it)
-                {
-                    board << *it;
-                    board.saveEPS( (std::to_string(i) + ".eps").c_str() );
-                }
+            if(successFlag)
+            {
+//                Board2D board;
+//                for(auto it=rv.not_allowed.begin();it!=rv.not_allowed.end();++it)
+//                {
+//                    board << *it;
+//                    board.saveEPS( (std::to_string(i) + ".eps").c_str() );
+//                }
 
 
                 constructImageFromCurve(image, image.domain(), minCurve);
                 DGtal::GenericWriter<Image2D>::exportFile(outputFolder + std::to_string(i + 1) + ".pgm", image);
-            } else {
-                std::cout << "THE END" << std::endl;
             }
 
             ++i;
-
         } while (successFlag);
 
         Curve newCurve;
-        for(auto it=rv.curve.begin();it!=rv.curve.end();++it)
-        {
-            if( rv.not_allowed.find(*it)!=rv.not_allowed.end() ) continue;
-            newCurve.push_back(*it);
-        }
+        CurveUpdater(newCurve,rv.selectedPairs,5);
 
-        for(auto it=rv.selectedPairs.begin();it!=rv.selectedPairs.end();++it)
-        {
-            newCurve.push_back(it->data().first.connectors[0]);
-            SCellCirculator itStart = it->data().first.secondCirculator;
-
-            do
-            {
-                newCurve.push_back(*itStart);
-                ++itStart;
-            }while(itStart!=it->data().second.firstCirculator);
-            newCurve.push_back(*itStart);
-
-            newCurve.push_back(it->data().second.connectors[0]);
-        }
-
-//        assert(newCurve.isValid());
 //        Board2D board;
 //        board << newCurve;
 //        board.saveEPS(("teste.eps"));
-//        exit(1);
+
+        assert(newCurve.isValid());
+
 
         constructImageFromCurve(image, image.domain(), newCurve);
         DGtal::GenericWriter<Image2D>::exportFile(outputFolder + std::to_string(i) + "-join.pgm", image);
