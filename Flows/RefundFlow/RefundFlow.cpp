@@ -462,8 +462,6 @@ double RefundFlow::run(int mainIteration)
 
     double currentEnergyValue;
     double initialEnergyValue = energyValue(partialImage);
-    Image2D bestImage = partialImage;
-    bool useBestImage = false;
     while(runIteration(fg,partialImage,usedKeys,iteration)==Continue && iteration <= maxIterations)
     {
         FlowGraphDebug fgd(fg);
@@ -473,14 +471,14 @@ double RefundFlow::run(int mainIteration)
 
         currentEnergyValue = energyValue(partialImage);
 
-        checkCodeConsistence(fg,partialImage);
+//        checkCodeConsistence(fg,partialImage);
 //        debugData(fg,partialImage,weightMap,iteration);
 
         if(currentEnergyValue<initialEnergyValue)
         {
             initialEnergyValue = currentEnergyValue;
-            bestImage = partialImage;
         }
+
         if(previousImage==partialImage) break;
 
 
@@ -488,8 +486,7 @@ double RefundFlow::run(int mainIteration)
         ++iteration;
     }
 
-    if(useBestImage) imageOut = bestImage;
-    else imageOut = partialImage;
+    imageOut = partialImage;
 
     return energyValue(imageOut);
 }

@@ -37,9 +37,10 @@ void FlowGraphDebug::drawFlowGraph(std::string outputFolder,
 //    FC+externalArcs+escapeArcs;
 
     ListDigraph::ArcMap<int> arcColors(fg.graph(),0);
-    colorizeArcs(arcColors,internalArcs,1);
-    colorizeArcs(arcColors,externalArcs,2);
-    colorizeArcs(arcColors,escapeArcs,3);
+    colorizeArcs(arcColors,allArcs,1);
+    colorizeArcs(arcColors,internalArcs,2);
+    colorizeArcs(arcColors,externalArcs,3);
+    colorizeArcs(arcColors,escapeArcs,4);
 
     suffix = "FlowGraph-" + suffix;
     highlightArcs(noTerminal,allArcs,arcColors,outputFolder,suffix);

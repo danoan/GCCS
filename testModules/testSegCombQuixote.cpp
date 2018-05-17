@@ -12,6 +12,7 @@
 #include "../ExhaustiveSearch/PropertyChecker/CheckableSeedPair.h"
 #include "../ExhaustiveSearch/CombinationsEvaluator.h"
 #include "../utils/Artist.h"
+#include "../Flows/PreprocessImage.h"
 
 typedef DGtal::ImageContainerBySTLVector<DGtal::Z2i::Domain, unsigned char> Image2D;
 
@@ -148,17 +149,12 @@ namespace Development{
     bool invertGluedArcs = false;
 };
 
-void computeOneExpansions()
+void computeOneExpansions(std::string filepath,std::string outputFolder)
 {
-    std::string filepath = "../images/flow-evolution/single_square.pgm";
-    std::string outputFolder = "../output/segComb/fromCurve/";
-
-    boost::filesystem::create_directories(outputFolder);
-
-    Image2D image = DGtal::GenericReader<Image2D>::import(filepath);
+    ImageData ID(filepath);
+    SegCut::Image2D image = ID.preprocessedImage;
 
     Curve minCurve;
-
     int i=0;
     while(i<100)
     {
@@ -177,38 +173,14 @@ void computeOneExpansions()
     }
 }
 
-void computeStabbingCircles()
-{
-    std::string inputFolder = "../output/segComb/fromCurve/";
-    std::string outputFolder = "../output/segComb/fromCurve/";
-
-    boost::filesystem::path p = inputFolder;
-    boost::filesystem::directory_iterator it(p);
-
-    Board2D board;
-    while(it!=boost::filesystem::directory_iterator())
-    {
-        if(strcmp( it->path().extension().c_str(),".eps" )!=0) {
-
-            Image2D image = DGtal::GenericReader<Image2D>::import(it->path().c_str());
-            ImageFlowData imf(image);
-            imf.init(ImageFlowData::FlowMode::DilationOnly, 5);
-
-
-            Artist EA(imf.getKSpace(), board);
-            EA.drawMaximalStabbingCircles(imf.getMostInnerCurve());
-            std::string currentFilepath = outputFolder + it->path().stem().c_str() + "-stabbing-circles.eps";
-            EA.board.saveEPS(currentFilepath.c_str());
-        }
-        ++it;
-    }
-}
-
 
 int main()
 {
-    computeOneExpansions();
-//    computeStabbingCircles();
+    std::string filepath = "../images/segSet/quixote_small.jpg";
+    std::string outputFolder = "../output/segComb/quixote/";
+
+    boost::filesystem::create_directories(outputFolder);
+    computeOneExpansions(filepath,outputFolder);
 
     return 0;
 }

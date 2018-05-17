@@ -27,9 +27,10 @@ add_executable(testInvariantRotation testModules/testInvariantRotation.cpp ${SOU
 add_executable(testSegCombinations testModules/testSegCombinations.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(testFindSmallestStabbingCircles testModules/testFindSmallestStabbingCircles.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(testIntExtMerge testModules/testIntExtMerge.cpp ${SOURCE_FILES} ${FLOW_FILES})
+add_executable(testSegCombQuixote testModules/testSegCombQuixote.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
-add_executable(issue issue.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(presentationFigures presentationFigures.cpp ${SOURCE_FILES} ${FLOW_FILES})
+add_executable(reportFigures reportFigures.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
 add_executable(simpleFlow Flows/simpleFlow.cpp ${SOURCE_FILES} ${FLOW_FILES} Flows/PreprocessImage.h)
 add_executable(refundFlow Flows/RefundFlow/refundFlow.cpp Flows/RefundFlow/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
@@ -52,8 +53,9 @@ target_link_libraries(testInvariantRotation ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -l
 target_link_libraries(testSegCombinations ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(testFindSmallestStabbingCircles ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(testIntExtMerge ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
+target_link_libraries(testSegCombQuixote ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 
-target_link_libraries(issue ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
+target_link_libraries(reportFigures ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(presentationFigures ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 
 target_link_libraries(simpleFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
