@@ -59,7 +59,7 @@ void findOneExpansionMinimumEnergy(Curve& minCurve,
         if(coordInt==coordExt) continue;
 
         //Internal and External Connector must cover between 2 and at most 10 external linels
-        if( connectorsDistance >= 8 || connectorsDistance <= 1) continue;
+        if( connectorsDistance <= 1) continue;
 
         filteredPairList.push_back(*it);
 
@@ -151,7 +151,7 @@ namespace Development{
 void computeOneExpansions()
 {
     std::string filepath = "../images/flow-evolution/single_square.pgm";
-    std::string outputFolder = "../output/segComb/fromCurve/";
+    std::string outputFolder = "../output/segComb-unlimited-ISC-TE2/fromCurve/";
 
     boost::filesystem::create_directories(outputFolder);
 
@@ -179,10 +179,9 @@ void computeOneExpansions()
 
 void computeStabbingCircles()
 {
-    std::string inputFolder = "../output/segComb/fromCurve/";
-    std::string outputFolder = "../output/segComb/fromCurve/";
+    std::string outputFolder = "../output/segComb-unlimited-ISC-TE2/fromCurve/";
 
-    boost::filesystem::path p = inputFolder;
+    boost::filesystem::path p = outputFolder;
     boost::filesystem::directory_iterator it(p);
 
     Board2D board;

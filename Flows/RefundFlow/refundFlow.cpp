@@ -91,7 +91,7 @@ int main()
 
     int gluedCurveLength = 5;
     std::string outputFolder = "../output/refundFlow";
-    std::string datasetFolder = "../images/segSet";
+    std::string datasetFolder = "../images/binary_images";
 
 
     typedef boost::filesystem::path path;
@@ -103,11 +103,11 @@ int main()
         if( boost::filesystem::is_regular_file(*it) )
         {
             std::string filename = it->path().stem().generic_string();
-            if(filename!="single_square") continue;
+            if(filename=="quixote_small") continue;
             std::cout << "Segmentation of image:" << filename << std::endl;
 
             try {
-                segmentImage(it->path().generic_string(), outputFolder + "/" + filename + "-DO-ISC", gluedCurveLength, 100);
+                segmentImage(it->path().generic_string(), outputFolder + "/binary_images/" + filename + "-DO-SC", gluedCurveLength, 5);
             }catch (Exception ex)
             {
                 std::cout << "Segmentation could not be finished." << std::endl;
