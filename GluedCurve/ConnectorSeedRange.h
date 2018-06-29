@@ -52,6 +52,7 @@ public:
     typedef typename std::vector< ConnectorSeedType >::const_iterator ConnectorSeedIteratorType;
 
 
+
     BOOST_STATIC_ASSERT(( boost::is_same<
             typename DGtal::IteratorCirculatorTraits<TIterator>::Value,
             SCell>::value ));

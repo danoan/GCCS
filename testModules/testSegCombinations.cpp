@@ -18,7 +18,8 @@ typedef DGtal::ImageContainerBySTLVector<DGtal::Z2i::Domain, unsigned char> Imag
 void findOneExpansionMinimumEnergy(Curve& minCurve,
                                    KSpace& KImage,
                                    Curve& innerCurve,
-                                   Curve& outerCurve)
+                                   Curve& outerCurve,
+                                   int maxJoints)
 {
 
     typedef SeparateInnerAndOuter::ConnectorSeed ConnectorSeed;
@@ -48,18 +49,38 @@ void findOneExpansionMinimumEnergy(Curve& minCurve,
     typedef std::vector< CheckableSeedPair > CheckableSeedList;
     CheckableSeedList filteredPairList;
 
+    std::map<SCell,int> indexOrder;
+    int index=0;
+    for(auto it=outerCurve.begin();it!=outerCurve.end();++it,++index)
+    {
+        indexOrder[*it]=index;
+    }
+
+    std::map<SCell,int> jointOrder;
     for(auto it= pairSeedList.begin();it!=pairSeedList.end();++it)
     {
-        DGtal::PointVector<2,int> coordInt = it->first.connectors[0].preCell().coordinates;
-        DGtal::PointVector<2,int> coordExt = it->second.connectors[0].preCell().coordinates;
-        DGtal::PointVector<2,int> diff = coordExt - coordInt;
-        int connectorsDistance = (abs(diff[0])+abs(diff[1]) )/2;
+        if(it->first.cType==ConnectorType::internToExtern)
+        {
+            jointOrder[ it->first.connectors[0] ] = indexOrder[ *it->first.secondCirculator ];
+            jointOrder[ it->second.connectors[0] ] = indexOrder[ *it->second.firstCirculator];
+        }
+        else
+        {
+            jointOrder[ it->first.connectors[0] ] = indexOrder[ *it->first.firstCirculator ];
+            jointOrder[ it->second.connectors[0] ] = indexOrder[ *it->second.secondCirculator];
+        }
+    }
+
+
+    for(auto it= pairSeedList.begin();it!=pairSeedList.end();++it)
+    {
+        int connectorsDistance = ( jointOrder[it->second.connectors[0]] - jointOrder[it->first.connectors[0]] + maxJoints )%maxJoints;
 
         //Internal Connector must be different from External Connector
-        if(coordInt==coordExt) continue;
+//        if(coordInt==coordExt) continue;
 
         //Internal and External Connector must cover between 2 and at most 10 external linels
-        if( connectorsDistance <= 1) continue;
+        if( connectorsDistance<=2 || connectorsDistance >= (maxJoints-1) ) continue;
 
         filteredPairList.push_back(*it);
 
@@ -151,7 +172,7 @@ namespace Development{
 void computeOneExpansions()
 {
     std::string filepath = "../images/flow-evolution/single_square.pgm";
-    std::string outputFolder = "../output/segComb-unlimited-ISC-TE2/fromCurve/";
+    std::string outputFolder = "../output/segComb-SC-Length/fromCurve/";
 
     boost::filesystem::create_directories(outputFolder);
 
@@ -165,11 +186,13 @@ void computeOneExpansions()
         ImageFlowData imf(image);
         imf.init(ImageFlowData::DilationOnly, 5);
 
+        int maxJoints = imf.getMostOuterCurve().size();
 
         findOneExpansionMinimumEnergy(minCurve,
                                       imf.getKSpace(),
                                       imf.getMostInnerCurve(),
-                                      imf.getMostOuterCurve());
+                                      imf.getMostOuterCurve(),
+                                      maxJoints);
 
         constructImageFromCurve(image,image.domain(),minCurve);
         DGtal::GenericWriter<Image2D>::exportFile(outputFolder + std::to_string(i+1) + ".pgm",image);
@@ -179,7 +202,7 @@ void computeOneExpansions()
 
 void computeStabbingCircles()
 {
-    std::string outputFolder = "../output/segComb-unlimited-ISC-TE2/fromCurve/";
+    std::string outputFolder = "../output/segComb-max5-ISC/fromCurve/";
 
     boost::filesystem::path p = outputFolder;
     boost::filesystem::directory_iterator it(p);

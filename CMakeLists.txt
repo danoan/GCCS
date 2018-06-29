@@ -28,6 +28,9 @@ add_executable(testSegCombinations testModules/testSegCombinations.cpp ${SOURCE_
 add_executable(testFindSmallestStabbingCircles testModules/testFindSmallestStabbingCircles.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(testIntExtMerge testModules/testIntExtMerge.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(testSegCombQuixote testModules/testSegCombQuixote.cpp ${SOURCE_FILES} ${FLOW_FILES})
+add_executable(testBestPair BestPair/testBestPair.cpp BestPair/API.cpp BestPair/API.h BestPair/JointSet.h BestPair/JointSet.cpp ${SOURCE_FILES} ${FLOW_FILES})
+add_executable(testFreezeOneExp testModules/testFreezeOneExpansion.cpp FreezeOneExp/CombinationsEvaluator.h ${SOURCE_FILES} ${FLOW_FILES} )
+
 
 add_executable(presentationFigures presentationFigures.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(reportFigures reportFigures.cpp ${SOURCE_FILES} ${FLOW_FILES})
@@ -35,7 +38,7 @@ add_executable(reportFigures reportFigures.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(simpleFlow Flows/simpleFlow.cpp ${SOURCE_FILES} ${FLOW_FILES} Flows/PreprocessImage.h)
 add_executable(refundFlow Flows/RefundFlow/refundFlow.cpp Flows/RefundFlow/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(projectionFlow Flows/ProjectionFlow/projectionFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
-add_executable(adaptativeScaleFlow Flows/AdaptativeScaleFlow/adaptativeScaleFlow.cpp ${SOURCE_FILES} ${FLOW_FILES} ExhaustiveSearch/PropertyChecker/MarkedMapChecker/IntervalChecker.h ImageProc/ImageProc.h)
+add_executable(adaptativeScaleFlow Flows/AdaptativeScaleFlow/adaptativeScaleFlow.cpp ${SOURCE_FILES} ${FLOW_FILES} ExhaustiveSearch/PropertyChecker/MarkedMapChecker/IntervalChecker.h ImageProc/ImageProc.h FreezeOneExp/CombinationsEvaluator.h)
 add_executable(boundedFlow Flows/BoundedFlow/boundedFlow.cpp Flows/RefundFlow/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
 
@@ -54,6 +57,8 @@ target_link_libraries(testSegCombinations ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lem
 target_link_libraries(testFindSmallestStabbingCircles ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(testIntExtMerge ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(testSegCombQuixote ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
+target_link_libraries(testBestPair ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
+target_link_libraries(testFreezeOneExp ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 
 target_link_libraries(reportFigures ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(presentationFigures ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)

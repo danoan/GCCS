@@ -28,6 +28,7 @@ public:
 
     typedef GluedCurveSetRange::ConstIterator GluedCurveIteratorPair;
 
+
     enum CurveType{
         OriginalCurve,DilatedCurve,ErodedCurve
     };
@@ -86,6 +87,8 @@ public:
         GluedCurveSetRange::ConstIterator gcsRangeBegin() const{ return gcsRange.begin(); }
         GluedCurveSetRange::ConstIterator gcsRangeEnd() const{ return gcsRange.end(); }
 
+        GluedCurveSetRange getGCSRange() const{ return gcsRange; }
+
 
         CurveData& intCurveData;
         CurveData& extCurveData;
@@ -98,6 +101,7 @@ public:
         GluedCurveSetRange gcsRange;
     };
 
+    typedef std::vector<CurvePair>::const_iterator CurvePairIterator;
 
 
 public:
@@ -115,8 +119,8 @@ public:
     std::vector<CurveData>::const_iterator curveDataBegin(){ return curvesVector.begin(); }
     std::vector<CurveData>::const_iterator curveDataEnd(){ return curvesVector.end(); }
 
-    std::vector<CurvePair>::const_iterator curvePairBegin(){ return curvesPairVector.begin(); }
-    std::vector<CurvePair>::const_iterator curvePairEnd(){ return curvesPairVector.end(); }
+    CurvePairIterator curvePairBegin(){ return curvesPairVector.begin(); }
+    CurvePairIterator curvePairEnd(){ return curvesPairVector.end(); }
 
     KSpace& getKSpace(){return KImage;}
 

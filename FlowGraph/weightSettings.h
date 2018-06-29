@@ -35,4 +35,5 @@ void setGluedCurveWeight(WeightSettingsTypes::GluedCurveSetRange::ConstIterator 
 
 void setArcsWeight(ImageFlowData& imageFlowData,std::map<Z2i::SCell,double>& weightMap);
 
+
 #endif //SEGBYCUT_WEIGHTSETTINGS_H
