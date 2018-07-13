@@ -21,8 +21,8 @@ void tangentWeight(WeightSettingsTypes::Curve::ConstIterator begin,
 
 
 
-        // 1.0/(cos+sin) Length estimation
-        // tangentWeightVector.push_back( 1.0/( fabs(estimationsTangent[i][0]) + fabs(estimationsTangent[i][1]) ) );
+//         1.0/(cos+sin) Length estimation
+//         tangentWeightVector.push_back( 1.0/( fabs(estimationsTangent[i][0]) + fabs(estimationsTangent[i][1]) ) );
 
 
         ++it;
@@ -72,14 +72,11 @@ void setGridCurveWeight(Curve curvePriorGS,
     {
         int i =0;
         for(auto it=curvePriorGS.begin();it!=curvePriorGS.end();++it){
-            weightMap[*it] *= tangentWeightVector[i];
-//            weightMap[*it] *= 100;//+100 only to avoid small numbers
-//            weightMap[*it] /= totalLinels;
-            weightMap[*it] += 0.001*tangentWeightVector[i];
+//            weightMap[*it] *= tangentWeightVector[i];
+            weightMap[*it] += 0.01*tangentWeightVector[i];
             ++i;
         }
     }
-
 }
 
 void setGluedCurveWeight(WeightSettingsTypes::GluedCurveSetRange::ConstIterator gcsRangeBegin,
@@ -143,10 +140,8 @@ void setGluedCurveWeight(WeightSettingsTypes::GluedCurveSetRange::ConstIterator 
         for (WeightSettingsTypes::GluedCurveIteratorPair it = gcsRangeBegin; it != gcsRangeEnd; ++it) {
             auto itC = it->first.connectorsBegin();
             do {
-                weightMap[*itC]*= tangentWeightVector[i];
-//                weightMap[*itC]*= 100; //+100 only to avoid small numbers
-//                weightMap[*itC]/= totalLinels;
-                weightMap[*itC]+= 0.001*tangentWeightVector[i];
+//                weightMap[*itC]*= tangentWeightVector[i];
+                weightMap[*itC]+= 0.01*tangentWeightVector[i];
                 ++i;
                 if(itC==it->first.connectorsEnd()) break;
                 ++itC;

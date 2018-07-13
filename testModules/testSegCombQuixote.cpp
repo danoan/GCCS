@@ -12,14 +12,14 @@
 #include "../ExhaustiveSearch/PropertyChecker/CheckableSeedPair.h"
 #include "../ExhaustiveSearch/CombinationsEvaluator.h"
 #include "../utils/Artist.h"
+#include "../Flows/PreprocessImage.h"
 
 typedef DGtal::ImageContainerBySTLVector<DGtal::Z2i::Domain, unsigned char> Image2D;
 
 void findOneExpansionMinimumEnergy(Curve& minCurve,
                                    KSpace& KImage,
                                    Curve& innerCurve,
-                                   Curve& outerCurve,
-                                   int maxJoints)
+                                   Curve& outerCurve)
 {
 
     typedef SeparateInnerAndOuter::ConnectorSeed ConnectorSeed;
@@ -49,38 +49,18 @@ void findOneExpansionMinimumEnergy(Curve& minCurve,
     typedef std::vector< CheckableSeedPair > CheckableSeedList;
     CheckableSeedList filteredPairList;
 
-    std::map<SCell,int> indexOrder;
-    int index=0;
-    for(auto it=outerCurve.begin();it!=outerCurve.end();++it,++index)
-    {
-        indexOrder[*it]=index;
-    }
-
-    std::map<SCell,int> jointOrder;
     for(auto it= pairSeedList.begin();it!=pairSeedList.end();++it)
     {
-        if(it->first.cType==ConnectorType::internToExtern)
-        {
-            jointOrder[ it->first.connectors[0] ] = indexOrder[ *it->first.secondCirculator ];
-            jointOrder[ it->second.connectors[0] ] = indexOrder[ *it->second.firstCirculator];
-        }
-        else
-        {
-            jointOrder[ it->first.connectors[0] ] = indexOrder[ *it->first.firstCirculator ];
-            jointOrder[ it->second.connectors[0] ] = indexOrder[ *it->second.secondCirculator];
-        }
-    }
-
-
-    for(auto it= pairSeedList.begin();it!=pairSeedList.end();++it)
-    {
-        int connectorsDistance = ( jointOrder[it->second.connectors[0]] - jointOrder[it->first.connectors[0]] + maxJoints )%maxJoints;
+        DGtal::PointVector<2,int> coordInt = it->first.connectors[0].preCell().coordinates;
+        DGtal::PointVector<2,int> coordExt = it->second.connectors[0].preCell().coordinates;
+        DGtal::PointVector<2,int> diff = coordExt - coordInt;
+        int connectorsDistance = (abs(diff[0])+abs(diff[1]) )/2;
 
         //Internal Connector must be different from External Connector
-//        if(coordInt==coordExt) continue;
+        if(coordInt==coordExt) continue;
 
         //Internal and External Connector must cover between 2 and at most 10 external linels
-        if( connectorsDistance<=2 || connectorsDistance >= (maxJoints-1) ) continue;
+        if( connectorsDistance >= 8 || connectorsDistance <= 1) continue;
 
         filteredPairList.push_back(*it);
 
@@ -169,30 +149,23 @@ namespace Development{
     bool invertGluedArcs = false;
 };
 
-void computeOneExpansions()
+void computeOneExpansions(std::string filepath,std::string outputFolder)
 {
-    std::string filepath = "../images/flow-evolution/single_square.pgm";
-    std::string outputFolder = "../output/segComb-SC-Length/fromCurve/";
-
-    boost::filesystem::create_directories(outputFolder);
-
-    Image2D image = DGtal::GenericReader<Image2D>::import(filepath);
+    ImageData ID(filepath);
+    SegCut::Image2D image = ID.preprocessedImage;
 
     Curve minCurve;
-
     int i=0;
     while(i<100)
     {
         ImageFlowData imf(image);
         imf.init(ImageFlowData::DilationOnly, 5);
 
-        int maxJoints = imf.getMostOuterCurve().size();
 
         findOneExpansionMinimumEnergy(minCurve,
                                       imf.getKSpace(),
                                       imf.getMostInnerCurve(),
-                                      imf.getMostOuterCurve(),
-                                      maxJoints);
+                                      imf.getMostOuterCurve());
 
         constructImageFromCurve(image,image.domain(),minCurve);
         DGtal::GenericWriter<Image2D>::exportFile(outputFolder + std::to_string(i+1) + ".pgm",image);
@@ -200,37 +173,14 @@ void computeOneExpansions()
     }
 }
 
-void computeStabbingCircles()
-{
-    std::string outputFolder = "../output/segComb-max5-ISC/fromCurve/";
-
-    boost::filesystem::path p = outputFolder;
-    boost::filesystem::directory_iterator it(p);
-
-    Board2D board;
-    while(it!=boost::filesystem::directory_iterator())
-    {
-        if(strcmp( it->path().extension().c_str(),".eps" )!=0) {
-
-            Image2D image = DGtal::GenericReader<Image2D>::import(it->path().c_str());
-            ImageFlowData imf(image);
-            imf.init(ImageFlowData::FlowMode::DilationOnly, 5);
-
-
-            Artist EA(imf.getKSpace(), board);
-            EA.drawMaximalStabbingCircles(imf.getMostInnerCurve());
-            std::string currentFilepath = outputFolder + it->path().stem().c_str() + "-stabbing-circles.eps";
-            EA.board.saveEPS(currentFilepath.c_str());
-        }
-        ++it;
-    }
-}
-
 
 int main()
 {
-    computeOneExpansions();
-//    computeStabbingCircles();
+    std::string filepath = "../images/segSet/quixote_small.jpg";
+    std::string outputFolder = "../output/segComb/quixote/";
+
+    boost::filesystem::create_directories(outputFolder);
+    computeOneExpansions(filepath,outputFolder);
 
     return 0;
 }

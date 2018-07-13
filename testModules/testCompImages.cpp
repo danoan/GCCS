@@ -159,8 +159,37 @@ namespace Development{
     bool invertGluedArcs = false;
 };
 
+void evaluate_energy_results()
+{
+    typedef boost::filesystem::path path;
+    typedef boost::filesystem::directory_iterator directory_iterator;
+
+    std::string datasetFolder = "../images/energy-digital-circle";
+
+    path p( datasetFolder );
+    int i =0;
+    for(directory_iterator it(p);it!=directory_iterator{};++it)
+    {
+            if (boost::filesystem::is_regular_file(*it))
+            {
+                std::string filename = it->path().stem().generic_string();
+
+                SegCut::Image2D image = GenericReader<SegCut::Image2D>::import(it->path().generic_string());
+                ImageFlowData imf(image);
+                imf.init(ImageFlowData::DilationOnly, 5);
+                double energyValue = computeEnergyValue(image, imf, std::to_string(i));
+
+                std::cout << filename << ":" << energyValue << std::endl;
+                ++i;
+            }
+    }
+}
+
 int main()
 {
+    evaluate_energy_results();
+    return 0;
+
     SegCut::Image2D comp1 = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/comp1.pgm");
     SegCut::Image2D comp2 = GenericReader<SegCut::Image2D>::import("../images/flow-evolution/comp2.pgm");
 

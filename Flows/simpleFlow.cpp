@@ -24,6 +24,7 @@ using namespace lemon;
 #include "../FlowGraph/FlowGraphDebug.h"
 #include "../utils/io.h"
 #include "PreprocessImage.h"
+#include "../utils/Artist.h"
 
 
 namespace Development{
@@ -46,11 +47,12 @@ void computeFlow(SegCut::Image2D& image,
                  std::vector<Z2i::Point>& coordPixelsSourceSide,
                  std::vector<Z2i::SCell>& pixelsInTheGraph,
                  std::string outputFolder,
-                 std::string suffix)
+                 std::string suffix,
+                 ImageFlowData::FlowMode flowMode)
 {
     ImageFlowData imageFlowData(image);
 
-    imageFlowData.init(ImageFlowData::FlowMode::DilationOnly,
+    imageFlowData.init(flowMode,
                        gluedCurveLength);
 
     setArcsWeight(imageFlowData,weightMap);
@@ -101,8 +103,9 @@ void computeFlow(SegCut::Image2D& image,
     }
 
 
-    FlowGraphDebug flowGraphDebug(fg);
-    flowGraphDebug.drawCutGraph(outputFolder,suffix);
+//    FlowGraphDebug flowGraphDebug(fg);
+//    flowGraphDebug.drawCutGraph(outputFolder,suffix);
+//    flowGraphDebug.drawFlowGraph(outputFolder,suffix);
 
 }
 
@@ -151,6 +154,10 @@ void updateImage(std::vector<Z2i::Point>& coordPixelsSourceSide,
 
     GenericWriter<SegCut::Image2D>::exportFile(imageOutputPath.c_str(),out);
 
+    Board2D board;
+    Artist EA(KImage,board);
+    EA.drawCurvesAndConnectionsCurvatureMap(imageOutputPath,outputFolder + "/curvmap" + suffix + ".eps");
+
 }
 
 void segmentImage(std::string originalImagePath,
@@ -174,12 +181,16 @@ void segmentImage(std::string originalImagePath,
     std::vector<Z2i::SCell> pixelsInTheGraph;
     std::map<Z2i::SCell,double> weightMap;
 
+
+    ImageFlowData::FlowMode fm;
     for(int i=0;i<maxIterations;++i)
     {
         coordPixelsSourceSide.clear();
         pixelsInTheGraph.clear();
         weightMap.clear();
 
+        if(i%2==0) fm = ImageFlowData::FlowMode::DilationOnly;
+        else fm = ImageFlowData::FlowMode::ErosionOnly;
 
         computeFlow(image,
                     gluedCurveLength,
@@ -187,7 +198,8 @@ void segmentImage(std::string originalImagePath,
                     coordPixelsSourceSide,
                     pixelsInTheGraph,
                     outputFolder,
-                    std::to_string(i));
+                    std::to_string(i),
+                    fm);
 
 
         updateImage(coordPixelsSourceSide,
@@ -195,7 +207,6 @@ void segmentImage(std::string originalImagePath,
                     image,
                     outputFolder,
                     std::to_string(i));
-
 
 
         std::cout << "OK " << i << std::endl;
@@ -209,7 +220,7 @@ int main()
 
     int gluedCurveLength = 5;
     std::string outputFolder = "../output/simpleFlow";
-    std::string datasetFolder = "../images/segSet";
+    std::string datasetFolder = "../images/binary_images";
 
 
     typedef boost::filesystem::path path;
@@ -223,8 +234,10 @@ int main()
             std::string filename = it->path().stem().generic_string();
             std::cout << "Segmentation of image:" << filename << std::endl;
 
+//            if(filename!="single_square") continue;
+
             try {
-                segmentImage(it->path().generic_string(), outputFolder + "/" + filename, gluedCurveLength, 5);
+                segmentImage(it->path().generic_string(), outputFolder + "/binary_images_SC/" + filename, gluedCurveLength, 4);
             }catch (Exception ex)
             {
                 std::cout << "Segmentation could not be finished." << std::endl;
