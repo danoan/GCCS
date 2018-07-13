@@ -390,6 +390,104 @@ namespace ImageProc2 {
         const DigitalSet &_ds;
     };
 
+    class QHalf
+    {
+    public:
+        typedef unsigned int Radius;
+
+        typedef DGtal::Z2i::Space Space;
+        typedef DGtal::Z2i::Point Point;
+        typedef DGtal::Z2i::Domain Domain;
+
+        typedef DGtal::Z2i::DigitalSet DigitalSet;
+        typedef DGtal::ImplicitBall<Space> EuclideanBall;
+
+    public:
+        QHalf(DigitalSet& QHalf, DigitalSet& ods, unsigned long int radius, Point anchor)
+        {
+            Domain domain = ods.domain();
+
+            DigitalSet ball(domain);
+            EuclideanBall eb(anchor, radius);
+            DGtal::Shapes<Domain>::euclideanShaper(ball, eb, 1);
+
+            DigitalSet dball(domain);
+            Dilate(dball,
+                   ball,
+                   ImageProc2::Dilate::StructuringElement::CROSS);
+
+            DigitalSet qDBall(domain);
+            DigitalIntersection(qDBall,ods,dball);
+
+            DigitalSet qBall(domain);
+            DigitalIntersection(qBall,ods,ball);
+
+            DigitalSet candidates(domain);
+            SetDifference(candidates,qDBall,qBall);
+
+            std::map<Point,int> touchMap;
+            Point filter[4] = { Point(0,1),Point(1,0),Point(-1,0),Point(0,-1)};
+            for(int i=0;i<4;++i)
+            {
+                Point nanchor = anchor + filter[i];
+
+                DigitalSet tempBall(domain);
+                EuclideanBall tempEB(nanchor, radius);
+                DGtal::Shapes<Domain>::euclideanShaper(tempBall, tempEB, 1);
+
+                DigitalSet tempQ(domain);
+                DigitalIntersection(tempQ,candidates,tempBall);
+
+                for(auto it=tempQ.begin();it!=tempQ.end();++it)
+                {
+                    if(touchMap.find(*it)!=touchMap.end())
+                    {
+                        touchMap[*it]+=1;
+                    }else
+                    {
+                        touchMap[*it] = 1;
+                    }
+                }
+            }
+
+            QHalf.clear();
+            for(auto it=touchMap.begin();it!=touchMap.end();++it)
+            {
+                if(it->second==1)
+                {
+                    QHalf.insert(it->first);
+                }
+            }
+
+        }
+    };
+
+    class DigitalRectangle
+    {
+    public:
+        typedef DGtal::Z2i::Space Space;
+        typedef DGtal::Z2i::Point Point;
+        typedef DGtal::Z2i::Domain Domain;
+
+        typedef DGtal::Z2i::DigitalSet DigitalSet;
+
+    public:
+        DigitalRectangle(DigitalSet& dsRect,
+                         Domain domain,
+                         Point bottomLeftCorner,
+                         unsigned int s1,
+                         unsigned int s2)
+        {
+            for(int w=0;w<s1;++w)
+            {
+                for(int h=0;h<s2;++h)
+                {
+                    dsRect.insert( bottomLeftCorner + Point(w,h) );
+                }
+            }
+        }
+    };
+
 }
 
 #endif //SEGBYCUT_IMAGEPROC2_H

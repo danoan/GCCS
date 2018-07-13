@@ -28,6 +28,8 @@ add_executable(testSegCombinations testModules/testSegCombinations.cpp ${SOURCE_
 add_executable(testFindSmallestStabbingCircles testModules/testFindSmallestStabbingCircles.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(testIntExtMerge testModules/testIntExtMerge.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
+add_executable(testQHalf testModules/testQHalf.cpp ${SOURCE_FILES} ${FLOW_FILES})
+
 add_executable(issue issue.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(presentationFigures presentationFigures.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
@@ -52,6 +54,7 @@ target_link_libraries(testInvariantRotation ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -l
 target_link_libraries(testSegCombinations ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(testFindSmallestStabbingCircles ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(testIntExtMerge ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
+target_link_libraries(testQHalf ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 
 target_link_libraries(issue ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(presentationFigures ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
