@@ -1,16 +1,18 @@
 #include "ImageFlowData.h"
 
 
-ImageFlowData::ImageFlowData(Image2D image):originalImage(image),
-                                            dilatedImage(image.domain()),
-                                            erodedImage(image.domain()),
-                                            itIsInitialized(false),
-                                            stgcF()
+ImageFlowData::ImageFlowData(Image2D image, Image2D refImage):originalImage(image),
+                                                              refImage(refImage),
+                                                              dilatedImage(image.domain()),
+                                                              erodedImage(image.domain()),
+                                                              itIsInitialized(false),
+                                                              stgcF()
 {
     KImage.init(image.domain().lowerBound(),image.domain().upperBound(),true);
 }
 
 ImageFlowData::ImageFlowData(const ImageFlowData& other):originalImage(other.originalImage),
+                                                         refImage(other.refImage),
                                                          dilatedImage(other.dilatedImage),
                                                          erodedImage(other.erodedImage),
                                                          KImage(other.KImage),
@@ -27,6 +29,7 @@ ImageFlowData::ImageFlowData(const ImageFlowData& other):originalImage(other.ori
 ImageFlowData& ImageFlowData::operator=(const ImageFlowData& other)
 {
     originalImage = other.originalImage;
+    refImage = other.refImage;
     erodedImage = other.erodedImage;
     dilatedImage = other.dilatedImage;
     KImage = other.KImage;

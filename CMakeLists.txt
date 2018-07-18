@@ -16,7 +16,8 @@ LINK_DIRECTORIES(${DGTAL_LIBRARY_DIRS})
 
 set(SOURCE_FILES ImageProc/imageProc.cpp utils/Artist.cpp utils/utils.cpp utils/io.cpp)
 set(FLOW_FILES FlowGraph/FlowGraphBuilder.cpp FlowGraph/FlowGraphDebug.cpp FlowGraph/FlowGraphQuery.cpp
-        FlowGraph/ImageFlowData.cpp FlowGraph/ImageFlowDataDebug.cpp FlowGraph/weightSettings.cpp)
+        FlowGraph/ImageFlowData.cpp FlowGraph/ImageFlowDataDebug.cpp FlowGraph/weightSettings.cpp
+        FlowGraph/Patch/SimpleFlowGraphBuilder.cpp FlowGraph/Patch/SimpleFlowGraphBuilder.h)
 
 add_executable(testEstimators testModules/testEstimators.cpp ${SOURCE_FILES})
 add_executable(testFlowGraphQuery testModules/testFlowGraphQuery.cpp ${SOURCE_FILES} ${FLOW_FILES} )
@@ -30,7 +31,7 @@ add_executable(testIntExtMerge testModules/testIntExtMerge.cpp ${SOURCE_FILES} $
 add_executable(testSegCombQuixote testModules/testSegCombQuixote.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(testBestPair BestPair/testBestPair.cpp BestPair/API.cpp BestPair/API.h BestPair/JointSet.h BestPair/JointSet.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(testFreezeOneExp testModules/testFreezeOneExpansion.cpp FreezeOneExp/CombinationsEvaluator.h ${SOURCE_FILES} ${FLOW_FILES} )
-
+add_executable(testCapture testModules/testCapture.cpp)
 
 add_executable(presentationFigures presentationFigures.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(reportFigures reportFigures.cpp ${SOURCE_FILES} ${FLOW_FILES})
@@ -40,7 +41,7 @@ add_executable(refundFlow Flows/RefundFlow/refundFlow.cpp Flows/RefundFlow/Refun
 add_executable(projectionFlow Flows/ProjectionFlow/projectionFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(adaptativeScaleFlow Flows/AdaptativeScaleFlow/adaptativeScaleFlow.cpp ${SOURCE_FILES} ${FLOW_FILES} ExhaustiveSearch/PropertyChecker/MarkedMapChecker/IntervalChecker.h ImageProc/ImageProc.h FreezeOneExp/CombinationsEvaluator.h)
 add_executable(boundedFlow Flows/BoundedFlow/boundedFlow.cpp Flows/RefundFlow/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
-
+add_executable(modifiedFlow Flows/modifiedFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
 add_executable(binaryDataset binaryDataset.cpp Flows/RefundFlow/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
@@ -59,6 +60,7 @@ target_link_libraries(testIntExtMerge ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -
 target_link_libraries(testSegCombQuixote ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(testBestPair ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(testFreezeOneExp ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
+target_link_libraries(testCapture ${OpenCV_LIBS} -lseed-capture -ldrawsics)
 
 target_link_libraries(reportFigures ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(presentationFigures ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
@@ -68,5 +70,6 @@ target_link_libraries(refundFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -l
 target_link_libraries(projectionFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(adaptativeScaleFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(boundedFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
+target_link_libraries(modifiedFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lseed-capture -ldrawsics -lemon -lm -lboost_system -lboost_filesystem)
 
 target_link_libraries(binaryDataset ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)

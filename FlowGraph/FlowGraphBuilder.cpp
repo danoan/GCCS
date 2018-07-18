@@ -80,6 +80,7 @@ void FlowGraphBuilder::createSourceArcs(Curve& erodedCurve,
     }
 }
 
+
 void FlowGraphBuilder::createTargetArcsFromGluedSegments(ImageFlowData::GluedCurveIteratorPair gluedRangeBegin,
                                                          ImageFlowData::GluedCurveIteratorPair gluedRangeEnd,
                                                          LinelWeightMap& weightMap,

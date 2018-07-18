@@ -92,11 +92,12 @@ public:
     FlowComputer prepareFlow(){ return FlowComputer(digraph,arcWeightMap,sourceNode,targetNode); }
 
 
-private:
+public:
     int gluedCurveLength;
     int consecutiveGluedPairDistance;
     int diffDistance;
     ImageFlowData::FlowMode flowGraphMode;
+
 
     ListDigraph digraph;
 

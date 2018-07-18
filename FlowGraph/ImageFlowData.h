@@ -106,7 +106,7 @@ public:
 
 public:
 
-    ImageFlowData(Image2D image);
+    ImageFlowData(Image2D image,Image2D refImage);
     ImageFlowData(const ImageFlowData& other);
     ImageFlowData& operator=(const ImageFlowData& other);
 
@@ -134,6 +134,7 @@ public:
     int getConsecutiveGluedPairDistance(){ return consecutiveGluedPairDistance; }
     int getDiffDistance(){ return diffDistance; }
 
+    Image2D& getRefImage(){ return refImage; };
     Image2D& getOriginalImage(){ return originalImage; }
     Image2D& getDilatedImage(){ return dilatedImage; }
     Image2D& getErodedImage(){ return erodedImage; }
@@ -157,7 +158,7 @@ private:
     int diffDistance;
 
     KSpace KImage;
-    Image2D originalImage,dilatedImage,erodedImage;
+    Image2D refImage,originalImage,dilatedImage,erodedImage;
 
     std::vector<CurveData> curvesVector;
     std::vector<CurvePair> curvesPairVector;

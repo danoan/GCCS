@@ -181,8 +181,17 @@ void curvatureEstimatorsConnections(UtilsTypes::GluedCurveIteratorPair begin,
                                       KImage,
                                       partialEstimations);
 
+        double avg = 0;
+        for(int i=0;i<2*gluedCurveLength+1;++i)
+        {
+            avg+=partialEstimations[i];
+        }
+
+        avg = avg/(2*gluedCurveLength+1);
+
         for(int i=0;i<gcBegin.numberOfConnectors();i++){
-            estimations.push_back( partialEstimations[gluedCurveLength+i] );
+//            estimations.push_back( partialEstimations[gluedCurveLength+i] );
+            estimations.push_back( avg );
         }
 
         partialEstimations.clear();
@@ -340,8 +349,16 @@ void tangentEstimatorsConnections(UtilsTypes::GluedCurveIteratorPair begin,
                                     KImage,
                                     partialEstimations);
 
+        UtilsTypes::TangentVector avg(0,0);
+        for(int i=0;i<2*gluedCurveLength+1;++i)
+        {
+            avg+= partialEstimations[i];
+        }
+        avg = avg/(2*gluedCurveLength+1);
+
         for(int i=0;i<begin.numberOfConnectors();i++){
-            estimations.push_back( partialEstimations[gluedCurveLength+i] );
+//            estimations.push_back( partialEstimations[gluedCurveLength+i] );
+            estimations.push_back( avg );
         }
 
         partialEstimations.clear();

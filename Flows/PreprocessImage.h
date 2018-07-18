@@ -32,8 +32,9 @@ public:
                                          preprocessedImage(originalImage.domain()),
                                          digitalSets(originalImage.domain())
     {
-        preprocessingTwo(originalImage);
-        preprocessingOne(preprocessedImage);
+        //preprocessingTwo(originalImage);
+        //preprocessingOne(preprocessedImage);
+        preprocessedImage = originalImage;
     }
 
 private:
