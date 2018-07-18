@@ -146,6 +146,12 @@ namespace Development {
 
         void setTerminalsCoordinates();
 
+        double dataTerm(int x, bool norm=true);
+
+        double directProp(int iv, double* distr, bool norm=true);
+
+        double inverseProp(int iv, double* distr, bool norm=true);
+
 
     public:
         const double infWeigth = 100;

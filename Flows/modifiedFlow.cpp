@@ -36,7 +36,7 @@ namespace Development{
     bool lambdaEstimator = false;
     bool pessimistEstimator = false;
 
-    bool makeConvexArcs = false;
+    bool makeConvexArcs = true;
     bool invertGluedArcs = false;
 
     bool iteractive = false;
@@ -108,9 +108,9 @@ void computeFlow(SegCut::Image2D& image,
     }
 
 
-//    FlowGraphDebug flowGraphDebug(fg);
-//    flowGraphDebug.drawCutGraph(outputFolder,suffix);
-//    flowGraphDebug.drawFlowGraph(outputFolder,suffix);
+    FlowGraphDebug flowGraphDebug(fg);
+    flowGraphDebug.drawCutGraph(outputFolder,suffix);
+    flowGraphDebug.drawFlowGraph(outputFolder,suffix);
 
 }
 
@@ -224,7 +224,7 @@ void segmentImage(std::string originalImagePath,
 //        if(i%4!=0) fm = ImageFlowData::FlowMode::DilationOnly;
 //        else fm = ImageFlowData::FlowMode::ErosionOnly;
 
-        fm = ImageFlowData::FlowMode::DilationOnly;
+        fm = ImageFlowData::FlowMode::DilationErosion;
 
         computeFlow(seedImage,
                     refImage,
@@ -255,8 +255,8 @@ int main()
     //cvNamedWindow(Development::windowName.c_str(), CV_WINDOW_AUTOSIZE);
 
     int gluedCurveLength = 5;
-    std::string outputFolder = "../output/modified_flow/natural";
-    std::string datasetFolder = "../images/natural";
+    std::string outputFolder = "../output/modified_flow/binary_images";
+    std::string datasetFolder = "../images/binary_images";
 
 
     typedef boost::filesystem::path path;

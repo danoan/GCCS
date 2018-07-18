@@ -15,6 +15,10 @@ namespace Development {
         fg.flowGraphMode = imageFlowData.getFlowMode();
 
 
+//        if(imageFlowData.getFlowMode()!=ImageFlowData::FlowMode::DilationErosion)
+//            throw std::runtime_error("Expected DilationErosion flow mode");
+
+
         std::map<SCell,bool> superposedLinels;
         for(auto it=imageFlowData.curveDataBegin();it!=imageFlowData.curveDataEnd();++it)
         {
@@ -71,8 +75,6 @@ namespace Development {
 
         KSpace& KImage = imageFlowData.getKSpace();
 
-        int iv = 0;
-
         KSpace::SCell pixelModel = KImage.sCell( KSpace::Point(1,1),KSpace::POS);
         for(IteratorType it=erodedCurve.getInnerPointsRange().begin();it!=erodedCurve.getInnerPointsRange().end();++it)
         {
@@ -85,9 +87,7 @@ namespace Development {
 
             //Source
             connectNodeToPixel(fg.sourceNode,directIncidentPixel,aSource);
-
-            iv = imageFlowData.getRefImage().operator()(*it);
-            fg.arcWeightMap[aSource] = alpha*-log(distrBkg[iv]);
+            fg.arcWeightMap[aSource] = infWeigth;
 
             fg.arcTypeMap[aSource] = FlowGraph::ArcType::SourceArc;
 
@@ -281,19 +281,48 @@ namespace Development {
             }
 
             Curve::SCell linel = *it;
+            //Curve Arc
+            {
+                double weight = 0;
+                weight += weightMap[linel];
 
-            Z2i::SCell directPixel = KImage.sDirectIncident(linel,KImage.sOrthDir(linel));
-            Z2i::SCell indirectPixel = KImage.sIndirectIncident(linel,KImage.sOrthDir(linel));
+                createArcFromLinel(linel,
+                                   weight,
+                                   at);
+            }
 
-            double weight = 0;
-            int iv = imageFlowData.getRefImage().operator()(KImage.sCoords(directPixel));
+            //Target Arc
+            {
+                Z2i::SCell directPixel = KImage.sDirectIncident(linel,KImage.sOrthDir(linel));
+                Z2i::SCell indirectPixel = KImage.sIndirectIncident(linel,KImage.sOrthDir(linel));
 
-            weight += -alpha*log(distrFrg[iv]);
-            weight += weightMap[linel];
+                double weight = 0;
+                int iv = imageFlowData.getRefImage().operator()(KImage.sCoords(directPixel));
 
-            createArcFromLinel(linel,
-                               weight,
-                               at);
+                if(ct!=ImageFlowData::CurveType::ErodedCurve)
+                {
+                    weight += directProp(iv,distrBkg);
+
+                    ListDigraph::Arc aTarget;
+
+                    connectPixelToNode(directPixel,fg.targetNode,aTarget);
+                    fg.arcWeightMap[aTarget] = weight;
+
+                    fg.arcTypeMap[aTarget] = FlowGraph::ArcType::TargetArc;
+                } else
+                {
+                    weight += directProp(iv,distrFrg);
+
+                    ListDigraph::Arc aSource;
+
+                    connectNodeToPixel(fg.sourceNode,indirectPixel,aSource);
+                    fg.arcWeightMap[aSource] = weight;
+
+                    fg.arcTypeMap[aSource] = FlowGraph::ArcType::SourceArc;
+                }
+
+
+            }
         }
     }
 
@@ -510,6 +539,26 @@ namespace Development {
         ListDigraph::Arc a1 = fg.digraph.addArc(u,v);
         fg.arcWeightMap[a1] = weight;
         fg.arcTypeMap[a1] = at;
+    }
+
+    double FlowGraphBuilder::dataTerm(int x, bool norm)
+    {
+        double nf = norm?0.64:1;
+        double nt = norm?0.36:0;
+
+        return -alpha*log(nt + nf*x);
+    }
+
+    double FlowGraphBuilder::directProp(int iv, double* distr, bool norm)
+    {
+        double x = 1-distr[iv];
+        return dataTerm(x,norm);
+    }
+
+    double FlowGraphBuilder::inverseProp(int iv, double* distr, bool norm)
+    {
+        double x = distr[iv];
+        return dataTerm(x,norm);
     }
 
 }
