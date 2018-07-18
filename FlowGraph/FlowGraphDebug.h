@@ -32,7 +32,8 @@ public:
     
     void highlightArcs(ListDigraph::ArcMap<bool>& arcFilter,
                        std::string imageOutputFolder,
-                       std::string suffix);
+                       std::string suffix,
+                       int color=1);
 
     void highlightArcs(ListDigraph::ArcMap<int>& arcColors,
                        std::string imageOutputFolder,

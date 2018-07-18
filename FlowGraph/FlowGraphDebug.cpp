@@ -55,8 +55,40 @@ void FlowGraphDebug::drawCutGraph(std::string outputFolder,
     ListDigraph::ArcMap<bool> arcsInTheCut(fg.graph(),false);
     FlowGraphQuery::sourceComponent(fg,arcsInTheCut);
 
+    ListDigraph::ArcMap<bool> gluedExtIntEdges(fg.graph(),false);
+    FlowGraphQuery::filterArcs(fg,gluedExtIntEdges,FlowGraph::ArcType::ExtIntGluedArc,true);
+
+    ListDigraph::ArcMap<bool> gluedIntExtEdges(fg.graph(),false);
+    FlowGraphQuery::filterArcs(fg,gluedIntExtEdges,FlowGraph::ArcType::IntExtGluedArc,true);
+
+    ListDigraph::ArcMap<bool> noArcs(fg.graph(),false);
+    FilterComposer<ListDigraph::ArcMap<bool>,ListDigraph::ArcIt> FC(fg.graph(),noArcs);
+    FC+gluedIntExtEdges;
+    FC+gluedExtIntEdges;
+
+
+    ListDigraph::ArcMap<int> arcColors(fg.graph(),0);
+    for(ListDigraph::ArcIt a(fg.graph());a!=INVALID;++a)
+    {
+        if(arcsInTheCut[a])
+        {
+            arcColors[a] = 1;
+        }
+        
+        if(FC.operator()()[a])
+        {
+            arcColors[a] = 2;
+        }        
+    }
+
+    ListDigraph::NodeMap<bool> noTerminal(fg.graph(),true);
+    noTerminal[fg.source()]=false;
+    noTerminal[fg.target()]=false;
+    
+    
     suffix = "CutGraph-" + suffix;
-    highlightArcs(arcsInTheCut,outputFolder,suffix);
+    highlightArcs(noTerminal,arcsInTheCut,arcColors,outputFolder,suffix);
+    
 }
 
 void FlowGraphDebug::drawRefundGraph(std::string outputFolder,
@@ -87,7 +119,8 @@ void FlowGraphDebug::drawRefundGraph(std::string outputFolder,
 
 void FlowGraphDebug::highlightArcs(ListDigraph::ArcMap<bool>& arcFilter,
                                    std::string imageOutputFolder,
-                                   std::string suffix)
+                                   std::string suffix,
+                                   int color)
 {
 
     ListDigraph::NodeMap<bool> allNodes(fg.graph(),true);
@@ -99,7 +132,7 @@ void FlowGraphDebug::highlightArcs(ListDigraph::ArcMap<bool>& arcFilter,
     {
         if(arcFilter[a])
         {
-            arcColors[a] = 1;
+            arcColors[a] = color;
         }
     }
 
