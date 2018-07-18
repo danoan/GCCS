@@ -18,7 +18,7 @@ namespace Development {
         std::map<SCell,bool> superposedLinels;
         for(auto it=imageFlowData.curveDataBegin();it!=imageFlowData.curveDataEnd();++it)
         {
-            createCurveArcs(it->curve.begin(),it->curve.end(),it->curveType,weightMap,superposedLinels,distrFrg);
+            createCurveArcs(it->curve.begin(),it->curve.end(),it->curveType,weightMap,superposedLinels,distrFrg,distrBkg);
         }
 
 
@@ -81,23 +81,16 @@ namespace Development {
             if(visitedNodes.find(directIncidentPixel)!=visitedNodes.end()) continue;
             visitedNodes.insert(directIncidentPixel);
 
-            ListDigraph::Arc aSource,aTarget;
+            ListDigraph::Arc aSource;
 
             //Source
             connectNodeToPixel(fg.sourceNode,directIncidentPixel,aSource);
 
             iv = imageFlowData.getRefImage().operator()(*it);
-            fg.arcWeightMap[aSource] = alpha*-log(1-distrFrg[iv]);
+            fg.arcWeightMap[aSource] = alpha*-log(distrBkg[iv]);
 
             fg.arcTypeMap[aSource] = FlowGraph::ArcType::SourceArc;
 
-            //Target
-            connectPixelToNode(directIncidentPixel,fg.targetNode,aTarget);
-
-            iv = imageFlowData.getRefImage().operator()(*it);
-            fg.arcWeightMap[aTarget] = alpha*-log(1-distrBkg[iv]);
-
-            fg.arcTypeMap[aTarget] = FlowGraph::ArcType::TargetArc;
         }
     }
 
@@ -151,20 +144,6 @@ namespace Development {
             fg.arcTypeMap[a] = FlowGraph::ArcType::TargetArc;
         }
 
-
-        KSpace::SCell pixelModel = KImage.sCell( KSpace::Point(1,1),KSpace::POS);
-        int iv = 0;
-        for(auto it = extCurve.getInnerPointsRange().begin();it!=extCurve.getInnerPointsRange().end();it++){
-            KSpace::SCell directIncidentPixel = KImage.sCell(*it,pixelModel);
-
-            ListDigraph::Arc aTarget;
-            connectPixelToNode(directIncidentPixel,fg.targetNode,aTarget);
-
-            iv = imageFlowData.getRefImage().operator()(*it);
-
-            fg.arcWeightMap[aTarget] = alpha*-log(1-distrBkg[iv]);
-            fg.arcTypeMap[aTarget] = FlowGraph::ArcType::TargetArc;
-        }
 
     }
 
@@ -236,19 +215,17 @@ namespace Development {
     }
 
     void FlowGraphBuilder::createArcFromLinel(Curve::SCell& linel,
-                                              LinelWeightMap& weightMap,
-                                              FlowGraph::ArcType at,
-                                              double* distrFrg)
+                                              double weight,
+                                              FlowGraph::ArcType at)
     {
         ListDigraph::Arc a;
-        createArcFromLinel(a,linel,weightMap,at,distrFrg);
+        createArcFromLinel(a,linel,weight,at);
     }
 
     void FlowGraphBuilder::createArcFromLinel(ListDigraph::Arc& arc,
                                               Curve::SCell& linel,
-                                              LinelWeightMap& weightMap,
-                                              FlowGraph::ArcType at,
-                                              double* distrFrg)
+                                              double weight,
+                                              FlowGraph::ArcType at)
     {
         KSpace& KImage = imageFlowData.getKSpace();
 
@@ -257,13 +234,12 @@ namespace Development {
 
         DGtal::Z2i::Point p = KImage.sCoords( KImage.sDirectIncident(linel,1) );
 
-        double x = 0;
 
         createArcFromPixels(arc,
                             directPixel,
                             indirectPixel,
                             at,
-                            weightMap[linel]+x);
+                            weight);
 
         fg.arcSCellMap[arc] = linel;
         fg.scellArcMap[linel] = arc;
@@ -275,8 +251,11 @@ namespace Development {
                                            ImageFlowData::CurveType ct,
                                            LinelWeightMap& weightMap,
                                            std::map<SCell,bool>& superposedLinels,
-                                           double* distrFrg)
+                                           double* distrFrg,
+                                           double* distrBkg)
     {
+        KSpace& KImage = imageFlowData.getKSpace();
+
         FlowGraph::ArcType at;
         if( ct==ImageFlowData::CurveType::OriginalCurve ){
             at = FlowGraph::ArcType::InternalCurveArc;
@@ -303,10 +282,18 @@ namespace Development {
 
             Curve::SCell linel = *it;
 
+            Z2i::SCell directPixel = KImage.sDirectIncident(linel,KImage.sOrthDir(linel));
+            Z2i::SCell indirectPixel = KImage.sIndirectIncident(linel,KImage.sOrthDir(linel));
+
+            double weight = 0;
+            int iv = imageFlowData.getRefImage().operator()(KImage.sCoords(directPixel));
+
+            weight += -alpha*log(distrFrg[iv]);
+            weight += weightMap[linel];
+
             createArcFromLinel(linel,
-                               weightMap,
-                               at,
-                               NULL);
+                               weight,
+                               at);
         }
     }
 
@@ -330,9 +317,8 @@ namespace Development {
                                         FlowGraph::ExtIntGluedArc;
                 createArcFromLinel(a,
                                    linel,
-                                   weightMap,
-                                   at,
-                                   NULL);
+                                   weightMap[linel],
+                                   at);
 
 
                 fg.arcCirculatorMap[a] = CirculatorPair(begin.curveSegment1End(),

@@ -70,14 +70,12 @@ namespace Development {
 
         void createArcFromLinel(ListDigraph::Arc &a,
                                 Curve::SCell &linel,
-                                LinelWeightMap &weightMap,
-                                FlowGraph::ArcType at,
-                                double* distrFrg);
+                                double weight,
+                                FlowGraph::ArcType at);
 
         void createArcFromLinel(Curve::SCell &linel,
-                                std::map<Z2i::SCell, double> &weightMap,
-                                FlowGraph::ArcType at,
-                                double* distrFrg);
+                                double weight,
+                                FlowGraph::ArcType at);
 
         void createArcFromPixels(ListDigraph::Arc &arc,
                                  KSpace::SCell pSource,
@@ -107,7 +105,8 @@ namespace Development {
                              ImageFlowData::CurveType ct,
                              LinelWeightMap &weightMap,
                              std::map<SCell, bool> &superposedLinels,
-                             double* distrFrg);
+                             double* distrFrg,
+                             double* distrBkg);
 
         void createGluedArcs(ImageFlowData::GluedCurveIteratorPair gluedRangeBegin,
                              ImageFlowData::GluedCurveIteratorPair gluedRangeEnd,
