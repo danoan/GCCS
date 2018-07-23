@@ -1,6 +1,5 @@
-#ifndef SEGBYCUT_SIMPLEFLOWGRAPHBUILDER_H
-#define SEGBYCUT_SIMPLEFLOWGRAPHBUILDER_H
-
+#ifndef SEGBYCUT_ONEPATHFLOWGRAPHBUILDER_H
+#define SEGBYCUT_ONEPATHFLOWGRAPHBUILDER_H
 
 #include <ctime>
 #include <cstdlib>
@@ -17,10 +16,11 @@ using namespace lemon;
 #include "../FlowGraph.h"
 
 namespace Development{
-    extern bool invertGluedArcs;
+      extern bool invertGluedArcs;  
 };
 
-namespace Development {
+namespace Development
+{
     class UnsignedSCellComparison {
     public:
         bool operator()(const SCell &s1, const SCell &s2) const {
@@ -28,8 +28,7 @@ namespace Development {
         }
     };
 
-    class FlowGraphBuilder {
-
+    class OnePathFlowGraphBuilder {
     public:
         typedef dim2::Point<int> LemonPoint;
 
@@ -42,11 +41,11 @@ namespace Development {
 
 
     public:
-        FlowGraphBuilder(FlowGraph &fg,
-                         ImageFlowData &imageFlowData,
-                         LinelWeightMap &weightMap,
-                         double *distrFrg,
-                         double* distrBkg);
+        OnePathFlowGraphBuilder(FlowGraph &fg,
+                                ImageFlowData &imageFlowData,
+                                LinelWeightMap &weightMap,
+                                double *distrFrg,
+                                double *distrBkg);
 
         static void addArc(FlowGraph &fg,
                            ListDigraph::Node &u,
@@ -70,12 +69,14 @@ namespace Development {
 
         void createArcFromLinel(ListDigraph::Arc &a,
                                 Curve::SCell &linel,
-                                double weight,
-                                FlowGraph::ArcType at);
+                                LinelWeightMap &weightMap,
+                                FlowGraph::ArcType at,
+                                bool invert);
 
         void createArcFromLinel(Curve::SCell &linel,
-                                double weight,
-                                FlowGraph::ArcType at);
+                                std::map<Z2i::SCell, double> &weightMap,
+                                FlowGraph::ArcType at,
+                                bool invert);
 
         void createArcFromPixels(ListDigraph::Arc &arc,
                                  KSpace::SCell pSource,
@@ -105,8 +106,8 @@ namespace Development {
                              ImageFlowData::CurveType ct,
                              LinelWeightMap &weightMap,
                              std::map<SCell, bool> &superposedLinels,
-                             double* distrFrg,
-                             double* distrBkg);
+                             double *distrFrg,
+                             double *distrBkg);
 
         void createGluedArcs(ImageFlowData::GluedCurveIteratorPair gluedRangeBegin,
                              ImageFlowData::GluedCurveIteratorPair gluedRangeEnd,
@@ -120,9 +121,7 @@ namespace Development {
 
 
         void createSourceArcs(Curve &erodedCurve,
-                              std::set<KSpace::SCell, UnsignedSCellComparison> &visitedNodes,
-                              double* distrFrg,
-                              double* distrBkg);
+                              std::set<KSpace::SCell, UnsignedSCellComparison> &visitedNodes);
 
 
         void explore(KSpace::SCell candidate,
@@ -136,8 +135,7 @@ namespace Development {
                                                UnsignedSCellSet &visitedNodes);
 
         void createTargetArcsFromExteriorCurve(Curve &extCurve,
-                                               UnsignedSCellSet &visitedNodes,
-                                               double* distrBkg);
+                                               UnsignedSCellSet &visitedNodes);
 
         template<typename TType>
         int createFromIteratorsQueue(std::queue<TType> intervals,
@@ -146,23 +144,32 @@ namespace Development {
 
         void setTerminalsCoordinates();
 
-        double dataTerm(int x, bool norm=true);
+        double dataTerm(int x, bool norm = true);
 
-        double directProp(int iv, double* distr, bool norm=true);
+        double directProp(int iv, double *distr, bool norm = true);
 
-        double inverseProp(int iv, double* distr, bool norm=true);
+        double inverseProp(int iv, double *distr, bool norm = true);
 
+        double similarityTerm(int iv1, int iv2);
+
+        void similarityBetweenDilated(Curve &curve);
+
+        void similarityBetweenCurves(Curve &curve);
 
     public:
         const double infWeigth = 100;
-        const double alpha = 1;
+        const double alpha = 5;
+        const double beta = 0.5;
+        const double gamma = 1;
 
     private:
         FlowGraph &fg;
         ImageFlowData &imageFlowData;
         LinelWeightMap &weightMap;
     };
-}
+
+};
 
 
-#endif //SEGBYCUT_SIMPLEFLOWGRAPHBUILDER_H
+
+#endif //SEGBYCUT_ONEPATHFLOWGRAPHBUILDER_H

@@ -20,7 +20,7 @@ using namespace lemon;
 #include "../utils/utils.h"
 #include "../FlowGraph/weightSettings.h"
 
-#include "../FlowGraph/Patch/SimpleFlowGraphBuilder.h"
+#include "../FlowGraph/Patch/BoykovWayFlowGraphBuilder.h"
 #include "../FlowGraph/ImageFlowData.h"
 #include "../FlowGraph/ImageFlowDataDebug.h"
 #include "../FlowGraph/FlowGraphDebug.h"
@@ -36,7 +36,7 @@ namespace Development{
     bool lambdaEstimator = false;
     bool pessimistEstimator = false;
 
-    bool makeConvexArcs = true;
+    bool makeConvexArcs = false;
     bool invertGluedArcs = false;
 
     bool iteractive = false;
@@ -224,7 +224,7 @@ void segmentImage(std::string originalImagePath,
 //        if(i%4!=0) fm = ImageFlowData::FlowMode::DilationOnly;
 //        else fm = ImageFlowData::FlowMode::ErosionOnly;
 
-        fm = ImageFlowData::FlowMode::DilationErosion;
+        fm = ImageFlowData::FlowMode::DilationOnly;
 
         computeFlow(seedImage,
                     refImage,
@@ -270,7 +270,7 @@ int main()
             std::string filename = it->path().stem().generic_string();
             std::cout << "Segmentation of image:" << filename << std::endl;
 
-            if(filename!="low_contrast") continue;
+            if(filename!="bottle15") continue;
 
             try {
                 segmentImage(it->path().generic_string(), outputFolder + "/binary_images_NOC/" + filename, gluedCurveLength, 200);

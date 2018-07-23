@@ -11,6 +11,8 @@ using namespace lemon;
 
 #include <DGtal/io/boards/Board2D.h>
 #include <boost/filesystem/path.hpp>
+#include <SeedCapture/CapturedData.h>
+#include <SeedCapture/seedCapture.h>
 #include "DGtal/io/readers/GenericReader.h"
 #include "DGtal/io/writers/GenericWriter.h"
 
@@ -18,7 +20,7 @@ using namespace lemon;
 #include "../utils/utils.h"
 #include "../FlowGraph/weightSettings.h"
 
-#include "../FlowGraph/FlowGraphBuilder.h"
+#include "../FlowGraph/Patch/OnePathFlowGraphBuilder.h"
 #include "../FlowGraph/ImageFlowData.h"
 #include "../FlowGraph/ImageFlowDataDebug.h"
 #include "../FlowGraph/FlowGraphDebug.h"
@@ -42,15 +44,18 @@ namespace Development{
 };
 
 void computeFlow(SegCut::Image2D& image,
+                 SegCut::Image2D& refImage,
                  unsigned int gluedCurveLength,
                  std::map<Z2i::SCell,double>& weightMap,
                  std::vector<Z2i::Point>& coordPixelsSourceSide,
                  std::vector<Z2i::SCell>& pixelsInTheGraph,
                  std::string outputFolder,
                  std::string suffix,
-                 ImageFlowData::FlowMode flowMode)
+                 ImageFlowData::FlowMode flowMode,
+                 double* distrFrg,
+                 double* distrBkg)
 {
-    ImageFlowData imageFlowData(image,image);
+    ImageFlowData imageFlowData(image,refImage);
 
     imageFlowData.init(flowMode,
                        gluedCurveLength);
@@ -58,7 +63,7 @@ void computeFlow(SegCut::Image2D& image,
     setArcsWeight(imageFlowData,weightMap);
 
     FlowGraph fg;
-    FlowGraphBuilder fgb(fg,imageFlowData,weightMap);
+    Development::OnePathFlowGraphBuilder fgb(fg,imageFlowData,weightMap,distrFrg,distrBkg);
 
 
     FlowGraph::FlowComputer flow = fg.prepareFlow();
@@ -105,7 +110,7 @@ void computeFlow(SegCut::Image2D& image,
 
     FlowGraphDebug flowGraphDebug(fg);
     flowGraphDebug.drawCutGraph(outputFolder,suffix);
-//    flowGraphDebug.drawFlowGraph(outputFolder,suffix);
+    flowGraphDebug.drawFlowGraph(outputFolder,suffix);
 
 }
 
@@ -118,6 +123,7 @@ void updateImage(std::vector<Z2i::Point>& coordPixelsSourceSide,
 {
     KSpace KImage;
     KImage.init(out.domain().lowerBound(),out.domain().upperBound(),true);
+
 
     SegCut::Image2D temp = out;
     ImageProc::Curve boundary;
@@ -164,9 +170,9 @@ void updateImage(std::vector<Z2i::Point>& coordPixelsSourceSide,
 
     GenericWriter<SegCut::Image2D>::exportFile(imageOutputPath.c_str(),out);
 
-    Board2D board;
-    Artist EA(KImage,board);
-    EA.drawCurvesAndConnectionsCurvatureMap(imageOutputPath,outputFolder + "/curvmap" + suffix + ".eps");
+//    Board2D board;
+//    Artist EA(KImage,board);
+//    EA.drawCurvesAndConnectionsCurvatureMap(imageOutputPath,outputFolder + "/curvmap" + suffix + ".eps");
 
 }
 
@@ -175,11 +181,13 @@ void segmentImage(std::string originalImagePath,
                   int gluedCurveLength,
                   int maxIterations)
 {
-    ImageData ID(originalImagePath);
-    SegCut::Image2D image = ID.preprocessedImage;
-    SegCut::Image2D imageOut = image;
+    typedef Z2i::Point Point;
 
-    std::string preprocessedFilepath = IO::saveImage(image,outputFolder,"preprocessing");
+    ImageData ID(originalImagePath);
+    SegCut::Image2D refImage = ID.preprocessedImage;
+    SegCut::Image2D imageOut = refImage;
+
+    std::string preprocessedFilepath = IO::saveImage(refImage,outputFolder,"preprocessing");
 
     if(Development::iteractive) {
         IO::displayImage(Development::windowName, originalImagePath);
@@ -191,6 +199,20 @@ void segmentImage(std::string originalImagePath,
     std::vector<Z2i::SCell> pixelsInTheGraph;
     std::map<Z2i::SCell,double> weightMap;
 
+    SeedCapture::CapturedData cd = SeedCapture::capture(preprocessedFilepath);
+    std::cout << cd.foregroundRegion.size() << ";" << std::endl;
+
+    SegCut::Image2D seedImage(refImage.domain());
+    for(auto it=refImage.domain().begin();it!=refImage.domain().end();++it)
+    {
+        seedImage.setValue(*it,0);
+    }
+
+    for(auto it=cd.foregroundRegion.begin();it!=cd.foregroundRegion.end();++it)
+    {
+        seedImage.setValue(Point( it->x,refImage.domain().upperBound()[1] - it->y),255);
+    }
+
 
     ImageFlowData::FlowMode fm;
     for(int i=0;i<maxIterations;++i)
@@ -199,27 +221,29 @@ void segmentImage(std::string originalImagePath,
         pixelsInTheGraph.clear();
         weightMap.clear();
 
-        if(i%2==0) fm = ImageFlowData::FlowMode::DilationOnly;
-        else fm = ImageFlowData::FlowMode::ErosionOnly;
+        //if(i%2!=0) fm = ImageFlowData::FlowMode::DilationOnly;
+        //else fm = ImageFlowData::FlowMode::ErosionOnly;
 
-        //fm = ImageFlowData::FlowMode::DilationOnly;
+        fm = ImageFlowData::FlowMode::DilationOnly;
 
-        computeFlow(image,
+        computeFlow(seedImage,
+                    refImage,
                     gluedCurveLength,
                     weightMap,
                     coordPixelsSourceSide,
                     pixelsInTheGraph,
                     outputFolder,
                     std::to_string(i),
-                    fm);
+                    fm,
+                    cd.foregroundDistrib,
+                    cd.backgroundDistrib);
 
 
         updateImage(coordPixelsSourceSide,
                     pixelsInTheGraph,
-                    image,
+                    seedImage,
                     outputFolder,
                     std::to_string(i));
-
 
         std::cout << "OK " << i << std::endl;
     }
@@ -228,11 +252,11 @@ void segmentImage(std::string originalImagePath,
 
 int main()
 {
-//    cvNamedWindow(Development::windowName.c_str(), CV_WINDOW_AUTOSIZE);
+    //cvNamedWindow(Development::windowName.c_str(), CV_WINDOW_AUTOSIZE);
 
     int gluedCurveLength = 5;
-    std::string outputFolder = "../output/simpleFlow";
-    std::string datasetFolder = "../images/segSet";
+    std::string outputFolder = "../output/onepath_flow/binary_images";
+    std::string datasetFolder = "../images/binary_images";
 
 
     typedef boost::filesystem::path path;
@@ -246,10 +270,10 @@ int main()
             std::string filename = it->path().stem().generic_string();
             std::cout << "Segmentation of image:" << filename << std::endl;
 
-            if(filename!="quixote_small") continue;
+            if(filename!="low_contrast") continue;
 
             try {
-                segmentImage(it->path().generic_string(), outputFolder + "/segSet/" + filename, gluedCurveLength, 100);
+                segmentImage(it->path().generic_string(), outputFolder + "/binary_images_NOC/" + filename, gluedCurveLength, 200);
             }catch (Exception ex)
             {
                 std::cout << "Segmentation could not be finished." << std::endl;

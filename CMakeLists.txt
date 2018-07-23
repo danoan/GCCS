@@ -4,6 +4,9 @@ project(segByCut)
 set(CMAKE_PREFIX_PATH /home-local/dantu1/Documents/local_libs)
 set(CMAKE_LIBRARY_PATH /home-local/dantu1/Documents/local_libs/lib)
 
+INCLUDE_DIRECTORIES(/home/daniel/Projects/local_libs/include)
+LINK_DIRECTORIES(/home/daniel/Projects/local_libs/lib)
+
 find_package(DGtal REQUIRED)
 find_package(OpenCV REQUIRED)
 
@@ -11,13 +14,12 @@ INCLUDE_DIRECTORIES(${DGTAL_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(GluedCurve)
 INCLUDE_DIRECTORIES(Patch)
 
-LINK_DIRECTORIES(${DGTAL_LIBRARY_DIRS})
+
 
 
 set(SOURCE_FILES ImageProc/imageProc.cpp utils/Artist.cpp utils/utils.cpp utils/io.cpp)
-set(FLOW_FILES FlowGraph/FlowGraphBuilder.cpp FlowGraph/FlowGraphDebug.cpp FlowGraph/FlowGraphQuery.cpp
-        FlowGraph/ImageFlowData.cpp FlowGraph/ImageFlowDataDebug.cpp FlowGraph/weightSettings.cpp
-        FlowGraph/Patch/SimpleFlowGraphBuilder.cpp FlowGraph/Patch/SimpleFlowGraphBuilder.h)
+set(FLOW_FILES FlowGraph/FlowGraphDebug.cpp FlowGraph/FlowGraphQuery.cpp FlowGraph/FlowGraphBuilder.cpp
+        FlowGraph/ImageFlowData.cpp FlowGraph/ImageFlowDataDebug.cpp FlowGraph/weightSettings.cpp)
 
 add_executable(testEstimators testModules/testEstimators.cpp ${SOURCE_FILES})
 add_executable(testFlowGraphQuery testModules/testFlowGraphQuery.cpp ${SOURCE_FILES} ${FLOW_FILES} )
@@ -44,7 +46,10 @@ add_executable(refundFlow Flows/RefundFlow/refundFlow.cpp Flows/RefundFlow/Refun
 add_executable(projectionFlow Flows/ProjectionFlow/projectionFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(adaptativeScaleFlow Flows/AdaptativeScaleFlow/adaptativeScaleFlow.cpp ${SOURCE_FILES} ${FLOW_FILES} ExhaustiveSearch/PropertyChecker/MarkedMapChecker/IntervalChecker.h ImageProc/ImageProc.h FreezeOneExp/CombinationsEvaluator.h)
 add_executable(boundedFlow Flows/BoundedFlow/boundedFlow.cpp Flows/RefundFlow/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
-add_executable(modifiedFlow Flows/modifiedFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
+
+add_executable(modifiedFlow Flows/modifiedFlow.cpp FlowGraph/Patch/BoykovWayFlowGraphBuilder.cpp FlowGraph/Patch/BoykovWayFlowGraphBuilder.h ${SOURCE_FILES} ${FLOW_FILES})
+add_executable(onePathFlow Flows/onePathFlow.cpp FlowGraph/Patch/OnePathFlowGraphBuilder.cpp FlowGraph/Patch/OnePathFlowGraphBuilder.h ${SOURCE_FILES} ${FLOW_FILES})
+
 
 add_executable(binaryDataset binaryDataset.cpp Flows/RefundFlow/RefundFlow.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
@@ -80,5 +85,6 @@ target_link_libraries(projectionFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -l
 target_link_libraries(adaptativeScaleFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(boundedFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(modifiedFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lseed-capture -ldrawsics -lemon -lm -lboost_system -lboost_filesystem)
+target_link_libraries(onePathFlow ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lseed-capture -ldrawsics -lemon -lm -lboost_system -lboost_filesystem)
 
 target_link_libraries(binaryDataset ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)

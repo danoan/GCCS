@@ -19,7 +19,7 @@ public:
     enum ArcType{
         SourceArc,TargetArc,IntExtGluedArc,ExtIntGluedArc,
         InternalCurveArc,ExternalCurveArc,EscapeArc,
-        MakeConvexArc,RefundArc,ConflictArc
+        MakeConvexArc,RefundArc,ConflictArc,SimilarityArc
     };
 
     typedef DGtal::Z2i::SCell SCell;

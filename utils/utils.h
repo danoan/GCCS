@@ -192,4 +192,5 @@ void eliminateLoops(Curve& curveOut,
                     KSpace& KImage,
                     Curve& curveIn);
 
+
 #endif //SEGBYCUT_CURVATUREWEIGHTMETHODS_H

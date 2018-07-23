@@ -10,7 +10,7 @@ void tangentWeight(WeightSettingsTypes::Curve::ConstIterator begin,
     int i =0;
     do{
 
-        //Dot product estimator (projection)
+        //Dot product estimator (projection) Suboptimal property
 
         WeightSettingsTypes::KSpace::Point pTarget = KImage.sCoords( KImage.sDirectIncident(*it,*KImage.sDirs(*it)) );
         WeightSettingsTypes::KSpace::Point pSource = KImage.sCoords( KImage.sIndirectIncident(*it,*KImage.sDirs(*it)) );
@@ -21,8 +21,8 @@ void tangentWeight(WeightSettingsTypes::Curve::ConstIterator begin,
 
 
 
-//         1.0/(cos+sin) Length estimation
-//         tangentWeightVector.push_back( 1.0/( fabs(estimationsTangent[i][0]) + fabs(estimationsTangent[i][1]) ) );
+         //1.0/(cos+sin) Length estimation
+         //tangentWeightVector.push_back( 1.0/( fabs(estimationsTangent[i][0]) + fabs(estimationsTangent[i][1]) ) );
 
 
         ++it;
@@ -32,7 +32,8 @@ void tangentWeight(WeightSettingsTypes::Curve::ConstIterator begin,
 
 void setGridCurveWeight(Curve curvePriorGS,
                         KSpace& KImage,
-                        std::map<Z2i::SCell,double>& weightMap)
+                        std::map<Z2i::SCell,double>& weightMap,
+                        double flength)
 {
     std::vector<double> curvatureEstimations;
     curvatureEstimatorsGridCurve(curvePriorGS.begin(),
@@ -72,8 +73,8 @@ void setGridCurveWeight(Curve curvePriorGS,
     {
         int i =0;
         for(auto it=curvePriorGS.begin();it!=curvePriorGS.end();++it){
-            weightMap[*it] *= tangentWeightVector[i];
-//            weightMap[*it] += 0.01*tangentWeightVector[i];
+            weightMap[*it] *= tangentWeightVector[i]*flength;
+            //weightMap[*it] += 0.001*tangentWeightVector[i];
             ++i;
         }
     }
@@ -83,7 +84,7 @@ void setGluedCurveWeight(WeightSettingsTypes::GluedCurveSetRange::ConstIterator 
                          WeightSettingsTypes::GluedCurveSetRange::ConstIterator gcsRangeEnd,
                          KSpace& KImage,
                          unsigned int gluedCurveLength,
-                         std::map<Z2i::SCell,double>& weightMap)
+                         std::map<Z2i::SCell,double>& weightMap,double flength)
 {
     std::vector<double> estimationsCurvature;
     curvatureEstimatorsConnections(gcsRangeBegin,gcsRangeEnd,KImage,gluedCurveLength,estimationsCurvature);
@@ -140,7 +141,7 @@ void setGluedCurveWeight(WeightSettingsTypes::GluedCurveSetRange::ConstIterator 
         for (WeightSettingsTypes::GluedCurveIteratorPair it = gcsRangeBegin; it != gcsRangeEnd; ++it) {
             auto itC = it->first.connectorsBegin();
             do {
-                weightMap[*itC]*= tangentWeightVector[i];
+                weightMap[*itC]*= tangentWeightVector[i]*flength;
 //                weightMap[*itC]+= 0.01*tangentWeightVector[i];
                 ++i;
                 if(itC==it->first.connectorsEnd()) break;
@@ -154,11 +155,18 @@ void setGluedCurveWeight(WeightSettingsTypes::GluedCurveSetRange::ConstIterator 
 void setArcsWeight(ImageFlowData& imageFlowData,std::map<Z2i::SCell,double>& weightMap)
 {
 
+    double flength = 1;
+    double innerLength = computeLength(imageFlowData.getMostInnerCurve(),imageFlowData.getKSpace());
+    double outerLength = computeLength(imageFlowData.getMostOuterCurve(),imageFlowData.getKSpace());
+    
+    flength = innerLength/outerLength;
+    
     for(auto it=imageFlowData.curveDataBegin();it!=imageFlowData.curveDataEnd();++it)
     {
         setGridCurveWeight(it->curve,
                            imageFlowData.getKSpace(),
-                           weightMap
+                           weightMap,
+                           flength
         );
     }
 
@@ -168,6 +176,36 @@ void setArcsWeight(ImageFlowData& imageFlowData,std::map<Z2i::SCell,double>& wei
                              it->gcsRangeEnd(),
                              imageFlowData.getKSpace(),
                              imageFlowData.getGluedCurveLength(),
-                             weightMap);
+                             weightMap,
+                             flength);
     }
+}
+
+double computeLength(Curve& curve, KSpace& KImage)
+{
+    double length = 0;
+    std::vector<WeightSettingsTypes::TangentVector> tangentEstimations;
+    tangentEstimatorsGridCurve(curve.begin(),
+                               curve.end(),
+                               KImage,
+                               tangentEstimations);
+
+
+    std::vector<double> tangentWeightVector;
+    tangentWeight(curve.begin(),
+                  curve.end(),
+                  KImage,
+                  tangentEstimations,
+                  tangentWeightVector);
+
+
+    {
+        int i =0;
+        for(auto it=curve.begin();it!=curve.end();++it){
+            length += tangentWeightVector[i];
+            ++i;
+        }
+    }
+
+    return length;
 }

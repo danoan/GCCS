@@ -241,10 +241,10 @@ void FlowGraphBuilder::createArcFromLinel(Curve::SCell& linel,
 
 
 void FlowGraphBuilder::createCurveArcs(Curve::ConstIterator curveBegin,
-                                     Curve::ConstIterator curveEnd,
-                                     ImageFlowData::CurveType ct,
-                                     LinelWeightMap& weightMap,
-                                     std::map<SCell,bool>& superposedLinels)
+                                       Curve::ConstIterator curveEnd,
+                                       ImageFlowData::CurveType ct,
+                                       LinelWeightMap& weightMap,
+                                       std::map<SCell,bool>& superposedLinels)
 {
     FlowGraph::ArcType at;
     if( ct==ImageFlowData::CurveType::OriginalCurve ){
@@ -311,7 +311,7 @@ void FlowGraphBuilder::createGluedArcs(ImageFlowData::GluedCurveIteratorPair glu
 
 
                 fg.arcCirculatorMap[a] = CirculatorPair(begin.curveSegment1End(),
-                                                     begin.curveSegment2Begin());
+                                                        begin.curveSegment2Begin());
             }
 
 

@@ -38,7 +38,7 @@ void mapGDets(BestLinel::WeightMap& mapOfGdets, ImageFlowData& ifd, int g)
 void testGDets(ImageData& ID)
 {
     int g = 5;
-    ImageFlowData ifd(ID.originalImage);
+    ImageFlowData ifd(ID.originalImage,ID.originalImage);
     ifd.init(ImageFlowData::FlowMode::DilationOnly,g);
 
     BestLinel::WeightMap mapOfGdets;
@@ -49,7 +49,7 @@ void testGDets(ImageData& ID)
 void testJointSet(ImageData& ID)
 {
     int g = 5;
-    ImageFlowData ifd(ID.originalImage);
+    ImageFlowData ifd(ID.originalImage,ID.originalImage);
     ifd.init(ImageFlowData::FlowMode::DilationOnly,g);
 
     BestLinel::JointSet js(ifd);
@@ -111,19 +111,20 @@ struct Determinant
 typedef BestLinel::JointSet::JointIterator JointIterator;
 typedef DGtal::Circulator<JointIterator> JointCirculator;
 
-void chooseBestPair(std::vector<Determinant>& detList,
+void chooseBestPair(int g,
+                    std::vector<Determinant>& detList,
                     JointCirculator firstCirc,
                     JointCirculator scndCirc,
                     BestLinel::WeightMap& mapOfGdets)
 {
     JointCirculator cinit = firstCirc;
-    JointCirculator coutit = scndCirc;//walkCirculator(joutcirc,2);
+    JointCirculator coutit = walkCirculator(scndCirc,g);//scndCirc;//walkCirculator(joutcirc,2);
     do
     {
         JointCirculator tempOut = coutit;
         double best = mapOfGdets[tempOut->scell];
         BestLinel::JointSet::Joint bestJoint = *tempOut;
-        for(int i=0;i<5;++i)
+        for(int i=0;i<g;++i)
         {
             if(mapOfGdets[tempOut->scell]>best)
             {
@@ -144,7 +145,7 @@ void chooseBestPair(std::vector<Determinant>& detList,
 void testBestPair(ImageData& ID)
 {
     int g = 5;
-    ImageFlowData ifd(ID.originalImage);
+    ImageFlowData ifd(ID.originalImage,ID.originalImage);
     ifd.init(ImageFlowData::FlowMode::DilationOnly,g);
 
     BestLinel::JointSet js(ifd);
@@ -165,19 +166,19 @@ void testBestPair(ImageData& ID)
     std::vector< Determinant > detListFromInner;
     std::vector< Determinant > detListFromOuter;
 
-    chooseBestPair(detListFromInner,jincirc,joutcirc,mapOfGdets);
-    chooseBestPair(detListFromOuter,joutcirc,jincirc,mapOfGdets);
+    chooseBestPair(g,detListFromInner,jincirc,joutcirc,mapOfGdets);
+    chooseBestPair(g,detListFromOuter,joutcirc,jincirc,mapOfGdets);
 
     std::sort(detListFromInner.begin(),detListFromInner.end(),[&](const struct Determinant& d1, const struct Determinant& d2){return d1.sigma > d2.sigma;});
     std::sort(detListFromOuter.begin(),detListFromOuter.end(),[&](const struct Determinant& d1, const struct Determinant& d2){return d1.sigma > d2.sigma;});
 
     int i=0;
-    for(auto it=detListFromOuter.begin();it!=detListFromOuter.end();++it,++i)
+    for(auto it=detListFromInner.begin();it!=detListFromInner.end();++it,++i)
     {
         std::cout << it->sigma << std::endl;
 
         Curve ncurve;
-        constructCurveFromJoints(ncurve,ifd,detListFromOuter[i].j1,detListFromOuter[i].j2);
+        constructCurveFromJoints(ncurve,ifd,detListFromInner[i].j1,detListFromInner[i].j2);
         DGtal::Board2D board;
         board << ncurve;
         board.saveEPS( ("bestCurve" + std::to_string(i) +".eps").c_str() );

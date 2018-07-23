@@ -25,15 +25,17 @@ void tangentWeight(WeightSettingsTypes::Curve::ConstIterator begin,
 
 void setGridCurveWeight(WeightSettingsTypes::Curve curvePriorGS,
                         WeightSettingsTypes::KSpace& KImage,
-                        std::map<WeightSettingsTypes::Z2i::SCell,double>& weightMap);
+                        std::map<WeightSettingsTypes::Z2i::SCell,double>& weightMap,double flength=1);
 
 void setGluedCurveWeight(WeightSettingsTypes::GluedCurveSetRange::ConstIterator gcsRangeBegin,
                          WeightSettingsTypes::GluedCurveSetRange::ConstIterator gcsRangeEnd,
                          KSpace& KImage,
                          unsigned int gluedCurveLength,
-                         std::map<Z2i::SCell,double>& weightMap);
+                         std::map<Z2i::SCell,double>& weightMap,double flength=1);
 
 void setArcsWeight(ImageFlowData& imageFlowData,std::map<Z2i::SCell,double>& weightMap);
+
+double computeLength(Curve& curve, KSpace& KImage);
 
 
 #endif //SEGBYCUT_WEIGHTSETTINGS_H

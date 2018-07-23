@@ -42,7 +42,8 @@ public:
                     std::vector<CheckableSeedPair> &pairList,
                     KSpace &KImage,
                     int maxSimultaneousPairs,
-                    std::string outputFolder="")
+                    std::string outputFolder="",
+                    double currLength=0)
     {
         typedef std::vector<CheckableSeedPair> CheckableSeedList;
         bool saveEPS = outputFolder!="";
@@ -69,6 +70,8 @@ public:
 
 
         CheckableSeedPair seedCombination[maxPairs];
+        double nlength;
+        double f = 1;
         while (myCombinations.next(seedCombination)) {
             Curve curve;
             std::map<KSpace::SCell, double> weightMap;
@@ -77,8 +80,13 @@ public:
             eliminateLoops(curve, KImage, curve);
 
             setGridCurveWeight(curve, KImage, weightMap);
+            if(currLength!=0)
+            {
+                nlength = computeLength(curve,KImage);
+                f = currLength/nlength;
+            }
 
-            currentEnergyValue = energyValue(curve, weightMap);
+            currentEnergyValue = energyValue(curve, weightMap)*f;
             if (currentEnergyValue < minEnergyValue) {
                 std::cout << "Updated min energy value: " << minEnergyValue << " -> " << currentEnergyValue
                           << std::endl;
@@ -205,6 +213,8 @@ private:
 
         return v;
     }
+
+
 
 private:
     std::vector< Checker* > checkers;
