@@ -8,7 +8,7 @@ using namespace DGtal;
 using namespace DGtal::Z2i;
 
 #include "utils/utils.h"
-#include "FlowGraph/weightSettings.h"
+#include "FlowGraph/FlowGraphUtils.h"
 
 #include "FlowGraph/FlowGraphBuilder.h"
 #include "FlowGraph/ImageFlowDataDebug.h"

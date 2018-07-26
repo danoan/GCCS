@@ -1,7 +1,7 @@
 #include "../FlowGraph/ImageFlowData.h"
 #include "../Flows/PreprocessImage.h"
 #include "../BestPair/API.h"
-#include "../FlowGraph/weightSettings.h"
+#include "../FlowGraph/FlowGraphUtils.h"
 #include "JointSet.h"
 
 namespace Development{

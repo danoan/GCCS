@@ -7,7 +7,6 @@
 #include "DGtal/io/writers/GenericWriter.h"
 
 #include "../utils/utils.h"
-#include "ImageFlowData.h"
 
 namespace WeightSettingsTypes
 {
@@ -32,8 +31,6 @@ void setGluedCurveWeight(WeightSettingsTypes::GluedCurveSetRange::ConstIterator 
                          KSpace& KImage,
                          unsigned int gluedCurveLength,
                          std::map<Z2i::SCell,double>& weightMap,double flength=1);
-
-void setArcsWeight(ImageFlowData& imageFlowData,std::map<Z2i::SCell,double>& weightMap);
 
 double computeLength(Curve& curve, KSpace& KImage);
 

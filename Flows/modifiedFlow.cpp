@@ -18,7 +18,7 @@ using namespace lemon;
 
 
 #include "../utils/utils.h"
-#include "../FlowGraph/weightSettings.h"
+#include "../FlowGraph/FlowGraphUtils.h"
 
 #include "../FlowGraph/Patch/BoykovWayFlowGraphBuilder.h"
 #include "../FlowGraph/ImageFlowData.h"

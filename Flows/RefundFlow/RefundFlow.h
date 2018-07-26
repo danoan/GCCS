@@ -9,7 +9,8 @@
 #include "../FlowGraph/FlowGraph.h"
 #include "../FlowGraph/FlowGraphQuery.h"
 
-#include "../FlowGraph/weightSettings.h"
+#include "../../FlowGraph/FlowGraphDebug.h"
+#include "../FlowGraph/FlowGraphUtils.h"
 
 
 class RefundFlow
