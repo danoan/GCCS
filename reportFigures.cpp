@@ -58,7 +58,7 @@ void grid_curve(std::string outputFolder)
     Board2D board;
 
     DigitalSet digitalImage(domain);
-    ImageProc2::ImageAsDigitalSet(digitalImage,imageOriginal);
+    ImageProc::ImageAsDigitalSet(digitalImage,imageOriginal);
 
     Curve boundaryCurve;
     ImageProc::computeBoundaryCurve(imageOriginal,boundaryCurve,100);

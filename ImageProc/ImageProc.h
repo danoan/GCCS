@@ -19,7 +19,7 @@
 #include "EightNeighborhoodPredicate.h"
 
 
-namespace ImageProc2 {
+namespace ImageProc {
     struct ImageAsDigitalSet {
         typedef DGtal::Z2i::KSpace KImage;
         typedef DGtal::Z2i::Domain Domain;
@@ -414,7 +414,7 @@ namespace ImageProc2 {
             DigitalSet dball(domain);
             Dilate(dball,
                    ball,
-                   ImageProc2::Dilate::StructuringElement::CROSS);
+                   ImageProc::Dilate::StructuringElement::CROSS);
 
             DigitalSet qDBall(domain);
             DigitalIntersection(qDBall,ods,dball);

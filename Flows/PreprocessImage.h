@@ -55,13 +55,13 @@ private:
 
     void preprocessingTwo(Image2D& image)
     {
-        ImageProc2::ImageAsDigitalSet(digitalSets.originalDS,image);
+        ImageProc::ImageAsDigitalSet(digitalSets.originalDS,image);
 
         DigitalSet dilated( image.domain() );
-        ImageProc2::Dilate(dilated, digitalSets.originalDS,ImageProc2::Dilate::RECT,1);
+        ImageProc::Dilate(dilated, digitalSets.originalDS,ImageProc::Dilate::RECT,1);
 
         DigitalSet dilatedNoHoles( image.domain() );
-        ImageProc2::NoHoles(digitalSets.segmentationDS,dilated);
+        ImageProc::NoHoles(digitalSets.segmentationDS,dilated);
 
         saveDigitalSetAsImage(preprocessedImage,digitalSets.segmentationDS);
     }

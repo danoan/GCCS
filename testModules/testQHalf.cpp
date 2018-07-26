@@ -13,13 +13,13 @@ namespace Development{
 
 int main()
 {
-    typedef ImageProc2::ImageAsDigitalSet::Domain Domain;
-    typedef ImageProc2::ImageAsDigitalSet::Image2D Image2D;
-    typedef ImageProc2::ImageAsDigitalSet::DigitalSet DigitalSet;
-    typedef ImageProc2::DigitalBallIntersection::EuclideanBall EuclideanBall;
-    typedef ImageProc2::DigitalBallIntersection::Point Point;
+    typedef ImageProc::ImageAsDigitalSet::Domain Domain;
+    typedef ImageProc::ImageAsDigitalSet::Image2D Image2D;
+    typedef ImageProc::ImageAsDigitalSet::DigitalSet DigitalSet;
+    typedef ImageProc::DigitalBallIntersection::EuclideanBall EuclideanBall;
+    typedef ImageProc::DigitalBallIntersection::Point Point;
 
-    typedef ImageProc2::DigitalBoundary< EightNeighborhoodPredicate<DigitalSet>  > EightBoundary;
+    typedef ImageProc::DigitalBoundary< EightNeighborhoodPredicate<DigitalSet>  > EightBoundary;
 
 
 
@@ -27,7 +27,7 @@ int main()
     Domain domain( Point(-50,-50), Point(50,50));
 
     DigitalSet ds(domain);
-    ImageProc2::DigitalRectangle(ds,domain,Point(-25,-25),50,50);
+    ImageProc::DigitalRectangle(ds,domain,Point(-25,-25),50,50);
 
     DigitalSet boundary(domain);
     EightBoundary(boundary,ds);
@@ -43,7 +43,7 @@ int main()
 
 
     DigitalSet dsQHalf(domain);
-    ImageProc2::QHalf(dsQHalf,ds,radius,center);
+    ImageProc::QHalf(dsQHalf,ds,radius,center);
 
     std::cout << dsQHalf.size() << std::endl;
 

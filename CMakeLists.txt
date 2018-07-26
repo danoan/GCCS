@@ -4,13 +4,15 @@ project(segByCut)
 set(CMAKE_PREFIX_PATH /home-local/dantu1/Documents/local_libs)
 set(CMAKE_LIBRARY_PATH /home-local/dantu1/Documents/local_libs/lib)
 
-INCLUDE_DIRECTORIES(/home/daniel/Projects/local_libs/include)
-LINK_DIRECTORIES(/home/daniel/Projects/local_libs/lib)
+#INCLUDE_DIRECTORIES(/home/daniel/Projects/local_libs/include)
+#LINK_DIRECTORIES(/home/daniel/Projects/local_libs/lib)
 
 find_package(DGtal REQUIRED)
 find_package(OpenCV REQUIRED)
 
 INCLUDE_DIRECTORIES(${DGTAL_INCLUDE_DIRS})
+LINK_DIRECTORIES(${DGTAL_LIBRARY_DIRS})
+
 INCLUDE_DIRECTORIES(GluedCurve)
 INCLUDE_DIRECTORIES(Patch)
 
@@ -34,7 +36,7 @@ add_executable(testSegCombQuixote testModules/testSegCombQuixote.cpp ${SOURCE_FI
 add_executable(testBestPair BestPair/testBestPair.cpp BestPair/API.cpp BestPair/API.h BestPair/JointSet.h BestPair/JointSet.cpp ${SOURCE_FILES} ${FLOW_FILES})
 add_executable(testFreezeOneExp testModules/testFreezeOneExpansion.cpp FreezeOneExp/CombinationsEvaluator.h ${SOURCE_FILES} ${FLOW_FILES} )
 add_executable(testCapture testModules/testCapture.cpp)
-
+add_executable(testEnergyEvaluation EnergyEvaluation/EnergyEvaluation.h EnergyEvaluation/testEnergyEvaluation.cpp EnergyEvaluation/EnergyEvaluation.cpp FlowGraph/weightSettings.cpp utils/utils.cpp ImageProc/imageProc.cpp FlowGraph/ImageFlowData.cpp)
 
 add_executable(testQHalf testModules/testQHalf.cpp ${SOURCE_FILES} ${FLOW_FILES})
 
@@ -74,6 +76,7 @@ target_link_libraries(testBestPair ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm 
 
 target_link_libraries(testFreezeOneExp ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 target_link_libraries(testCapture ${OpenCV_LIBS} -lseed-capture -ldrawsics)
+target_link_libraries(testEnergyEvaluation ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
 
 
 target_link_libraries(reportFigures ${DGTAL_LIBRARIES} ${OpenCV_LIBS} -lemon -lm -lboost_system -lboost_filesystem)
